@@ -1013,7 +1013,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1065,7 +1064,6 @@ with_milestone
 with_update_version
 with_user_release_suffix
 with_build_number
-with_company_name
 with_vendor_name
 with_vendor_url
 with_vendor_bug_url
@@ -1257,7 +1255,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1510,15 +1507,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1656,7 +1644,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1809,7 +1797,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1858,7 +1845,7 @@ Optional Features:
                           run the Queens test after Hotspot build [disabled]
   --enable-unlimited-crypto
                           Enable unlimited crypto policy [disabled]
-  --enable-jfr            Enable Java Flight Recorder support [disabled]
+  --disable-jfr           Disable Java Flight Recorder support [enabled]
   --disable-debug-symbols disable generation of debug symbols [enabled]
   --disable-zip-debug-info
                           disable zipping of debug-info files [enabled]
@@ -1898,8 +1885,8 @@ Optional Packages:
   --with-toolchain-path   prepend these directories when searching for
                           toolchain binaries (compilers etc)
   --with-extra-path       prepend these directories to the default path
-  --with-xcode-path       explicit path to Xcode (Xcode 4 is supported;
-                          generally for building on 10.9 and later)
+  --with-xcode-path       explicit path to Xcode 4 (generally for building on
+                          10.9 and later)
   --with-conf-name        use this as the name of the configuration [generated
                           from important configuration options]
   --with-builddeps-conf   use this configuration file for the builddeps
@@ -1916,7 +1903,6 @@ Optional Packages:
                           Add a custom string to the version string if build
                           number isn't set.[username_builddateb00]
   --with-build-number     Set build number value for build [b00]
-  --with-company-name     Set company name.
   --with-vendor-name      Set vendor name. Among others, used to set the
                           'java.vendor' and 'java.vm.vendor' system
                           properties. [not specified]
@@ -4396,7 +4382,7 @@ VS_SDK_PLATFORM_NAME_2017=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1594810185
+DATE_WHEN_GENERATED=1596229451
 
 ###############################################################################
 #
@@ -13601,11 +13587,6 @@ test -n "$target_alias" &&
       VAR_OS_API=posix
       VAR_OS_ENV=solaris
       ;;
-    *android*)
-      VAR_OS=linux
-      VAR_OS_API=posix
-      VAR_OS_ENV=linux
-      ;;
     *darwin*)
       VAR_OS=macosx
       VAR_OS_API=posix
@@ -13652,14 +13633,8 @@ test -n "$target_alias" &&
       VAR_CPU_ENDIAN=little
       ;;
     arm*)
-      VAR_CPU=aarch32
-      VAR_CPU_ARCH=aarch32
-      VAR_CPU_BITS=32
-      VAR_CPU_ENDIAN=little
-      ;;
-    aarch32)
-      VAR_CPU=aarch32
-      VAR_CPU_ARCH=aarch32
+      VAR_CPU=arm
+      VAR_CPU_ARCH=arm
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
@@ -13749,11 +13724,6 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_OS=solaris
       VAR_OS_API=posix
       VAR_OS_ENV=solaris
-      ;;
-    *android*)
-      VAR_OS=linux
-      VAR_OS_API=posix
-      VAR_OS_ENV=linux
       ;;
     *darwin*)
       VAR_OS=macosx
@@ -14027,8 +13997,6 @@ $as_echo "$COMPILE_TYPE" >&6; }
     elif test "x$OPENJDK_TARGET_CPU_ARCH" = xx86; then
       OPENJDK_TARGET_CPU_JLI_CFLAGS="$OPENJDK_TARGET_CPU_JLI_CFLAGS -DLIBARCH32NAME='\"i386\"' -DLIBARCH64NAME='\"amd64\"'"
     fi
-  elif test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$TOOLCHAIN_TYPE" = xclang ; then
-    OPENJDK_TARGET_CPU_JLI_CFLAGS="$OPENJDK_TARGET_CPU_JLI_CFLAGS -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
   fi
 
 
@@ -14648,9 +14616,6 @@ $as_echo "$with_jvm_variants" >&6; }
     INCLUDE_SA=false
   fi
   if test "x$VAR_CPU" = xppc64 -o "x$VAR_CPU" = xppc64le ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     INCLUDE_SA=false
   fi
 
@@ -19842,8 +19807,8 @@ fi
   #
   # Enable or disable JFR
   #
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to build jfr" >&5
-$as_echo_n "checking whether to build jfr... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to build JFR" >&5
+$as_echo_n "checking whether to build JFR... " >&6; }
   # Check whether --enable-jfr was given.
 if test "${enable_jfr+set}" = set; then :
   enableval=$enable_jfr;
@@ -19851,18 +19816,26 @@ else
   enable_jfr=auto
 fi
 
-  if test "x$enable_jfr" = "xno" -o "x$enable_jfr" = "xauto"; then
+  if test "x$enable_jfr" = "xno"; then
     ENABLE_JFR=false
-  elif test "x$enable_jfr" = "xyes" ; then
+  elif test "x$enable_jfr" = "xyes" -o "x$enable_jfr" = "xauto"; then
     if test "x$JVM_VARIANT_MINIMAL1" = "xtrue" -o "x$JVM_VARIANT_ZERO" = "xtrue"; then
-      as_fn_error $? "cannot enable JFR on minimal1 VM or zero build" "$LINENO" 5
+      if test "x$enable_jfr" = "xyes"; then
+        as_fn_error $? "cannot enable JFR on minimal1 VM or zero build" "$LINENO" 5
+      else
+        ENABLE_JFR=false
+      fi
     elif test "x$OPENJDK_TARGET_OS" = xaix; then
-      as_fn_error $? "AIX does not support JFR" "$LINENO" 5
+      if test "x$enable_jfr" = "xyes"; then
+        as_fn_error $? "AIX does not support JFR" "$LINENO" 5
+      else
+        ENABLE_JFR=false
+      fi
     else
       ENABLE_JFR=true
     fi
   else
-    as_fn_error $? "--enable-jfr must either be set to yes or no" "$LINENO" 5
+    as_fn_error $? "--enable-jfr must be set to either yes or no" "$LINENO" 5
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_JFR" >&5
 $as_echo "$ENABLE_JFR" >&6; }
@@ -19953,22 +19926,6 @@ fi
 
 
 
-
-
-  # The company name, if any
-
-# Check whether --with-company-name was given.
-if test "${with_company_name+set}" = set; then :
-  withval=$with_company_name;
-fi
-
-  if test "x$with_company_name" = xyes; then
-    as_fn_error $? "--with-company-name must have a value" "$LINENO" 5
-  elif  ! [[ $with_company_name =~ ^[[:print:]]*$ ]] ; then
-    as_fn_error $? "--with-company-name contains non-printing characters: $with_company_name" "$LINENO" 5
-  elif test "x$with_company_name" != x; then
-    COMPANY_NAME="$with_company_name"
-  fi
 
 
   # The vendor name, if any
@@ -26800,7 +26757,7 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
 $as_echo_n "checking Determining if we need to set DEVELOPER_DIR... " >&6; }
     if test -n "$DEVELOPER_DIR"; then
       if test ! -d "$DEVELOPER_DIR"; then
-        as_fn_error $? "Xcode Developer path does not exist: $DEVELOPER_DIR, please provide a path to the Xcode application bundle using --with-xcode-path" "$LINENO" 5
+        as_fn_error $? "Xcode Developer path does not exist: $DEVELOPER_DIR, please provide a path to the Xcode 4 application bundle using --with-xcode-path" "$LINENO" 5
       fi
       if test ! -f "$DEVELOPER_DIR"/usr/bin/xcodebuild; then
         as_fn_error $? "Xcode Developer path is not valid: $DEVELOPER_DIR, it must point to Contents/Developer inside an Xcode application bundle" "$LINENO" 5
@@ -26863,8 +26820,8 @@ fi
     # Fail-fast: verify we're building on Xcode 4, we cannot build with Xcode 5 or later
     XCODE_VERSION=`$XCODEBUILD -version | grep '^Xcode ' | sed 's/Xcode //'`
     XC_VERSION_PARTS=( ${XCODE_VERSION//./ } )
-    if test "${XC_VERSION_PARTS[0]}" != "4" -a "${XC_VERSION_PARTS[0]}" != "9" -a "${XC_VERSION_PARTS[0]}" != "10" -a "${XC_VERSION_PARTS[0]}" != "11" ; then
-      as_fn_error $? "Xcode 4, 9, 10 or 11 is required to build JDK 8, the version found was $XCODE_VERSION. Use --with-xcode-path to specify the location of Xcode or make Xcode active by using xcode-select." "$LINENO" 5
+    if test ! "${XC_VERSION_PARTS[0]}" = "4"; then
+      as_fn_error $? "Xcode 4 is required to build JDK 8, the version found was $XCODE_VERSION. Use --with-xcode-path to specify the location of Xcode 4 or make Xcode 4 active by using xcode-select." "$LINENO" 5
     fi
 
     # Some versions of Xcode 5 command line tools install gcc and g++ as symlinks to
@@ -41336,26 +41293,6 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
       SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
     fi
-  elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    PICFLAG="-fPIC"
-    C_FLAG_REORDER=''
-    CXX_FLAG_REORDER=''
-
-    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # Linking is different on MacOSX
-      SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
-      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1'
-      SET_SHARED_LIBRARY_MAPFILE=''
-    else
-      # Default works for linux, might work on other platforms as well.
-      SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN$1'
-      SET_SHARED_LIBRARY_ORIGIN="-Xlinker -z -Xlinker origin $SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
-      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
-    fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     PICFLAG="-KPIC"
     PIEFLAG=""
@@ -41420,8 +41357,6 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
   # Generate make dependency files
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     C_FLAG_DEPS="-MMD -MF"
-  elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    C_FLAG_DEPS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     C_FLAG_DEPS="-xMMD -xMF"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
@@ -41438,15 +41373,6 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
   # See JDK-8207057.
   ASFLAGS_DEBUG_SYMBOLS=""
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
-      CFLAGS_DEBUG_SYMBOLS="-g1"
-      CXXFLAGS_DEBUG_SYMBOLS="-g1"
-    else
-      CFLAGS_DEBUG_SYMBOLS="-g"
-      CXXFLAGS_DEBUG_SYMBOLS="-g"
-    fi
-    ASFLAGS_DEBUG_SYMBOLS="-g"
-  elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
       CFLAGS_DEBUG_SYMBOLS="-g1"
       CXXFLAGS_DEBUG_SYMBOLS="-g1"
@@ -41498,20 +41424,6 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     # The remaining toolchains share opt flags between CC and CXX;
     # setup for C and duplicate afterwards.
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-        # On MacOSX we optimize for size, something
-        # we should do for all platforms?
-        C_O_FLAG_HIGHEST="-Os"
-        C_O_FLAG_HI="-Os"
-        C_O_FLAG_NORM="-Os"
-        C_O_FLAG_NONE=""
-      else
-        C_O_FLAG_HIGHEST="-O3"
-        C_O_FLAG_HI="-O3"
-        C_O_FLAG_NORM="-O2"
-        C_O_FLAG_NONE="-O0"
-      fi
-    elif test "x$TOOLCHAIN_TYPE" = xclang; then
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then
         # On MacOSX we optimize for size, something
         # we should do for all platforms?
@@ -42201,22 +42113,6 @@ $as_echo "$supports" >&6; }
       # command line.
       CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
       LDFLAGS_JDK="$LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
-    elif test "x$TOOLCHAIN_TYPE" = xclang; then
-      # FIXME: This needs to be exported in spec.gmk due to closed legacy code.
-      # FIXME: clean this up, and/or move it elsewhere.
-
-      # Setting these parameters makes it an error to link to macosx APIs that are
-      # newer than the given OS version and makes the linked binaries compatible
-      # even if built on a newer version of the OS.
-      # The expected format is X.Y.Z
-      MACOSX_VERSION_MIN=10.9.0
-
-
-      # The macro takes the version with no dots, ex: 1070
-      # Let the flags variables get resolved in make for easier override on make
-      # command line.
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
-      LDFLAGS_JDK="$LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
     fi
   fi
 
@@ -42269,23 +42165,6 @@ $as_echo "$supports" >&6; }
     LDFLAGS_JDKEXE="${LDFLAGS_JDK} /STACK:$LDFLAGS_STACK_SIZE"
   else
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      # If this is a --hash-style=gnu system, use --hash-style=both, why?
-      # We have previously set HAS_GNU_HASH if this is the case
-      if test -n "$HAS_GNU_HASH"; then
-        LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker --hash-style=both "
-      fi
-      if test "x$OPENJDK_TARGET_OS" = xlinux; then
-        # And since we now know that the linker is gnu, then add:
-        #   -z defs, to forbid undefined symbols in object files
-        #   -z noexecstack, to mark stack regions as non-executable
-        LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -z -Xlinker defs -Xlinker -z -Xlinker noexecstack"
-        if test "x$DEBUG_LEVEL" = "xrelease"; then
-          # When building release libraries, tell the linker optimize them.
-          # Should this be supplied to the OSS linker as well?
-          LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -O1"
-        fi
-      fi
-    elif test "x$TOOLCHAIN_TYPE" = xclang; then
       # If this is a --hash-style=gnu system, use --hash-style=both, why?
       # We have previously set HAS_GNU_HASH if this is the case
       if test -n "$HAS_GNU_HASH"; then
@@ -48960,12 +48839,8 @@ fi
   fi
 
   # TODO better (platform agnostic) test
-  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$LIBCXX" = x ; then
-    if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      LIBCXX="-lstdc++"
-    elif test "x$TOOLCHAIN_TYPE" = xclang; then
-      LIBCXX="-std=c++03" # libc++ is c++11 or latest
-    fi
+  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$LIBCXX" = x && test "x$TOOLCHAIN_TYPE" = xgcc; then
+    LIBCXX="-lstdc++"
   fi
 
 
@@ -54295,3 +54170,4 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
     printf "consider using a supported version unless you know what you are doing.\n"
     printf "\n"
   fi
+
