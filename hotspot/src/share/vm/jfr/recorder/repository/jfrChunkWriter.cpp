@@ -32,6 +32,11 @@
 #include "runtime/os.hpp"
 #include "runtime/os.hpp"
 
+#ifdef __ANDROID__
+# define S_IREAD S_IRUSR
+# define S_IWRITE S_IWUSR
+#endif
+
 static const u2 JFR_VERSION_MAJOR = 2;
 static const u2 JFR_VERSION_MINOR = 0;
 static const size_t MAGIC_LEN = 4;
@@ -47,7 +52,7 @@ bool JfrChunkWriter::initialize() {
 }
 
 static fio_fd open_existing(const char* path) {
-  return os::open(path, O_RDWR, S_IRUSR | S_IWUSR);
+  return os::open(path, O_RDWR, S_IREAD | S_IWRITE);
 }
 
 static fio_fd open_chunk(const char* path) {
