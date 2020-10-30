@@ -1003,7 +1003,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineClass0(JNIEnv *env, jobject unsafe, jstring na
 UNSAFE_END
 
 
-#define DAC_Args CLS"[B["OBJ
+#define DAC_Args CLS "[B[" OBJ
 // define a class but do not make it known to the class loader or system dictionary
 // - host_class:  supplies context for linkage, access control, protection domain, and class loader
 // - data:  bytes of a class file, a raw memory address (length gives the number of bytes)
