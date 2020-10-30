@@ -665,7 +665,7 @@ jlong PSMarkSweep::millis_since_last_gc() {
   jlong ret_val = now - _time_of_last_gc;
   // XXX See note in genCollectedHeap::millis_since_last_gc().
   if (ret_val < 0) {
-    NOT_PRODUCT(warning("time warp: "INT64_FORMAT, ret_val);)
+    NOT_PRODUCT(warning("time warp: " INT64_FORMAT, ret_val);)
     return 0;
   }
   return ret_val;
