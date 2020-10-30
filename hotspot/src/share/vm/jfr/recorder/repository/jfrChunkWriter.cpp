@@ -47,7 +47,7 @@ bool JfrChunkWriter::initialize() {
 }
 
 static fio_fd open_existing(const char* path) {
-  return os::open(path, O_RDWR, S_IREAD | S_IWRITE);
+  return os::open(path, O_RDWR, S_IRUSR | S_IWUSR);
 }
 
 static fio_fd open_chunk(const char* path) {
