@@ -164,7 +164,7 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
 
   NOT_PRODUCT(
   if (now < _soft_ref_timestamp_clock) {
-    warning("time warp: "INT64_FORMAT" to "INT64_FORMAT,
+    warning("time warp: " INT64_FORMAT " to " INT64_FORMAT,
             _soft_ref_timestamp_clock, now);
   }
   )
