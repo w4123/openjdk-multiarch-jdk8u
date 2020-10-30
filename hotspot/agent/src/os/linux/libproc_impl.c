@@ -26,7 +26,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
+#ifndef __ANDROID__
 #include <thread_db.h>
+#else
+#include "thread_db.h"
+#endif
 #include "libproc_impl.h"
 
 #define SA_ALTROOT "SA_ALTROOT"
