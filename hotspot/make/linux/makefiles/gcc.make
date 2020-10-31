@@ -339,8 +339,7 @@ ifeq ($(USE_CLANG), true)
   # Restrict the debug information created by Clang to avoid
   # too big object files and speed the build up a little bit
   # (see http://llvm.org/bugs/show_bug.cgi?id=7554)
-
-  # CFLAGS += -flimit-debug-info
+  CFLAGS += -flimit-debug-info
 endif
 
 # DEBUG_BINARIES uses full -g debug information for all configs
