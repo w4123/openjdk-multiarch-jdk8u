@@ -30,7 +30,7 @@
 #include <thread_db.h>
 #else
 #include "thread_db.h"
-#include "glibc_procfs.h"
+// #include "glibc_procfs.h"
 #endif
 
 // Linux does not have the proc service library, though it does provide the
