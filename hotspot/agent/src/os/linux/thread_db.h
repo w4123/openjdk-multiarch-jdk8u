@@ -19,7 +19,8 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdint.h>
-#include <sys/procfs.h>
+// #include <sys/procfs.h>
+#include "glibc_procfs.h"
 #include <sys/types.h>
 
 #define TD_THR_ANY_USER_FLAGS       0xffffffff
