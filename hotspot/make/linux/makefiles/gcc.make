@@ -30,17 +30,10 @@ ifeq ($(SPEC),)
   # When cross-compiling the ALT_COMPILER_PATH points
   # to the cross-compilation toolset
   ifdef CROSS_COMPILE_ARCH
-    ifeq ($(USE_CLANG), true)
-      CXX = $(ALT_COMPILER_PATH)/clang++
-      CC  = $(ALT_COMPILER_PATH)/clang
-      HOSTCXX = clang++
-      HOSTCC  = clang
-    else
-      CXX = $(ALT_COMPILER_PATH)/g++
-      CC  = $(ALT_COMPILER_PATH)/gcc
-      HOSTCXX = g++
-      HOSTCC  = gcc
-    endif
+    CXX = $(ALT_COMPILER_PATH)/g++
+    CC  = $(ALT_COMPILER_PATH)/gcc
+    HOSTCXX = g++
+    HOSTCC  = gcc
     STRIP = $(ALT_COMPILER_PATH)/strip
   else
     ifeq ($(USE_CLANG), true)
@@ -346,7 +339,8 @@ ifeq ($(USE_CLANG), true)
   # Restrict the debug information created by Clang to avoid
   # too big object files and speed the build up a little bit
   # (see http://llvm.org/bugs/show_bug.cgi?id=7554)
-  CFLAGS += -flimit-debug-info
+
+  # CFLAGS += -flimit-debug-info
 endif
 
 # DEBUG_BINARIES uses full -g debug information for all configs
