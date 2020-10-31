@@ -36,9 +36,9 @@ SOURCES  = salibelf.c   \
 
 INCLUDES = -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux 
 
-OBJS     = $(SOURCES:%.c=$(ARCH)/%.o) $(ARCH)/sadis.o
+OBJS     = $(SOURCES:%.c=$(ARCH)/%.o) $(ARCH)/sadis.o $(ARCH)/libthread_db.o
 
-LIBS     = -lthread_db
+# LIBS     = -lthread_db
 
 CFLAGS   = -c -fPIC -g -D_GNU_SOURCE -D$(ARCH) $(INCLUDES) -I$(ARCH)
 
@@ -60,6 +60,9 @@ $(ARCH)/LinuxDebuggerLocal.o: LinuxDebuggerLocal.c
 $(ARCH)/sadis.o:  ../../share/native/sadis.c
         $(JAVAH) -jni -classpath ../../../build/classes -d $(ARCH) \
                 sun.jvm.hotspot.asm.Disassembler
+        $(GCC) $(CFLAGS) $< -o $@
+
+$(ARCH)/libthread_db.o: libthread_db.c
         $(GCC) $(CFLAGS) $< -o $@
 
 $(ARCH)/%.o: %.c
