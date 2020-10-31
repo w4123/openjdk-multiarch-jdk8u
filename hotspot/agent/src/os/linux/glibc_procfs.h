@@ -40,12 +40,14 @@ __BEGIN_DECLS
 
 #if !defined(__x86_64__) && !defined(__i386__)
 /* Signal info.  */
+/*
 struct elf_siginfo
   {
-    int si_signo;			/* Signal number.  */
-    int si_code;			/* Extra code.  */
-    int si_errno;			/* Errno.  */
+    int si_signo;			// Signal number.
+    int si_code;			// Extra code.
+    int si_errno;			// Errno.
   };
+*/
 
 /* Definitions to generate Intel SVR4-like core files.  These mostly
    have the same names as the SVR4 types with "elf_" tacked on the
