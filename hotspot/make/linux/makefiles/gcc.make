@@ -30,10 +30,17 @@ ifeq ($(SPEC),)
   # When cross-compiling the ALT_COMPILER_PATH points
   # to the cross-compilation toolset
   ifdef CROSS_COMPILE_ARCH
-    CXX = $(ALT_COMPILER_PATH)/g++
-    CC  = $(ALT_COMPILER_PATH)/gcc
-    HOSTCXX = g++
-    HOSTCC  = gcc
+    ifeq ($(USE_CLANG), true)
+      CXX = $(ALT_COMPILER_PATH)/clang++
+      CC  = $(ALT_COMPILER_PATH)/clang
+      HOSTCXX = clang++
+      HOSTCC  = clang
+    else
+      CXX = $(ALT_COMPILER_PATH)/g++
+      CC  = $(ALT_COMPILER_PATH)/gcc
+      HOSTCXX = g++
+      HOSTCC  = gcc
+    endif
     STRIP = $(ALT_COMPILER_PATH)/strip
   else
     ifeq ($(USE_CLANG), true)
