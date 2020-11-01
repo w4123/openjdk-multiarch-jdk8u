@@ -16,6 +16,8 @@
 #ifndef _SYS_PROCFS_H
 #define _SYS_PROCFS_H	1
 
+#define USE_LOCAL_PROCFS 1
+
 /* This is somewhat modelled after the file of the same name on SVR4
    systems.  It provides a definition of the core file format for ELF
    used on Linux.  It doesn't have anything to do with the /proc file
@@ -29,9 +31,40 @@
 #include <sys/types.h>
 #include <sys/user.h>
 
-#include <sys/procfs.h>
+#ifndef USE_LOCAL_PROCFS
+# include <sys/procfs.h>
+#else
+# include <sys/cdefs.h>
+# include <sys/ucontext.h>
+#endif
 
 __BEGIN_DECLS
+
+#ifdef USE_LOCAL_PROCFS
+
+typedef unsigned long elf_greg_t;
+typedef elf_greg_t elf_gregset_t[NGREG];
+
+typedef fpregset_t elf_fpregset_t;
+
+#if defined(__i386__)
+typedef struct user_fpxregs_struct elf_fpxregset_t;
+#endif
+
+typedef elf_gregset_t prgregset_t;
+typedef elf_fpregset_t prfpregset_t;
+
+typedef pid_t lwpid_t;
+typedef void* psaddr_t;
+
+struct elf_siginfo {
+  int si_signo;
+  int si_code;
+  int si_errno;
+};
+
+#endif // USE_LOCAL_PROCFS
+
 /* And the whole bunch of them.  We could have used `struct
    user_regs_struct' directly in the typedef, but tradition says that
    the register set is an array, which does have some peculiar
@@ -39,16 +72,6 @@ __BEGIN_DECLS
 #define ELF_NGREG (sizeof (struct user_regs_struct) / sizeof(elf_greg_t))
 
 #if !defined(__x86_64__) && !defined(__i386__)
-/* Signal info.  */
-/*
-struct elf_siginfo
-  {
-    int si_signo;			// Signal number.
-    int si_code;			// Extra code.
-    int si_errno;			// Errno.
-  };
-*/
-
 /* Definitions to generate Intel SVR4-like core files.  These mostly
    have the same names as the SVR4 types with "elf_" tacked on the
    front to prevent clashes with Linux definitions, and the typedef
