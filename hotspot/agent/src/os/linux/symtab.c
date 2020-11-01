@@ -22,15 +22,19 @@
  *
  */
 
-#ifdef __ANDROID__
-// The full search.h implementation is on Android API 28, so we backport it.
-# include "hsearch/search.h"
+#ifndef __ANDROID__
+#include <search.h>
 #else
-# include <search.h>
+// The full search.h implementation is on Android API 28, so we backport it.
+#include "hsearch/search.h"
 #endif
 
 #include <unistd.h>
+#ifndef __ANDROID__
 #include <sys/procfs.h>
+#else
+#include "glibc_procfs.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include "symtab.h"
