@@ -42,6 +42,70 @@ __BEGIN_DECLS
 
 #ifdef USE_LOCAL_PROCFS
 
+#if defined(__arm__)
+typedef struct user_fpregs fpregset_t;
+#elif defined(__aarch64__)
+/*
+struct user_regs_struct {
+  uint64_t regs[31];
+  uint64_t sp;
+  uint64_t pc;
+  uint64_t pstate;
+};
+*/
+struct user_fpsimd_struct {
+  __uint128_t vregs[32];
+  uint32_t fpsr;
+  uint32_t fpcr;
+};
+typedef struct user_fpsimd_struct fpregset_t;
+#elif defined(__i386__)
+struct _libc_fpreg {
+  unsigned short significand[4];
+  unsigned short exponent;
+};
+
+struct _libc_fpstate {
+  unsigned long cw;
+  unsigned long sw;
+  unsigned long tag;
+  unsigned long ipoff;
+  unsigned long cssel;
+  unsigned long dataoff;
+  unsigned long datasel;
+  struct _libc_fpreg _st[8];
+  unsigned long status;
+};
+
+typedef struct _libc_fpstate* fpregset_t;
+#elif defined(__x86_64__)
+struct _libc_fpxreg {
+  unsigned short significand[4];
+  unsigned short exponent;
+  unsigned short padding[3];
+};
+
+struct _libc_xmmreg {
+  uint32_t element[4];
+};
+
+struct _libc_fpstate {
+  uint16_t cwd;
+  uint16_t swd;
+  uint16_t ftw;
+  uint16_t fop;
+  uint64_t rip;
+  uint64_t rdp;
+  uint32_t mxcsr;
+  uint32_t mxcr_mask;
+  struct _libc_fpxreg _st[8];
+  struct _libc_xmmreg _xmm[16];
+  uint32_t padding[24];
+};
+
+typedef struct _libc_fpstate* fpregset_t;
+#endif
+
 typedef unsigned long elf_greg_t;
 typedef elf_greg_t elf_gregset_t[NGREG];
 
