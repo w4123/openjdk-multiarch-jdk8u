@@ -59,6 +59,7 @@ struct user_fpsimd_struct {
   uint32_t fpcr;
 };
 typedef struct user_fpsimd_struct fpregset_t;
+/*
 #elif defined(__i386__)
 struct _libc_fpreg {
   unsigned short significand[4];
@@ -104,6 +105,7 @@ struct _libc_fpstate {
 };
 
 typedef struct _libc_fpstate* fpregset_t;
+*/
 #endif
 
 typedef unsigned long elf_greg_t;
