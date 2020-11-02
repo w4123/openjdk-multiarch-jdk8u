@@ -37,12 +37,9 @@
 
 #ifndef _ALLBSD_SOURCE
 # ifndef __ANDROID__
-#  include <values.h>
+# include <values.h>
 # else
-#  include "values.h"
-
-#  define RTF_FLOW 0x02000000
-#  define RTF_POLICY 0x04000000
+# include "values.h"
 # endif
 #else
 #include <limits.h>
