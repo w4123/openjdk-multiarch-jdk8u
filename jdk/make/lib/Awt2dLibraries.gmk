@@ -930,7 +930,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
         AccelGlyphCache.c, \
     LANG := C++, \
     CFLAGS := $(CFLAGS_JDKLIB) -fno-rtti $(BUILD_LIBFONTMANAGER_CFLAGS_COMMON), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB) -fno-rtti $(BUILD_LIBFONTMANAGER_CFLAGS_COMMON), \
+    CXXFLAGS := $(CXXFLAGS_JDKLIB) -fno-rtti -std=c++99 $(BUILD_LIBFONTMANAGER_CFLAGS_COMMON), \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
     CFLAGS_windows = -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/windows \
         -DCC_NOEX, \
