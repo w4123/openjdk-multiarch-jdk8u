@@ -673,6 +673,12 @@ static int nifs = 0;            /* number of entries used in array */
 /* not thread safe: make sure called once from one thread */
 
 static void initLocalIfs () {
+/* Android port:
+ * - Android 5.x cause crashes.
+ * - Android 6+ read /proc/net/if_inet6 gives "permission denied", so it skips.
+ * So, skip them to fix Android 5.x crashes.
+ */
+#ifndef __ANDROID__
     FILE *f;
     unsigned char staddr [16];
     char ifname [33];
@@ -721,6 +727,7 @@ static void initLocalIfs () {
         lif->index = index;
     }
     fclose (f);
+#endif
 }
 
 /* return the scope_id (interface index) of the
