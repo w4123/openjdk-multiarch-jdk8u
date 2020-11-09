@@ -105,7 +105,7 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             jfloat px = x + positions[++n];
             jfloat py = y + positions[++n];
 
-            ginfo = (GlyphInfo*)imagePtrs[g];
+            ginfo = /* (GlyphInfo*) */ imagePtrs[g];
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
             gbv->glyphs[g].width = ginfo->width;
