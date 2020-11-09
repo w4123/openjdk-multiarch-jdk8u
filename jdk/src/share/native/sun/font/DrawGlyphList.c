@@ -104,7 +104,8 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
         for (g=0; g<len; g++) {
             jfloat px = x + positions[++n];
             jfloat py = y + positions[++n];
-
+            assert(imagePtrs != NULL);
+            assert(imagePtrs[g] != NULL);
             ginfo = (GlyphInfo*) imagePtrs[g];
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
