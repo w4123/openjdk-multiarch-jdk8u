@@ -105,7 +105,11 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             jfloat px = x + positions[++n];
             jfloat py = y + positions[++n];
 
+#ifndef __ANDROID__
+            ginfo = (GlyphInfo*) imagePtrs[g];
+#else
             ginfo = /* (GlyphInfo*) */ imagePtrs[g];
+#endif
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
             gbv->glyphs[g].width = ginfo->width;
