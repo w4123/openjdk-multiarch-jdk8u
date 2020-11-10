@@ -33,7 +33,7 @@
 #include "GraphicsPrimitiveMgr.h"
 #include "sun_java2d_loops_DrawGlyphList.h"
 #include "sun_java2d_loops_DrawGlyphListAA.h"
-
+#include <assert.h>
 
 /*
  * Need to account for the rare case when (eg) repainting damaged
