@@ -110,10 +110,14 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             jfloat px;
             jfloat py;
             n++;
-            if(positions[n] == NULL) px = x; else px = x + positions[n];
+            // if(positions[n] == NULL) px = x; else 
+            px = x + positions[n];
             n++
-            if(positions[n] == NULL) py = y; else py = y + positions[n];
-            ginfo = (GlyphInfo*) imagePtrs[g];
+            // if(positions[n] == NULL) py = y; else 
+            py = y + positions[n];
+            // ginfo = (GlyphInfo*) imagePtrs[g];
+            ginfo = (GlyphInfo*)((uintptr_t)imagePtrs[g]);
+         
             if(ginfo != NULL){
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
