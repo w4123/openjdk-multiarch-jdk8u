@@ -102,11 +102,13 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
         }
 
         for (g=0; g<len; g++) {
-            jfloat px = x + positions[++n];
-            jfloat py = y + positions[++n];
+            printf("addr of n: %p\n",&n);
+            printf("addr of positions: %p\n",&positions);
             printf("addr of g: %p\n",&g);
             printf("addr of imagePtrs: %p\n",&imagePtrs);
             printf("addr of imagePtrs[g]: %p\n",&(imagePtrs[g]));
+            jfloat px = x + positions[++n];
+            jfloat py = y + positions[++n];
             ginfo = (GlyphInfo*) imagePtrs[g];
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
