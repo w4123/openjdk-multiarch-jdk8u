@@ -111,16 +111,9 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             jfloat py;
 
             n++;
-            px = x + positions[n];
-            n++;
-            py = y + positions[n];
-
-/*
-            n++;
-            if(positions[n] == NULL) px = x; else px = x + positions[n];
+            if (positions[n] == NULL) {px = x;} else {px = x + positions[n];}
             n++
-            if(positions[n] == NULL) py = y; else py = y + positions[n];
-*/
+            if (positions[n] == NULL) {py = y;} else {py = y + positions[n];}
 
             if (&(imagePtrs[g]) == 0 || &(imagePtrs[g]) == 0x18) {
                 printf("imagePtrs[g] == 0 or 0x18 detected! Breaking\n");
