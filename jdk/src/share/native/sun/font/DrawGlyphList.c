@@ -33,7 +33,7 @@
 #include "GraphicsPrimitiveMgr.h"
 #include "sun_java2d_loops_DrawGlyphList.h"
 #include "sun_java2d_loops_DrawGlyphListAA.h"
-#include <assert.h>
+#include <stdio.h>
 
 /*
  * Need to account for the rare case when (eg) repainting damaged
@@ -52,7 +52,7 @@
 
 GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
 
-    int g;
+    int g=0;
     size_t bytesNeeded;
     jlong *imagePtrs;
     jfloat* positions = NULL;
@@ -104,8 +104,9 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
         for (g=0; g<len; g++) {
             jfloat px = x + positions[++n];
             jfloat py = y + positions[++n];
-            assert(imagePtrs != NULL);
-            assert(imagePtrs[g] != NULL);
+            printf("addr of g: %p\n",&g);
+            printf("addr of imagePtrs: %p\n",&imagePtrs);
+            printf("addr of imagePtrs[g]: %p\n",&(imagePtrs[g]));
             ginfo = (GlyphInfo*) imagePtrs[g];
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
@@ -119,6 +120,9 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
                                               positions, JNI_ABORT);
     } else {
         for (g=0; g<len; g++) {
+             printf("addr of g: %p\n",&g);
+            printf("addr of imagePtrs: %p\n",&imagePtrs);
+            printf("addr of imagePtrs[g]: %p\n",&(imagePtrs[g]));
             ginfo = (GlyphInfo*)imagePtrs[g];
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
