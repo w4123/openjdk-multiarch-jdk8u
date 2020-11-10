@@ -107,9 +107,14 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             printf("addr of g: %p\n",&g);
             printf("addr of imagePtrs: %p\n",&imagePtrs);
             printf("addr of imagePtrs[g]: %p\n",&(imagePtrs[g]));
-            jfloat px = x + positions[++n];
-            jfloat py = y + positions[++n];
+            jfloat px;
+            jfloat py;
+            n++;
+            if(positions[n] == NULL) px = x; else px = x + positions[n];
+            n++
+            if(positions[n] == NULL) py = y; else py = y + positions[n];
             ginfo = (GlyphInfo*) imagePtrs[g];
+            if(ginfo != NULL){
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
             gbv->glyphs[g].width = ginfo->width;
@@ -117,6 +122,7 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             gbv->glyphs[g].height = ginfo->height;
             FLOOR_ASSIGN(gbv->glyphs[g].x, px + ginfo->topLeftX);
             FLOOR_ASSIGN(gbv->glyphs[g].y, py + ginfo->topLeftY);
+            }
         }
         (*env)->ReleasePrimitiveArrayCritical(env,glyphPositions,
                                               positions, JNI_ABORT);
@@ -126,6 +132,7 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             printf("addr of imagePtrs: %p\n",&imagePtrs);
             printf("addr of imagePtrs[g]: %p\n",&(imagePtrs[g]));
             ginfo = (GlyphInfo*)imagePtrs[g];
+            if(ginfo != NULL) {
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
             gbv->glyphs[g].width = ginfo->width;
@@ -137,6 +144,7 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             /* copy image data into this array at x/y locations */
             x += ginfo->advanceX;
             y += ginfo->advanceY;
+            }
         }
     }
 
