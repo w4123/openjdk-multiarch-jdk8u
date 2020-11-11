@@ -107,8 +107,8 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             printf("addr of g: %p\n",&g);
             printf("addr of imagePtrs: %p\n",&imagePtrs);
             printf("addr of imagePtrs[g]: %p\n",&(imagePtrs[g]));
-            jfloat px;
-            jfloat py;
+            jfloat px=0;
+            jfloat py=0;
 
             n++;
             if (&(positions[n]) == NULL) {px = x;} else {px = x + positions[n];}
