@@ -33,7 +33,7 @@
 #include "GraphicsPrimitiveMgr.h"
 #include "sun_java2d_loops_DrawGlyphList.h"
 #include "sun_java2d_loops_DrawGlyphListAA.h"
-#include <stdio.h>
+
 
 /*
  * Need to account for the rare case when (eg) repainting damaged
@@ -52,7 +52,7 @@
 
 GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
 
-    int g=0;
+    int g;
     size_t bytesNeeded;
     jlong *imagePtrs;
     jfloat* positions = NULL;
@@ -102,28 +102,10 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
         }
 
         for (g=0; g<len; g++) {
-            printf("addr of n: %p\n",&n);
-            printf("addr of positions: %p\n",&positions);
-            printf("addr of g: %p\n",&g);
-            printf("addr of imagePtrs: %p\n",&imagePtrs);
-            printf("addr of imagePtrs[g]: %p\n",&(imagePtrs[g]));
-            jfloat px=0;
-            jfloat py=0;
+            jfloat px = x + positions[++n];
+            jfloat py = y + positions[++n];
 
-            n++;
-            if (&(positions[n]) == NULL) {px = x;} else {px = x + positions[n];}
-            n++;
-            if (&(positions[n]) == NULL) {py = y;} else {py = y + positions[n];}
-
-            if (&(imagePtrs[g]) == 0 || &(imagePtrs[g]) == 0x18) {
-                printf("imagePtrs[g] == 0 or 0x18 detected! Breaking\n");
-                break;
-            }
-
-            // ginfo = (GlyphInfo*) imagePtrs[g];
-            ginfo = (GlyphInfo*)((uintptr_t)imagePtrs[g]);
-         
-            if(ginfo != NULL){
+            ginfo = (GlyphInfo*) imagePtrs[g];
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
             gbv->glyphs[g].width = ginfo->width;
@@ -131,17 +113,12 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             gbv->glyphs[g].height = ginfo->height;
             FLOOR_ASSIGN(gbv->glyphs[g].x, px + ginfo->topLeftX);
             FLOOR_ASSIGN(gbv->glyphs[g].y, py + ginfo->topLeftY);
-            }
         }
         (*env)->ReleasePrimitiveArrayCritical(env,glyphPositions,
                                               positions, JNI_ABORT);
     } else {
         for (g=0; g<len; g++) {
-             printf("addr of g: %p\n",&g);
-            printf("addr of imagePtrs: %p\n",&imagePtrs);
-            printf("addr of imagePtrs[g]: %p\n",&(imagePtrs[g]));
             ginfo = (GlyphInfo*)imagePtrs[g];
-            if(ginfo != NULL) {
             gbv->glyphs[g].glyphInfo = ginfo;
             gbv->glyphs[g].pixels = ginfo->image;
             gbv->glyphs[g].width = ginfo->width;
@@ -153,7 +130,6 @@ GlyphBlitVector* setupBlitVector(JNIEnv *env, jobject glyphlist) {
             /* copy image data into this array at x/y locations */
             x += ginfo->advanceX;
             y += ginfo->advanceY;
-            }
         }
     }
 
