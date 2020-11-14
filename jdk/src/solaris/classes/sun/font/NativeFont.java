@@ -63,7 +63,7 @@ public class NativeFont extends PhysicalFont {
     PhysicalFont delegateFont;
 
     static {
-        boolean willDump = Boolean.parseBoolean(AccessController.doPrivileged(new GetPropertyAction("java.awt.headless.dumponcheck", "false")));
+        boolean willDump = Boolean.parseBoolean(System.getProperty("java.awt.headless.dumponcheck", "false"));
         if (willDump) {
             new Exception("NativeFont invoke stack trace").printStackTrace();
         }
