@@ -62,13 +62,6 @@ public class NativeFont extends PhysicalFont {
     boolean isBitmapDelegate;
     PhysicalFont delegateFont;
 
-    static {
-        boolean willDump = Boolean.parseBoolean(System.getProperty("java.awt.headless.dumponcheck", "false"));
-        if (willDump) {
-            new Exception("NativeFont invoke stack trace").printStackTrace();
-        }
-    }
-
     /**
      * Verifies native font is accessible.
      * @throws FontFormatException - if the font can't be located.
