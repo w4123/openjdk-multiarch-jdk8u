@@ -138,7 +138,10 @@ public abstract class GraphicsEnvironment {
      * @since 1.4
      */
     public static boolean isHeadless() {
-        // new Exception(new Throwable("Headless check stack trace")).printStackTrace();
+        boolean willDump = Boolean.parseBoolean(AccessController.doPrivileged(new GetPropertyAction("java.awt.headless.dumponcheck", "false"));
+        if (willDump) {
+            new Exception("Headless check stack trace").printStackTrace();
+        }
         return getHeadlessProperty();
     }
 
