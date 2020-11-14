@@ -3338,7 +3338,8 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                         // registered. But we have checks in place to prevent
                         // double registration.
                         if (! gotFontsFromPlatform()) {
-                            registerFontsOnPath(fontPath, false,
+                            // Android AWT port: useJavaRasterizer=true
+                            registerFontsOnPath(fontPath, true /* false */,
                                                 Font2D.UNKNOWN_RANK,
                                                 false, true);
                             loadedAllFontFiles = true;
