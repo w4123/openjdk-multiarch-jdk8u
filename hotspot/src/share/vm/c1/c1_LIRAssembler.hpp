@@ -265,6 +265,9 @@ class LIR_Assembler: public CompilationResourceObj {
 #ifdef TARGET_ARCH_x86
 # include "c1_LIRAssembler_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "c1_LIRAssembler_aarch32.hpp"
+#endif
 #ifdef TARGET_ARCH_aarch64
 # include "c1_LIRAssembler_aarch64.hpp"
 #endif
