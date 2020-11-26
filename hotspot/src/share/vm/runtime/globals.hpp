@@ -40,6 +40,9 @@
 #ifdef TARGET_ARCH_x86
 # include "globals_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "globals_aarch32.hpp"
+#endif
 #ifdef TARGET_ARCH_aarch64
 # include "globals_aarch64.hpp"
 #endif
@@ -72,6 +75,9 @@
 #endif
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "globals_linux_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_aarch32
+# include "globals_linux_aarch32.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_aarch64
 # include "globals_linux_aarch64.hpp"
@@ -110,6 +116,9 @@
 #ifdef TARGET_ARCH_x86
 # include "c1_globals_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "c1_globals_aarch32.hpp"
+#endif
 #ifdef TARGET_ARCH_aarch64
 # include "c1_globals_aarch64.hpp"
 #endif
@@ -141,6 +150,9 @@
 #ifdef COMPILER2
 #ifdef TARGET_ARCH_x86
 # include "c2_globals_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_aarch32
+# include "c2_globals_aarch32.hpp"
 #endif
 #ifdef TARGET_ARCH_aarch64
 # include "c2_globals_aarch64.hpp"
@@ -540,8 +552,9 @@ class CommandLineFlags {
   /* UseMembar is theoretically a temp flag used for memory barrier         \
    * removal testing.  It was supposed to be removed before FCS but has     \
    * been re-added (see 6401008) */                                         \
+  NOT_AARCH32(                                                              \
   product_pd(bool, UseMembar,                                               \
-          "(Unstable) Issues membars on thread state transitions")          \
+          "(Unstable) Issues membars on thread state transitions"))         \
                                                                             \
   develop(bool, CleanChunkPoolAsync, falseInEmbedded,                       \
           "Clean the chunk pool asynchronously")                            \
