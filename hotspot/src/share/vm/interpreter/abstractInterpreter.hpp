@@ -34,6 +34,8 @@
 # include INTERP_MASM_MD_HPP
 #elif defined TARGET_ARCH_x86
 # include "interp_masm_x86.hpp"
+#elif defined TARGET_ARCH_MODEL_aarch32
+# include "interp_masm_aarch32.hpp"
 #elif defined TARGET_ARCH_MODEL_aarch64
 # include "interp_masm_aarch64.hpp"
 #elif defined TARGET_ARCH_MODEL_sparc
