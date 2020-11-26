@@ -595,6 +595,9 @@ void print();
 #ifdef TARGET_ARCH_x86
 # include "bytecodeInterpreter_x86.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch32
+# include "bytecodeInterpreter_aarch32.hpp"
+#endif
 #ifdef TARGET_ARCH_aarch64
 # include "bytecodeInterpreter_aarch64.hpp"
 #endif
