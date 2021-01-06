@@ -245,7 +245,7 @@ mapfile : $(MAPFILE) vm.def mapfile_ext
 mapfile_reorder : mapfile $(REORDERFILE)
 	rm -f $@
 	cat $^ > $@
-а
+
 VMDEF_PAT  = ^_ZTV
 VMDEF_PAT := ^gHotSpotVM|$(VMDEF_PAT)
 VMDEF_PAT := ^UseSharedSpaces$$|$(VMDEF_PAT)
