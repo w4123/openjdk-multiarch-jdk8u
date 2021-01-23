@@ -324,7 +324,9 @@
 # include "gc_implementation/shared/gcAdaptivePolicyCounters.hpp"
 # include "gc_implementation/shared/gcPolicyCounters.hpp"
 # include "gc_implementation/shared/parGCAllocBuffer.hpp"
+#ifndef DONT_COMPILE_SHENANDOAH
 # include "gc_implementation/shenandoah/shenandoah_globals.hpp"
+#endif // !DONT_COMPILE_SHENANDOAH
 #endif // INCLUDE_ALL_GCS
 
 #endif // !DONT_USE_PRECOMPILED_HEADER
