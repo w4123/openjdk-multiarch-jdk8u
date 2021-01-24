@@ -3013,13 +3013,13 @@ extern "C" JNIEXPORT int fork1() { return fork(); }
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
 #ifndef __ANDROID__
   void *f = dlvsym(handle, name, "libnuma_1.1");
+#else
+  void *f = NULL;
+#endif
   if (f == NULL) {
     f = dlsym(handle, name);
   }
   return f;
-#else // __ANDROID__
-  return NULL;
-#endif // !__ANDROID__
 }
 
 // Handle request to load libnuma symbol version 1.2 (API v2) only.
