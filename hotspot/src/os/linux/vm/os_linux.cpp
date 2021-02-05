@@ -180,6 +180,7 @@ sigset_t SR_sigset;
 static pthread_mutex_t dl_mutex;
 
 // Declarations
+static bool read_so_path_from_maps(const char* so_name, char* buf, int buflen);
 static void unpackTime(timespec* absTime, bool isAbsolute, jlong time);
 
 // utility functions
@@ -1840,6 +1841,30 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return false;
 }
 
+static bool read_so_path_from_maps(const char* so_name, char* buf, int buflen) {
+  FILE *fp = fopen("/proc/self/maps", "r");
+  assert(fp, "Failed to open /proc/self/maps");
+  if (!fp) {
+    return false;
+  }
+
+  char maps_buffer[2048];
+  while (fgets(maps_buffer, 2048, fp) != NULL) {
+    if (strstr(maps_buffer, so_name) == NULL) {
+      continue;
+    }
+
+    char *so_path = strchr(maps_buffer, '/');
+    so_path[strlen(so_path) - 1] = '\0'; // Cut trailing \n
+    jio_snprintf(buf, buflen, "%s", so_path);
+    fclose(fp);
+    return true;
+  }
+
+  fclose(fp);
+  return false;
+}
+
   // Loads .dll/.so and
   // in case of error it checks if .dll/.so was built for the
   // same architecture as Hotspot is running on
@@ -2456,6 +2481,13 @@ void os::jvm_path(char *buf, jint buflen) {
   if (java_home_var == NULL || dli_fname[0] == '\0') {
     return;
   }
+
+  if (strchr(dli_fname, '/') == NULL) {
+    bool ok = read_so_path_from_maps(dli_fname, buf, buflen);
+    assert(ok, "unable to turn relative libjvm.so path into absolute");
+    return;
+  }
+
   snprintf(buf, buflen, /* "%s/lib/%s/server/%s", java_home_var, cpu_arch, */ dli_fname);
 #else // !__ANDROID__
   char *rp = NULL;
