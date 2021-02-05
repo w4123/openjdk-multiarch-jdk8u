@@ -2477,8 +2477,7 @@ void os::jvm_path(char *buf, jint buflen) {
                 dli_fname, sizeof(dli_fname), NULL);
   assert(ret, "cannot locate libjvm");
 #ifdef __ANDROID__
-  char* java_home_var = ::getenv("JAVA_HOME");
-  if (java_home_var == NULL || dli_fname[0] == '\0') {
+  if (dli_fname[0] == '\0') {
     return;
   }
 
