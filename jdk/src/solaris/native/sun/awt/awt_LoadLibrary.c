@@ -30,6 +30,7 @@
 #include <jni.h>
 #include <jni_util.h>
 #include <jvm.h>
+#inslude <stdbool.h>
 #include "gdefs.h"
 
 #include <sys/param.h>
@@ -93,6 +94,28 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
   #define DEFAULT_PATH XAWT_PATH
   #define HEADLESS_PATH "/libawt_headless.so"
 #endif
+static bool read_so_path_from_maps(const char* so_name, char* buf) {
+  FILE *fp = fopen("/proc/self/maps", "r");
+  if (!fp) {
+    return false;
+  }
+
+  char maps_buffer[2048];
+  while (fgets(maps_buffer, 2048, fp) != NULL) {
+    if (strstr(maps_buffer, so_name) == NULL) {
+      continue;
+    }
+
+    char *so_path = strchr(maps_buffer, '/');
+    so_path[strlen(so_path) - 1] = '\0'; // Cut trailing \n
+      strcpy(buf,so_path);
+    fclose(fp);
+    return true;
+  }
+
+  fclose(fp);
+  return false;
+}
 
 jint
 AWT_OnLoad(JavaVM *vm, void *reserved)
@@ -117,7 +140,11 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
 
     /* Get address of this library and the directory containing it. */
     dladdr((void *)AWT_OnLoad, &dlinfo);
-    realpath((char *)dlinfo.dli_fname, buf);
+     if (strrchr(dlinfo.dli_fname, '/') != NULL) {
+        realpath((char *)dlinfo.dli_fname, buf);
+     }else{
+         read_so_path_from_maps(dlinfo.dli_fname,buf);
+     }
     len = strlen(buf);
     p = strrchr(buf, '/');
 
