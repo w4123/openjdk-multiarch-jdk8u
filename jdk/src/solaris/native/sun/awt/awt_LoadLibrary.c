@@ -30,7 +30,7 @@
 #include <jni.h>
 #include <jni_util.h>
 #include <jvm.h>
-#inslude <stdbool.h>
+#include <stdbool.h>
 #include "gdefs.h"
 
 #include <sys/param.h>
