@@ -37,7 +37,7 @@ import sun.jvm.hotspot.debugger.MachineDescriptionIA64;
 import sun.jvm.hotspot.debugger.MachineDescriptionIntelX86;
 import sun.jvm.hotspot.debugger.MachineDescriptionSPARC32Bit;
 import sun.jvm.hotspot.debugger.MachineDescriptionSPARC64Bit;
-import sun.jvm.hotspot.debugger.MachineDescriptionAArch64;
+import sun.jvm.hotspot.debugger.MachineDescriptionAARCH64;
 import sun.jvm.hotspot.debugger.NoSuchSymbolException;
 import sun.jvm.hotspot.debugger.bsd.BsdDebuggerLocal;
 import sun.jvm.hotspot.debugger.linux.LinuxDebuggerLocal;
@@ -651,7 +651,7 @@ public class HotSpotAgent {
         if (cpu.equals("amd64") || cpu.equals("x86_64")) {
             machDesc = new MachineDescriptionAMD64();
         } else if (cpu.equals("aarch64")) {
-            machDesc = new MachineDescriptionAArch64();
+            machDesc = new MachineDescriptionAARCH64();
         } else {
             throw new DebuggerException("Darwin only supported on x86_64/aarch64. Current arch: " + cpu);
         }
