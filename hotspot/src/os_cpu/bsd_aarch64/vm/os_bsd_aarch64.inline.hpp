@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,18 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+#ifndef OS_CPU_LINUX_AARCH64_VM_OS_LINUX_AARCH64_INLINE_HPP
+#define OS_CPU_LINUX_AARCH64_VM_OS_LINUX_AARCH64_INLINE_HPP
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.bsd.aarch64.*;
-import sun.jvm.hotspot.debugger.bsd.amd64.*;
-import sun.jvm.hotspot.debugger.bsd.x86.*;
+#include "runtime/os.hpp"
 
-class BsdThreadContextFactory {
-   static ThreadContext createThreadContext(BsdDebugger dbg) {
-      String cpu = dbg.getCPU();
-      if (cpu.equals("x86")) {
-         return new BsdX86ThreadContext(dbg);
-      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
-         return new BsdAMD64ThreadContext(dbg);
-      } else if (cpu.equals("aarch64")) {
-         return new BsdAARCH64ThreadContext(dbg);
-      } else {
-         throw new RuntimeException("cpu " + cpu + " is not yet supported");
-      }
-   }
+// See http://www.technovelty.org/code/c/reading-rdtsc.htl for details
+inline jlong os::rdtsc() {
+  uint64_t res;
+  uint32_t ts1, ts2;
+  __asm__ __volatile__ ("rdtsc" : "=a" (ts1), "=d" (ts2));
+  res = ((uint64_t)ts1 | (uint64_t)ts2 << 32);
+  return (jlong)res;
 }
+
+#endif // OS_CPU_LINUX_AARCH64_VM_OS_LINUX_AARCH64_INLINE_HPP

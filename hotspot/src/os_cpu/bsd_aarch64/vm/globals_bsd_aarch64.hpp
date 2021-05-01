@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,23 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+#ifndef OS_CPU_LINUX_AARCH64_VM_GLOBALS_LINUX_AARCH64_HPP
+#define OS_CPU_LINUX_AARCH64_VM_GLOBALS_LINUX_AARCH64_HPP
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.bsd.aarch64.*;
-import sun.jvm.hotspot.debugger.bsd.amd64.*;
-import sun.jvm.hotspot.debugger.bsd.x86.*;
+// Sets the default values for platform dependent flags used by the runtime system.
+// (see globals.hpp)
 
-class BsdThreadContextFactory {
-   static ThreadContext createThreadContext(BsdDebugger dbg) {
-      String cpu = dbg.getCPU();
-      if (cpu.equals("x86")) {
-         return new BsdX86ThreadContext(dbg);
-      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
-         return new BsdAMD64ThreadContext(dbg);
-      } else if (cpu.equals("aarch64")) {
-         return new BsdAARCH64ThreadContext(dbg);
-      } else {
-         throw new RuntimeException("cpu " + cpu + " is not yet supported");
-      }
-   }
-}
+define_pd_global(bool, DontYieldALot,            false);
+define_pd_global(intx, ThreadStackSize,          2048); // 0 => use system default
+define_pd_global(intx, VMThreadStackSize,        2048);
+
+define_pd_global(intx, CompilerThreadStackSize,  0);
+
+define_pd_global(uintx,JVMInvokeMethodSlack,     8192);
+
+// Used on 64 bit platforms for UseCompressedOops base address
+define_pd_global(uintx,HeapBaseMinAddress,       2*G);
+
+extern __thread Thread *aarch64_currentThread;
+
+#endif // OS_CPU_LINUX_AARCH64_VM_GLOBALS_LINUX_AARCH64_HPP

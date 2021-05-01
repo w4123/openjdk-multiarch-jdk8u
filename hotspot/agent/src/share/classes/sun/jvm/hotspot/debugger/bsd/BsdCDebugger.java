@@ -97,6 +97,8 @@ class BsdCDebugger implements CDebugger {
        Address pc  = context.getRegisterAsAddress(AMD64ThreadContext.RIP);
        if (pc == null) return null;
        return new BsdAMD64CFrame(dbg, rbp, pc);
+    } else if (cpu.equals("aarch64")) {
+       
     } else {
        throw new DebuggerException(cpu + " is not yet supported");
     }

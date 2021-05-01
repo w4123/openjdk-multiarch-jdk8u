@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,23 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+#ifndef OS_CPU_LINUX_AARCH64_VM_BYTES_LINUX_AARCH64_INLINE_HPP
+#define OS_CPU_LINUX_AARCH64_VM_BYTES_LINUX_AARCH64_INLINE_HPP
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.bsd.aarch64.*;
-import sun.jvm.hotspot.debugger.bsd.amd64.*;
-import sun.jvm.hotspot.debugger.bsd.x86.*;
+#include <byteswap.h>
 
-class BsdThreadContextFactory {
-   static ThreadContext createThreadContext(BsdDebugger dbg) {
-      String cpu = dbg.getCPU();
-      if (cpu.equals("x86")) {
-         return new BsdX86ThreadContext(dbg);
-      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
-         return new BsdAMD64ThreadContext(dbg);
-      } else if (cpu.equals("aarch64")) {
-         return new BsdAARCH64ThreadContext(dbg);
-      } else {
-         throw new RuntimeException("cpu " + cpu + " is not yet supported");
-      }
-   }
+// Efficient swapping of data bytes from Java byte
+// ordering to native byte ordering and vice versa.
+inline u2   Bytes::swap_u2(u2 x) {
+  return bswap_16(x);
 }
+
+inline u4   Bytes::swap_u4(u4 x) {
+  return bswap_32(x);
+}
+
+inline u8 Bytes::swap_u8(u8 x) {
+  return bswap_64(x);
+}
+
+#endif // OS_CPU_LINUX_AARCH64_VM_BYTES_LINUX_AARCH64_INLINE_HPP

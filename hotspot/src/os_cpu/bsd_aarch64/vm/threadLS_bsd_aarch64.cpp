@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,20 @@
  *
  */
 
-package sun.jvm.hotspot.debugger.bsd;
+#include "precompiled.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#include "runtime/thread.inline.hpp"
 
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.bsd.aarch64.*;
-import sun.jvm.hotspot.debugger.bsd.amd64.*;
-import sun.jvm.hotspot.debugger.bsd.x86.*;
+void ThreadLocalStorage::generate_code_for_get_thread() {
+    // nothing we can do here for user-level thread
+}
 
-class BsdThreadContextFactory {
-   static ThreadContext createThreadContext(BsdDebugger dbg) {
-      String cpu = dbg.getCPU();
-      if (cpu.equals("x86")) {
-         return new BsdX86ThreadContext(dbg);
-      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
-         return new BsdAMD64ThreadContext(dbg);
-      } else if (cpu.equals("aarch64")) {
-         return new BsdAARCH64ThreadContext(dbg);
-      } else {
-         throw new RuntimeException("cpu " + cpu + " is not yet supported");
-      }
-   }
+void ThreadLocalStorage::pd_init() {
+}
+
+__thread Thread *aarch64_currentThread;
+
+void ThreadLocalStorage::pd_set_thread(Thread* thread) {
+  os::thread_local_storage_at_put(ThreadLocalStorage::thread_index(), thread);
+  aarch64_currentThread = thread;
 }
