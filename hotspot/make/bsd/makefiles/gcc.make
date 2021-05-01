@@ -247,7 +247,8 @@ endif
 
 # Compiler warnings are treated as errors
 ifneq ($(COMPILER_WARNINGS_FATAL),false)
-  WARNINGS_ARE_ERRORS = -Werror
+  # WARNINGS_ARE_ERRORS = -Werror
+  WARNINGS_ARE_ERRORS = -Werror=implicit-function-declaration
 endif
 
 ifeq ($(USE_CLANG), true)
