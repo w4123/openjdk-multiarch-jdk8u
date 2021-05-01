@@ -288,7 +288,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     # Determine appropriate SDKPATH, don't use SDKROOT as it interferes with the stub tools
     AC_MSG_CHECKING([Determining Xcode SDK path])
     # allow SDKNAME to be set to override the default SDK selection
-    SDKPATH=`"$XCODEBUILD" -sdk ${SDKNAME:-macosx} -version | grep '^Path: ' | sed 's/Path: //'`
+    SDKPATH=`"$XCODEBUILD" -sdk ${SDKNAME:-iphoneos} -version | grep '^Path: ' | sed 's/Path: //'`
     if test -n "$SDKPATH"; then
       AC_MSG_RESULT([$SDKPATH])
     else
