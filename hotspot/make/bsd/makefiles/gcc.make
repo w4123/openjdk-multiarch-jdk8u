@@ -343,12 +343,13 @@ ifeq ($(OS_VENDOR), Darwin)
   # if built on a newer version of the OS.
   # The expected format is X.Y.Z
   ifeq ($(MACOSX_VERSION_MIN),)
-    MACOSX_VERSION_MIN=10.7.0
+    MACOSX_VERSION_MIN=12.0
+    # 10.7.0
   endif
   # The macro takes the version with no dots, ex: 1070
   CFLAGS += -DMAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(MACOSX_VERSION_MIN)) \
-            -mmacosx-version-min=$(MACOSX_VERSION_MIN)
-  LFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
+            -miphoneos-version-min=$(MACOSX_VERSION_MIN)
+  LFLAGS += -miphoneos-version-min=$(MACOSX_VERSION_MIN)
 endif
 
 
