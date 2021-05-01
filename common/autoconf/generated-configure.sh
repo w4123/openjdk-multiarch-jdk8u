@@ -26861,7 +26861,7 @@ $as_echo "$as_me: Found gcc symlinks to clang in /usr/bin, adding path to real g
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking Determining Xcode SDK path" >&5
 $as_echo_n "checking Determining Xcode SDK path... " >&6; }
     # allow SDKNAME to be set to override the default SDK selection
-    SDKPATH=`"$XCODEBUILD" -sdk ${SDKNAME:-macosx} -version | grep '^Path: ' | sed 's/Path: //'`
+    SDKPATH=`"$XCODEBUILD" -sdk ${SDKNAME:-iphoneos} -version | grep '^Path: ' | sed 's/Path: //'`
     if test -n "$SDKPATH"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SDKPATH" >&5
 $as_echo "$SDKPATH" >&6; }
