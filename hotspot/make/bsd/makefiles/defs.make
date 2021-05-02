@@ -116,6 +116,15 @@ ifeq ($(ARCH), arm)
   HS_ARCH          = arm
 endif
 
+# AArch64
+ifeq ($(ARCH), aarch64)
+  ARCH_DATA_MODEL  = 64
+  MAKE_ARGS       += LP64=1
+  PLATFORM         = bsd-aarch64
+  VM_PLATFORM      = bsd_aarch64
+  HS_ARCH          = aarch64
+endif
+
 # PPC
 ifeq ($(ARCH), ppc)
   ARCH_DATA_MODEL  = 32
