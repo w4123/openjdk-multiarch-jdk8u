@@ -450,6 +450,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   AC_SUBST(LEGACY_EXTRA_LDFLAGS)
   AC_SUBST(LEGACY_EXTRA_ASFLAGS)
 
+
+
   ###############################################################################
   #
   # Now setup the CFLAGS and LDFLAGS for the JDK build.
@@ -603,6 +605,14 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   # Setup target CPU
   CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DARCH='\"$OPENJDK_TARGET_CPU_LEGACY\"' -D$OPENJDK_TARGET_CPU_LEGACY"
   
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+      CFLAGS_JDK="-arch arm64 $CFLAGS_JDK"
+      CXXFLAGS_JDK="-arch arm64 $CXXFLAGS_JDK"
+      LDFLAGS_JDK="-arch arm64 $LDFLAGS_JDK"
+    fi
+  fi
+
   # Setup debug/release defines
   if test "x$DEBUG_LEVEL" = xrelease; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DNDEBUG"
