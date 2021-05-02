@@ -42093,6 +42093,14 @@ $as_echo "$supports" >&6; }
   # Setup target CPU
   CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DARCH='\"$OPENJDK_TARGET_CPU_LEGACY\"' -D$OPENJDK_TARGET_CPU_LEGACY"
 
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+      CFLAGS_JDK="-arch arm64 $CFLAGS_JDK"
+      CXXFLAGS_JDK="-arch arm64 $CXXFLAGS_JDK"
+      LDFLAGS_JDK="-arch arm64 $LDFLAGS_JDK"
+    fi
+  fi
+
   # Setup debug/release defines
   if test "x$DEBUG_LEVEL" = xrelease; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DNDEBUG"
