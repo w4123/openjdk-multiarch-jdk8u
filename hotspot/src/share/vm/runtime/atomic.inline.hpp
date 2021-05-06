@@ -69,6 +69,9 @@
 #endif
 
 // BSD
+#ifdef TARGET_OS_ARCH_bsd_aarch64
+# include "atomic_bsd_aarch64.inline.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "atomic_bsd_x86.inline.hpp"
 #endif

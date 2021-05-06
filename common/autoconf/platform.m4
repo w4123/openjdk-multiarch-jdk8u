@@ -129,6 +129,11 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
       VAR_OS_API=posix
       VAR_OS_ENV=linux
       ;;
+      *ios*)
+        VAR_OS=macosx
+        VAR_OS_API=posix
+        VAR_OS_ENV=macosx
+        ;;
     *darwin*)
       VAR_OS=macosx
       VAR_OS_API=posix

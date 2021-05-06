@@ -64,6 +64,12 @@ CXXFLAGS = $(SYSDEFS) $(INCLUDES)
 # Force assertions on.
 CXXFLAGS += -DASSERT
 
+# if target Darwin then set arch 
+ifeq ($(OS_VENDOR), Darwin)
+  CFLAGS += -arch x86_64
+  CXXFLAGS += -arch x86_64 -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1
+endif
+
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 # Compiler warnings are treated as errors
 ifneq ($(COMPILER_WARNINGS_FATAL),false)
@@ -109,7 +115,7 @@ all: $(EXEC)
 
 $(EXEC) : $(OBJECTS)
 	@echo Making adlc
-	$(QUIETLY) $(HOST.LINK_NOPROF.CXX) -o $(EXEC) $(OBJECTS)
+	$(QUIETLY) $(HOST.LINK_NOPROF.CXX) -o $(EXEC) $(OBJECTS) -lc++
 
 # Random dependencies:
 $(OBJECTS): opcodes.hpp classes.hpp adlc.hpp adlcVMDeps.hpp adlparse.hpp archDesc.hpp arena.hpp dict2.hpp filebuff.hpp forms.hpp formsopt.hpp formssel.hpp

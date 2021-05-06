@@ -13592,6 +13592,11 @@ test -n "$target_alias" &&
       VAR_OS_API=posix	
       VAR_OS_ENV=linux	
       ;;
+    *ios*)
+      VAR_OS=macosx
+      VAR_OS_API=posix
+      VAR_OS_ENV=macosx
+      ;;
     *darwin*)
       VAR_OS=macosx
       VAR_OS_API=posix
@@ -13740,6 +13745,11 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_OS=linux	
       VAR_OS_API=posix	
       VAR_OS_ENV=linux	
+      ;;
+    *ios*)
+      VAR_OS=macosx
+      VAR_OS_API=posix
+      VAR_OS_ENV=macosx
       ;;
     *darwin*)
       VAR_OS=macosx
