@@ -34,10 +34,6 @@ include $(GAMMADIR)/make/$(Platform_os_family)/makefiles/rules.make
 GENERATED = ../generated
 OUTDIR  = $(GENERATED)/adfiles
 
-# ios aarch64 port
-Platform_arch = $(shell uname -m)
-Platform_arch_model = $(shell uname -m)
-
 ARCH = $(Platform_arch)
 OS = $(Platform_os_family)
 
