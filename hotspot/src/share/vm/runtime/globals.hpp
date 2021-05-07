@@ -76,9 +76,6 @@
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "globals_linux_x86.hpp"
 #endif
-#ifdef TARGET_OS_ARCH_linux_aarch32
-# include "globals_linux_aarch32.hpp"
-#endif
 #ifdef TARGET_OS_ARCH_linux_aarch64
 # include "globals_linux_aarch64.hpp"
 #endif
@@ -108,6 +105,9 @@
 #endif
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "globals_bsd_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_aarch64
+# include "globals_bsd_aarch64.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "globals_bsd_zero.hpp"
