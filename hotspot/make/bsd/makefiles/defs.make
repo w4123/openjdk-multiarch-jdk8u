@@ -29,7 +29,11 @@
 SLASH_JAVA ?= /java
 
 # Need PLATFORM (os-arch combo names) for jdk and hotspot, plus libarch name
-ARCH:=$(shell uname -m)
+
+ifndef ARCH
+  ARCH := $(shell uname -m)
+endif
+
 PATH_SEP = :
 ifeq ($(LP64), 1)
   ARCH_DATA_MODEL ?= 64
