@@ -1849,7 +1849,11 @@ void MacroAssembler::decrement(Register reg, int value)
   if (value < (1 << 12)) { sub(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register decrement");
+#ifndef __APPLE__
     mov(rscratch2, (unsigned long)value);
+#else
+    mov(rscratch2, (uint64_t)value);
+#endif
     sub(reg, reg, rscratch2);
   }
 }

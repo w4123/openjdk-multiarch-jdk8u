@@ -30,10 +30,10 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
-#include "jvm_linux.h"
+#include "jvm_bsd.h"
 #include "memory/allocation.inline.hpp"
-#include "mutex_linux.inline.hpp"
-#include "os_share_linux.hpp"
+#include "mutex_bsd.inline.hpp"
+#include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
@@ -72,7 +72,7 @@
 # include <pwd.h>
 # include <poll.h>
 # include <ucontext.h>
-#ifndef __ANDROID__
+#ifndef AARCH64
 # include <fpu_control.h>
 #endif
 
@@ -95,15 +95,15 @@ char* os::non_memory_address_word() {
 void os::initialize_thread(Thread *thr) {
 }
 
-address os::Linux::ucontext_get_pc(ucontext_t * uc) {
+address os::Bsd::ucontext_get_pc(ucontext_t * uc) {
   return (address)uc->uc_mcontext.pc;
 }
 
-intptr_t* os::Linux::ucontext_get_sp(ucontext_t * uc) {
+intptr_t* os::Bsd::ucontext_get_sp(ucontext_t * uc) {
   return (intptr_t*)uc->uc_mcontext.sp;
 }
 
-intptr_t* os::Linux::ucontext_get_fp(ucontext_t * uc) {
+intptr_t* os::Bsd::ucontext_get_fp(ucontext_t * uc) {
   return (intptr_t*)uc->uc_mcontext.regs[REG_FP];
 }
 
@@ -112,7 +112,7 @@ intptr_t* os::Linux::ucontext_get_fp(ucontext_t * uc) {
 // os::Solaris::fetch_frame_from_ucontext() tries to skip nested signal
 // frames. Currently we don't do that on Linux, so it's the same as
 // os::fetch_frame_from_context().
-ExtendedPC os::Linux::fetch_frame_from_ucontext(Thread* thread,
+ExtendedPC os::Bsd::fetch_frame_from_ucontext(Thread* thread,
   ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
 
   assert(thread != NULL, "just checking");
@@ -129,9 +129,9 @@ ExtendedPC os::fetch_frame_from_context(void* ucVoid,
   ucontext_t* uc = (ucontext_t*)ucVoid;
 
   if (uc != NULL) {
-    epc = ExtendedPC(os::Linux::ucontext_get_pc(uc));
-    if (ret_sp) *ret_sp = os::Linux::ucontext_get_sp(uc);
-    if (ret_fp) *ret_fp = os::Linux::ucontext_get_fp(uc);
+    epc = ExtendedPC(os::Bsd::ucontext_get_pc(uc));
+    if (ret_sp) *ret_sp = os::Bsd::ucontext_get_sp(uc);
+    if (ret_fp) *ret_fp = os::Bsd::ucontext_get_fp(uc);
   } else {
     // construct empty ExtendedPC for return value checking
     epc = ExtendedPC(NULL);
@@ -188,7 +188,7 @@ static address handle_unsafe_access(JavaThread* thread, address pc) {
 }
 
 extern "C" JNIEXPORT int
-JVM_handle_linux_signal(int sig,
+JVM_handle_bsd_signal(int sig,
                         siginfo_t* info,
                         void* ucVoid,
                         int abort_if_unrecognized) {
@@ -205,13 +205,13 @@ JVM_handle_linux_signal(int sig,
   // Note: it's not uncommon that JNI code uses signal/sigset to install
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
   // or have a SIGILL handler when detecting CPU type). When that happens,
-  // JVM_handle_linux_signal() might be invoked with junk info/ucVoid. To
+  // JVM_handle_bsd_signal() might be invoked with junk info/ucVoid. To
   // avoid unnecessary crash when libjsig is not preloaded, try handle signals
   // that do not require siginfo/ucontext first.
 
   if (sig == SIGPIPE || sig == SIGXFSZ) {
     // allow chained handler to go first
-    if (os::Linux::chained_handler(sig, info, ucVoid)) {
+    if (os::Bsd::chained_handler(sig, info, ucVoid)) {
       return true;
     } else {
       if (PrintMiscellaneous && (WizardMode || Verbose)) {
@@ -225,7 +225,7 @@ JVM_handle_linux_signal(int sig,
 
   JavaThread* thread = NULL;
   VMThread* vmthread = NULL;
-  if (os::Linux::signal_handlers_are_installed) {
+  if (os::Bsd::signal_handlers_are_installed) {
     if (t != NULL ){
       if(t->is_Java_thread()) {
         thread = (JavaThread*)t;
@@ -236,7 +236,7 @@ JVM_handle_linux_signal(int sig,
     }
   }
 /*
-  NOTE: does not seem to work on linux.
+  NOTE: does not seem to work on bsd.
   if (info == NULL || info->si_code <= 0 || info->si_code == SI_NOINFO) {
     // can't decode this kind of signal
     info = NULL;
@@ -251,7 +251,7 @@ JVM_handle_linux_signal(int sig,
 
   //%note os_trap_1
   if (info != NULL && uc != NULL && thread != NULL) {
-    pc = (address) os::Linux::ucontext_get_pc(uc);
+    pc = (address) os::Bsd::ucontext_get_pc(uc);
 
     if (StubRoutines::is_safefetch_fault(pc)) {
       uc->uc_mcontext.pc = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
@@ -300,10 +300,10 @@ JVM_handle_linux_signal(int sig,
           // Accessing stack address below sp may cause SEGV if current
           // thread has MAP_GROWSDOWN stack. This should only happen when
           // current thread was created by user code with MAP_GROWSDOWN flag
-          // and then attached to VM. See notes in os_linux.cpp.
+          // and then attached to VM. See notes in os_bsd.cpp.
           if (thread->osthread()->expanding_stack() == 0) {
              thread->osthread()->set_expanding_stack();
-             if (os::Linux::manually_expand_stack(thread, addr)) {
+             if (os::Bsd::manually_expand_stack(thread, addr)) {
                thread->osthread()->clear_expanding_stack();
                return 1;
              }
@@ -389,7 +389,7 @@ JVM_handle_linux_signal(int sig,
   }
 
   // signal-chaining
-  if (os::Linux::chained_handler(sig, info, ucVoid)) {
+  if (os::Bsd::chained_handler(sig, info, ucVoid)) {
      return true;
   }
 
@@ -399,7 +399,7 @@ JVM_handle_linux_signal(int sig,
   }
 
   if (pc == NULL && uc != NULL) {
-    pc = os::Linux::ucontext_get_pc(uc);
+    pc = os::Bsd::ucontext_get_pc(uc);
   }
 
   // unmask current signal
@@ -415,17 +415,17 @@ JVM_handle_linux_signal(int sig,
   return true; // Mute compiler
 }
 
-void os::Linux::init_thread_fpu_state(void) {
+void os::Bsd::init_thread_fpu_state(void) {
 }
 
-int os::Linux::get_fpu_control_word(void) {
+int os::Bsd::get_fpu_control_word(void) {
   return 0;
 }
 
-void os::Linux::set_fpu_control_word(int fpu_control) {
+void os::Bsd::set_fpu_control_word(int fpu_control) {
 }
 
-// Check that the linux kernel version is 2.4 or higher since earlier
+// Check that the bsd kernel version is 2.4 or higher since earlier
 // versions do not support SSE without patches.
 bool os::supports_sse() {
   return true;
@@ -438,19 +438,19 @@ bool os::is_allocatable(size_t bytes) {
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-size_t os::Linux::min_stack_allowed  = 64 * K;
+size_t os::Bsd::min_stack_allowed  = 64 * K;
 
 // amd64: pthread on amd64 is always in floating stack mode
-bool os::Linux::supports_variable_stack_size() {  return true; }
+bool os::Bsd::supports_variable_stack_size() {  return true; }
 
 // return default stack size for thr_type
-size_t os::Linux::default_stack_size(os::ThreadType thr_type) {
+size_t os::Bsd::default_stack_size(os::ThreadType thr_type) {
   // default stack size (compiler thread needs larger stack)
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
   return s;
 }
 
-size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
+size_t os::Bsd::default_guard_size(os::ThreadType thr_type) {
   // Creating guard page is very expensive. Java thread has HotSpot
   // guard page, only enable glibc guard page for non-Java threads.
   return (thr_type == java_thread ? 0 : page_size());
@@ -493,8 +493,8 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (os::is_primordial_thread()) {
      // primordial thread needs special handling because pthread_getattr_np()
      // may return bogus value.
-     *bottom = os::Linux::initial_thread_stack_bottom();
-     *size   = os::Linux::initial_thread_stack_size();
+     *bottom = os::Bsd::initial_thread_stack_bottom();
+     *size   = os::Bsd::initial_thread_stack_size();
   } else {
      pthread_attr_t attr;
 
@@ -547,7 +547,7 @@ void os::print_context(outputStream *st, void *context) {
 	  st->print_cr(  "R%d=" INTPTR_FORMAT, r, (int64_t)uc->uc_mcontext.regs[r]);
   st->cr();
 
-  intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
+  intptr_t *sp = (intptr_t *)os::Bsd::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
   print_hex_dump(st, (address)sp, (address)(sp + 8*sizeof(intptr_t)), sizeof(intptr_t));
   st->cr();
@@ -555,7 +555,7 @@ void os::print_context(outputStream *st, void *context) {
   // Note: it may be unsafe to inspect memory near pc. For example, pc may
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
-  address pc = os::Linux::ucontext_get_pc(uc);
+  address pc = os::Bsd::ucontext_get_pc(uc);
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
   print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
 }

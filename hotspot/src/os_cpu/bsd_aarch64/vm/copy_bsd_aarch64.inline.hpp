@@ -30,126 +30,126 @@
         long tmp0, tmp1, tmp2, tmp3;                                    \
         long tmp4, tmp5, tmp6, tmp7;                                    \
   __asm volatile(                                                       \
-"       adr     %[t0], 0f;"                                             \
-"       add     %[t0], %[t0], %[cnt], lsl #6;"                          \
-"       br      %[t0];"                                                 \
-"       .align  6;"                                                     \
+"       adr     %[t0], 0f;\n"                                             \
+"       add     %[t0], %[t0], %[cnt], lsl #6;\n"                          \
+"       br      %[t0];\n"                                                 \
+"       .align  6;\n"                                                     \
 "0:"                                                                    \
-"       b       1f;"                                                    \
+"       b       1f;\n"                                                    \
 "8:"                                                                    \
-"       ldr     %[t0], [%[s], #0];"                                     \
-"       ldp     %[t1], %[t2], [%[s], #8];"                              \
-"       ldp     %[t3], %[t4], [%[s], #24];"                             \
-"       ldr     %[t5], [%[s], #40];"                                    \
-"       tbz     %[d], #3, 10f;"                                         \
+"       ldr     %[t0], [%[s], #0];\n"                                     \
+"       ldp     %[t1], %[t2], [%[s], #8];\n"                              \
+"       ldp     %[t3], %[t4], [%[s], #24];\n"                             \
+"       ldr     %[t5], [%[s], #40];\n"                                    \
+"       tbz     %[d], #3, 10f;\n"                                         \
 "9:"                                                                    \
-"       str     %[t0], [%[d], #0];"                                     \
-"       stp     %[t1], %[t2], [%[d], #8];"                              \
-"       stp     %[t3], %[t4], [%[d], #24];"                             \
-"       str     %[t5], [%[d], #40];"                                    \
-"       b       1f;"                                                    \
-"       .align  6;"                                                     \
-"       ldr     %[t0], [%[s], #0];"                                     \
-"       str     %[t0], [%[d], #0];"                                     \
-"       b       1f;"                                                    \
+"       str     %[t0], [%[d], #0];\n"                                     \
+"       stp     %[t1], %[t2], [%[d], #8];\n"                              \
+"       stp     %[t3], %[t4], [%[d], #24];\n"                             \
+"       str     %[t5], [%[d], #40];\n"                                    \
+"       b       1f;\n"                                                    \
+"       .align  6;\n"                                                     \
+"       ldr     %[t0], [%[s], #0];\n"                                     \
+"       str     %[t0], [%[d], #0];\n"                                     \
+"       b       1f;\n"                                                    \
 "2:"                                                                    \
-"       ldr     %[t0], [%[s], #0];"                                     \
-"       ldp     %[t1], %[t2], [%[s], #8];"                              \
-"       ldp     %[t3], %[t4], [%[s], #24];"                             \
-"       ldp     %[t5], %[t6], [%[s], #40];"                             \
-"       ldr     %[t7], [%[s], #56];"                                    \
-"       tbz     %[d], #3, 4f;"                                          \
+"       ldr     %[t0], [%[s], #0];\n"                                     \
+"       ldp     %[t1], %[t2], [%[s], #8];\n"                              \
+"       ldp     %[t3], %[t4], [%[s], #24];\n"                             \
+"       ldp     %[t5], %[t6], [%[s], #40];\n"                             \
+"       ldr     %[t7], [%[s], #56];\n"                                    \
+"       tbz     %[d], #3, 4f;\n"                                          \
 "3:"                                                                    \
-"       str     %[t0], [%[d], #0];"                                     \
-"       stp     %[t1], %[t2], [%[d], #8];"                              \
-"       stp     %[t3], %[t4], [%[d], #24];"                             \
-"       stp     %[t5], %[t6], [%[d], #40];"                             \
-"       str     %[t7], [%[d], #56];"                                    \
-"       b       1f;"                                                    \
-"       .align  6;"                                                     \
-"       ldr     %[t0], [%[s], #0];"                                     \
-"       ldr     %[t1], [%[s], #8];"                                     \
-"       str     %[t0], [%[d], #0];"                                     \
-"       str     %[t1], [%[d], #8];"                                     \
-"       b       1f;"                                                    \
+"       str     %[t0], [%[d], #0];\n"                                     \
+"       stp     %[t1], %[t2], [%[d], #8];\n"                              \
+"       stp     %[t3], %[t4], [%[d], #24];\n"                             \
+"       stp     %[t5], %[t6], [%[d], #40];\n"                             \
+"       str     %[t7], [%[d], #56];\n"                                    \
+"       b       1f;\n"                                                    \
+"       .align  6;\n"                                                     \
+"       ldr     %[t0], [%[s], #0];\n"                                     \
+"       ldr     %[t1], [%[s], #8];\n"                                     \
+"       str     %[t0], [%[d], #0];\n"                                     \
+"       str     %[t1], [%[d], #8];\n"                                     \
+"       b       1f;\n"                                                    \
 "5:"                                                                    \
-"       ldr     %[t0], [%[s], #0];"                                     \
-"       ldp     %[t1], %[t2], [%[s], #8];"                              \
-"       ldp     %[t3], %[t4], [%[s], #24];"                             \
-"       ldp     %[t5], %[t6], [%[s], #40];"                             \
-"       tbz     %[d], #3, 7f;"                                          \
+"       ldr     %[t0], [%[s], #0];\n"                                     \
+"       ldp     %[t1], %[t2], [%[s], #8];\n"                              \
+"       ldp     %[t3], %[t4], [%[s], #24];\n"                             \
+"       ldp     %[t5], %[t6], [%[s], #40];\n"                             \
+"       tbz     %[d], #3, 7f;\n"                                          \
 "6:"                                                                    \
-"       str     %[t0], [%[d], #0];"                                     \
-"       stp     %[t1], %[t2], [%[d], #8];"                              \
-"       stp     %[t3], %[t4], [%[d], #24];"                             \
-"       stp     %[t5], %[t6], [%[d], #40];"                             \
-"       b       1f;"                                                    \
-"       .align  6;"                                                     \
-"       ldr     %[t0], [%[s], #0];"                                     \
-"       ldr     %[t1], [%[s], #8];"                                     \
-"       ldr     %[t2], [%[s], #16];"                                    \
-"       str     %[t0], [%[d], #0];"                                     \
-"       str     %[t1], [%[d], #8];"                                     \
-"       str     %[t2], [%[d], #16];"                                    \
-"       b       1f;"                                                    \
-"       .align  6;"                                                     \
-"       ldr     %[t0], [%[s], #0];"                                     \
-"       ldr     %[t1], [%[s], #8];"                                     \
-"       ldr     %[t2], [%[s], #16];"                                    \
-"       ldr     %[t3], [%[s], #24];"                                    \
-"       str     %[t0], [%[d], #0];"                                     \
-"       str     %[t1], [%[d], #8];"                                     \
-"       str     %[t2], [%[d], #16];"                                    \
-"       str     %[t3], [%[d], #24];"                                    \
-"       b       1f;"                                                    \
-"       .align  6;"                                                     \
-"       ldr     %[t0], [%[s], #0];"                                     \
-"       ldr     %[t1], [%[s], #8];"                                     \
-"       ldr     %[t2], [%[s], #16];"                                    \
-"       ldr     %[t3], [%[s], #24];"                                    \
-"       ldr     %[t4], [%[s], #32];"                                    \
-"       str     %[t0], [%[d], #0];"                                     \
-"       str     %[t1], [%[d], #8];"                                     \
-"       str     %[t2], [%[d], #16];"                                    \
-"       str     %[t3], [%[d], #24];"                                    \
-"       str     %[t4], [%[d], #32];"                                    \
-"       b       1f;"                                                    \
-"       .align  6;"                                                     \
-"       tbnz    %[s], #3, 8b;"                                          \
-"       ldp     %[t0], %[t1], [%[s], #0];"                              \
-"       ldp     %[t2], %[t3], [%[s], #16];"                             \
-"       ldp     %[t4], %[t5], [%[s], #32];"                             \
-"       tbnz    %[d], #3, 9b;"                                          \
+"       str     %[t0], [%[d], #0];\n"                                     \
+"       stp     %[t1], %[t2], [%[d], #8];\n"                              \
+"       stp     %[t3], %[t4], [%[d], #24];\n"                             \
+"       stp     %[t5], %[t6], [%[d], #40];\n"                             \
+"       b       1f;\n"                                                    \
+"       .align  6;\n"                                                     \
+"       ldr     %[t0], [%[s], #0];\n"                                     \
+"       ldr     %[t1], [%[s], #8];\n"                                     \
+"       ldr     %[t2], [%[s], #16];\n"                                    \
+"       str     %[t0], [%[d], #0];\n"                                     \
+"       str     %[t1], [%[d], #8];\n"                                     \
+"       str     %[t2], [%[d], #16];\n"                                    \
+"       b       1f;\n"                                                    \
+"       .align  6;\n"                                                     \
+"       ldr     %[t0], [%[s], #0];\n"                                     \
+"       ldr     %[t1], [%[s], #8];\n"                                     \
+"       ldr     %[t2], [%[s], #16];\n"                                    \
+"       ldr     %[t3], [%[s], #24];\n"                                    \
+"       str     %[t0], [%[d], #0];\n"                                     \
+"       str     %[t1], [%[d], #8];\n"                                     \
+"       str     %[t2], [%[d], #16];\n"                                    \
+"       str     %[t3], [%[d], #24];\n"                                    \
+"       b       1f;\n"                                                    \
+"       .align  6;\n"                                                     \
+"       ldr     %[t0], [%[s], #0];\n"                                     \
+"       ldr     %[t1], [%[s], #8];\n"                                     \
+"       ldr     %[t2], [%[s], #16];\n"                                    \
+"       ldr     %[t3], [%[s], #24];\n"                                    \
+"       ldr     %[t4], [%[s], #32];\n"                                    \
+"       str     %[t0], [%[d], #0];\n"                                     \
+"       str     %[t1], [%[d], #8];\n"                                     \
+"       str     %[t2], [%[d], #16];\n"                                    \
+"       str     %[t3], [%[d], #24];\n"                                    \
+"       str     %[t4], [%[d], #32];\n"                                    \
+"       b       1f;\n"                                                    \
+"       .align  6;\n"                                                     \
+"       tbnz    %[s], #3, 8b;\n"                                          \
+"       ldp     %[t0], %[t1], [%[s], #0];\n"                              \
+"       ldp     %[t2], %[t3], [%[s], #16];\n"                             \
+"       ldp     %[t4], %[t5], [%[s], #32];\n"                             \
+"       tbnz    %[d], #3, 9b;\n"                                          \
 "10:"                                                                   \
-"       stp     %[t0], %[t1], [%[d], #0];"                              \
-"       stp     %[t2], %[t3], [%[d], #16];"                             \
-"       stp     %[t4], %[t5], [%[d], #32];"                             \
-"       b       1f;"                                                    \
-"       .align  6;"                                                     \
-"       tbnz    %[s], #3, 5b;"                                          \
-"       ldp     %[t0], %[t1], [%[s], #0];"                              \
-"       ldp     %[t2], %[t3], [%[s], #16];"                             \
-"       ldp     %[t4], %[t5], [%[s], #32];"                             \
-"       ldr     %[t6], [%[s], #48];"                                    \
-"       tbnz    %[d], #3, 6b;"                                          \
+"       stp     %[t0], %[t1], [%[d], #0];\n"                              \
+"       stp     %[t2], %[t3], [%[d], #16];\n"                             \
+"       stp     %[t4], %[t5], [%[d], #32];\n"                             \
+"       b       1f;\n"                                                    \
+"       .align  6;\n"                                                     \
+"       tbnz    %[s], #3, 5b;\n"                                          \
+"       ldp     %[t0], %[t1], [%[s], #0];\n"                              \
+"       ldp     %[t2], %[t3], [%[s], #16];\n"                             \
+"       ldp     %[t4], %[t5], [%[s], #32];\n"                             \
+"       ldr     %[t6], [%[s], #48];\n"                                    \
+"       tbnz    %[d], #3, 6b;\n"                                          \
 "7:"                                                                    \
-"       stp     %[t0], %[t1], [%[d], #0];"                              \
-"       stp     %[t2], %[t3], [%[d], #16];"                             \
-"       stp     %[t4], %[t5], [%[d], #32];"                             \
-"       str     %[t6], [%[d], #48];"                                    \
-"       b       1f;"                                                    \
-"       .align  6;"                                                     \
-"       tbnz    %[s], #3, 2b;"                                          \
-"       ldp     %[t0], %[t1], [%[s], #0];"                              \
-"       ldp     %[t2], %[t3], [%[s], #16];"                             \
-"       ldp     %[t4], %[t5], [%[s], #32];"                             \
-"       ldp     %[t6], %[t7], [%[s], #48];"                             \
-"       tbnz    %[d], #3, 3b;"                                          \
+"       stp     %[t0], %[t1], [%[d], #0];\n"                              \
+"       stp     %[t2], %[t3], [%[d], #16];\n"                             \
+"       stp     %[t4], %[t5], [%[d], #32];\n"                             \
+"       str     %[t6], [%[d], #48];\n"                                    \
+"       b       1f;\n"                                                    \
+"       .align  6;\n"                                                     \
+"       tbnz    %[s], #3, 2b;\n"                                          \
+"       ldp     %[t0], %[t1], [%[s], #0];\n"                              \
+"       ldp     %[t2], %[t3], [%[s], #16];\n"                             \
+"       ldp     %[t4], %[t5], [%[s], #32];\n"                             \
+"       ldp     %[t6], %[t7], [%[s], #48];\n"                             \
+"       tbnz    %[d], #3, 3b;\n"                                          \
 "4:"                                                                    \
-"       stp     %[t0], %[t1], [%[d], #0];"                              \
-"       stp     %[t2], %[t3], [%[d], #16];"                             \
-"       stp     %[t4], %[t5], [%[d], #32];"                             \
-"       stp     %[t6], %[t7], [%[d], #48];"                             \
+"       stp     %[t0], %[t1], [%[d], #0];\n"                              \
+"       stp     %[t2], %[t3], [%[d], #16];\n"                             \
+"       stp     %[t4], %[t5], [%[d], #32];\n"                             \
+"       stp     %[t6], %[t7], [%[d], #48];\n"                             \
 "1:"                                                                    \
   : [s]"+r"(from), [d]"+r"(to), [cnt]"+r"(count),                       \
     [t0]"=&r"(tmp0), [t1]"=&r"(tmp1), [t2]"=&r"(tmp2), [t3]"=&r"(tmp3), \
@@ -159,7 +159,7 @@
 }
 
 static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
-  __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
+  __asm volatile( "prfm pldl1strm, [%[s], #0];\n" :: [s]"r"(from) : "memory");
   if (__builtin_expect(count <= 8, 1)) {
     COPY_SMALL(from, to, count);
     return;
@@ -172,7 +172,7 @@ static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
     memcpy(to, from, count * sizeof(HeapWord));
     return;
   }
-  __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
+  __asm volatile( "prfm pldl1strm, [%[s], #0];\n" :: [s]"r"(from) : "memory");
   if (__builtin_expect(count <= 8, 1)) {
     COPY_SMALL(from, to, count);
     return;
@@ -181,7 +181,7 @@ static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
 }
 
 static void pd_disjoint_words_atomic(HeapWord* from, HeapWord* to, size_t count) {
-  __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
+  __asm volatile( "prfm pldl1strm, [%[s], #0];\n" :: [s]"r"(from) : "memory");
   if (__builtin_expect(count <= 8, 1)) {
     COPY_SMALL(from, to, count);
     return;

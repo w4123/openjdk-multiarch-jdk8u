@@ -26,7 +26,11 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
+#ifdef AARCH64
+#include "vm_version_ext_aarch64.hpp"
+#else
 #include "vm_version_ext_x86.hpp"
+#endif
 
 #ifdef __APPLE__
   #import <libproc.h>

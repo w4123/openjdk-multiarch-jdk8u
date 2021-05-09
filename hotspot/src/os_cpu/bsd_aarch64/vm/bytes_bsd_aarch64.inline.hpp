@@ -25,7 +25,13 @@
 #ifndef OS_CPU_LINUX_AARCH64_VM_BYTES_LINUX_AARCH64_INLINE_HPP
 #define OS_CPU_LINUX_AARCH64_VM_BYTES_LINUX_AARCH64_INLINE_HPP
 
-#include <byteswap.h>
+
+#ifdef __APPLE__
+#  include <libkern/OSByteOrder.h>
+#  define bswap_16(x) OSSwapInt16(x)
+#  define bswap_32(x) OSSwapInt32(x)
+#  define bswap_64(x) OSSwapInt64(x)
+#endif
 
 // Efficient swapping of data bytes from Java byte
 // ordering to native byte ordering and vice versa.
