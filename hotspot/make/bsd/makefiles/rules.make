@@ -52,6 +52,8 @@ PREPROCESS.CXX   = $(CXX_COMPILE) -E
 # cross compiling the jvm with c2 requires host compilers to build
 # adlc tool
 
+# iOS build hack
+HOSTCXX := ${thehostcxx}
 HOST.CXX_COMPILE      = $(HOSTCXX) $(CXXFLAGS) $(CFLAGS)
 HOST.COMPILE.CXX      = $(HOST.CXX_COMPILE) -c
 HOST.LINK_NOPROF.CXX  = $(HOSTCXX) $(LFLAGS) $(AOUT_FLAGS)

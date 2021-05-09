@@ -65,10 +65,9 @@ CXXFLAGS = $(SYSDEFS) $(INCLUDES)
 CXXFLAGS += -DASSERT
 
 # if target Darwin then set arch 
-ifeq ($(OS_VENDOR), Darwin)
-  CFLAGS += -arch x86_64
-  CXXFLAGS += -arch x86_64 -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1
-endif
+# ifeq ($(OS_VENDOR), Darwin)
+  CXXFLAGS += -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1
+# endif
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 # Compiler warnings are treated as errors
