@@ -3671,6 +3671,7 @@ void os::init(void) {
   initial_time_count = javaTimeNanos();
 
 #ifdef __APPLE__
+#ifndef AARCH64
   // XXXDARWIN
   // Work around the unaligned VM callbacks in hotspot's
   // sharedRuntime. The callbacks don't use SSE2 instructions, and work on
@@ -3678,6 +3679,7 @@ void os::init(void) {
   // alignment when doing symbol lookup. To work around this, we force early
   // binding of all symbols now, thus binding when alignment is known-good.
   _dyld_bind_fully_image_containing_address((const void *) &os::init);
+#endif
 #endif
 }
 

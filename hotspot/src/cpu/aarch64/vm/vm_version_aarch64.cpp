@@ -33,9 +33,14 @@
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
 
+#if defined (__linux__)
 #include <sys/auxv.h>
 #include <asm/hwcap.h>
+#endif
 
 #ifndef HWCAP_AES
 #define HWCAP_AES   (1<<3)
@@ -140,6 +145,7 @@ void VM_Version::get_processor_features() {
   }
   FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
 
+#ifdef __linux__
   unsigned long auxv = getauxval(AT_HWCAP);
 
   char buf[512];
@@ -175,6 +181,11 @@ void VM_Version::get_processor_features() {
     }
     fclose(f);
   }
+#else // __APPLE__ or BSD
+    char buf[512];
+    int cpu_lines = 0;
+    unsigned long auxv = os_get_processor_features();
+#endif
 
   // Enable vendor specific features
   if (_cpu == CPU_CAVIUM) {
@@ -188,10 +199,17 @@ void VM_Version::get_processor_features() {
   }
   if (_cpu == CPU_ARM && (_model == 0xd03 || _model2 == 0xd03)) _cpuFeatures |= CPU_A53MAC;
   if (_cpu == CPU_ARM && (_model == 0xd07 || _model2 == 0xd07)) _cpuFeatures |= CPU_STXR_PREFETCH;
-  // If an olde style /proc/cpuinfo (cpu_lines == 1) then if _model is an A57 (0xd07)
-  // we assume the worst and assume we could be on a big little system and have
-  // undisclosed A53 cores which we could be swapped to at any stage
-  if (_cpu == CPU_ARM && cpu_lines == 1 && _model == 0xd07) _cpuFeatures |= CPU_A53MAC;
+
+#if defined(_BSDONLY_SOURCE) || defined(__APPLE__)
+    // A53 can be combined with A57 and A72 at least. Let's be more
+  // conservative and enable CPU_A53MAC work-around for all ARM boards
+  if (_cpu == CPU_ARM) _cpuFeatures |= CPU_A53MAC;
+#else
+    // If an olde style /proc/cpuinfo (cpu_lines == 1) then if _model is an A57 (0xd07)
+    // we assume the worst and assume we could be on a big little system and have
+    // undisclosed A53 cores which we could be swapped to at any stage
+    if (_cpu == CPU_ARM && cpu_lines == 1 && _model == 0xd07) _cpuFeatures |= CPU_A53MAC;
+#endif
 
   if (FLAG_IS_DEFAULT(UseCRC32)) {
     UseCRC32 = (auxv & HWCAP_CRC32) != 0;
