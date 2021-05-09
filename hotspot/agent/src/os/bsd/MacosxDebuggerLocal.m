@@ -50,6 +50,8 @@
 
 #if amd64
 #include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
+#elif defined(aarch64)
+#include "sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext.h"
 #else
 #error UNSUPPORTED_ARCH
 #endif
@@ -119,6 +121,13 @@ static struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
     #define HSDB_FLOAT_STATE        x86_FLOAT_STATE64
     #define HSDB_THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
     #define HSDB_FLOAT_STATE_COUNT  x86_FLOAT_STATE64_COUNT
+#elif defined(aarch64)
+    #define hsdb_thread_state_t     arm_thread_state64_t
+    #define hsdb_float_state_t      arm_neon_state64_t
+    #define HSDB_THREAD_STATE       ARM_THREAD_STATE64
+    #define HSDB_FLOAT_STATE        ARM_NEON_STATE64
+    #define HSDB_THREAD_STATE_COUNT ARM_THREAD_STATE64_COUNT
+    #define HSDB_FLOAT_STATE_COUNT  ARM_NEON_STATE64_COUNT
 #else
     #error UNSUPPORTED_ARCH
 #endif
@@ -551,6 +560,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
   }
 
 #if amd64
+
 #define NPRGREG sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_NPRGREG
 #undef REG_INDEX
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_##reg
@@ -589,13 +599,52 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
   primitiveArray[REG_INDEX(DS)] = 0;
   primitiveArray[REG_INDEX(FSBASE)] = 0;
   primitiveArray[REG_INDEX(GSBASE)] = 0;
-  print_debug("set registers\n");
 
-  (*env)->ReleaseLongArrayElements(env, registerArray, primitiveArray, 0);
+#elif defined(aarch64)
+
+#define NPRGREG sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_NPRGREG
+#define REG_INDEX(reg) sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_##reg
+
+  primitiveArray[REG_INDEX(R0)] = state.__r0;
+  primitiveArray[REG_INDEX(R1)] = state.__r1;
+  primitiveArray[REG_INDEX(R2)] = state.__r2;
+  primitiveArray[REG_INDEX(R3)] = state.__r3;
+  primitiveArray[REG_INDEX(R4)] = state.__r4;
+  primitiveArray[REG_INDEX(R5)] = state.__r5;
+  primitiveArray[REG_INDEX(R6)] = state.__r6;
+  primitiveArray[REG_INDEX(R7)] = state.__r7;
+  primitiveArray[REG_INDEX(R8)] = state.__r8;
+  primitiveArray[REG_INDEX(R9)] = state.__r9;
+  primitiveArray[REG_INDEX(R10)] = state.__r10;
+  primitiveArray[REG_INDEX(R11)] = state.__r11;
+  primitiveArray[REG_INDEX(R12)] = state.__r12;
+  primitiveArray[REG_INDEX(R13)] = state.__r13;
+  primitiveArray[REG_INDEX(R14)] = state.__r14;
+  primitiveArray[REG_INDEX(R15)] = state.__r15;
+  primitiveArray[REG_INDEX(R16)] = state.__r16;
+  primitiveArray[REG_INDEX(R17)] = state.__r17;
+  primitiveArray[REG_INDEX(R18)] = state.__r18;
+  primitiveArray[REG_INDEX(R19)] = state.__r19;
+  primitiveArray[REG_INDEX(R20)] = state.__r20;
+  primitiveArray[REG_INDEX(R21)] = state.__r21;
+  primitiveArray[REG_INDEX(R22)] = state.__r22;
+  primitiveArray[REG_INDEX(R23)] = state.__r23;
+  primitiveArray[REG_INDEX(R24)] = state.__r24;
+  primitiveArray[REG_INDEX(R25)] = state.__r25;
+  primitiveArray[REG_INDEX(R26)] = state.__r26;
+  primitiveArray[REG_INDEX(R27)] = state.__r27;
+  primitiveArray[REG_INDEX(R28)] = state.__r28;
+  primitiveArray[REG_INDEX(FP)] = state.__rfp;
+  primitiveArray[REG_INDEX(LR)] = state.__rlr;
+  primitiveArray[REG_INDEX(SP)] = state.__rsp;
+  primitiveArray[REG_INDEX(PC)] = state.__rpc;
 
 #else
 #error UNSUPPORTED_ARCH
 #endif /* amd64 */
+
+  print_debug("set registers\n");
+  (*env)->ReleaseLongArrayElements(env, registerArray, primitiveArray, 0);
 
   return registerArray;
 }
