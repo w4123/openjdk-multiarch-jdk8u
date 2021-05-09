@@ -430,13 +430,6 @@ JVM_handle_bsd_signal(int sig,
   return true; // Mute compiler
 }
 
-void os::Bsd::init_thread_fpu_state(void) {
-}
-
-int os::Bsd::get_fpu_control_word(void) {
-  return 0;
-}
-
 void os::Bsd::set_fpu_control_word(int fpu_control) {
 }
 
