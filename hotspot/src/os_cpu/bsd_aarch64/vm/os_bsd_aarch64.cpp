@@ -80,6 +80,21 @@
 
 #define NOINLINE __attribute__ ((noinline))
 
+#ifdef __APPLE__
+// see darwin-xnu/osfmk/mach/arm/_structs.h
+
+// 10.5 UNIX03 member name prefixes
+#define DU3_PREFIX(s, m) __ ## s.__ ## m
+#endif
+
+#define context_x    uc_mcontext->DU3_PREFIX(ss,x)
+#define context_fp   uc_mcontext->DU3_PREFIX(ss,fp)
+#define context_lr   uc_mcontext->DU3_PREFIX(ss,lr)
+#define context_sp   uc_mcontext->DU3_PREFIX(ss,sp)
+#define context_pc   uc_mcontext->DU3_PREFIX(ss,pc)
+#define context_cpsr uc_mcontext->DU3_PREFIX(ss,cpsr)
+#define context_esr  uc_mcontext->DU3_PREFIX(es,esr)
+
 NOINLINE address os::current_stack_pointer() {
   return (address)__builtin_frame_address(0);
 }
@@ -95,16 +110,16 @@ char* os::non_memory_address_word() {
 void os::initialize_thread(Thread *thr) {
 }
 
-address os::Bsd::ucontext_get_pc(ucontext_t * uc) {
-  return (address)uc->uc_mcontext.pc;
+address os::Bsd::ucontext_get_pc(const ucontext_t * uc) {
+  return (address)uc->context_pc;
 }
 
-intptr_t* os::Bsd::ucontext_get_sp(ucontext_t * uc) {
-  return (intptr_t*)uc->uc_mcontext.sp;
+intptr_t* os::Bsd::ucontext_get_sp(const ucontext_t * uc) {
+  return (intptr_t*)uc->context_sp;
 }
 
-intptr_t* os::Bsd::ucontext_get_fp(ucontext_t * uc) {
-  return (intptr_t*)uc->uc_mcontext.regs[REG_FP];
+intptr_t* os::Bsd::ucontext_get_fp(const ucontext_t * uc) {
+  return (intptr_t*)uc->context_fp;
 }
 
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread
@@ -254,7 +269,7 @@ JVM_handle_bsd_signal(int sig,
     pc = (address) os::Bsd::ucontext_get_pc(uc);
 
     if (StubRoutines::is_safefetch_fault(pc)) {
-      uc->uc_mcontext.pc = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
+      uc->context_pc = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
       return 1;
     }
 
@@ -384,7 +399,7 @@ JVM_handle_bsd_signal(int sig,
     // save all thread context in case we need to restore it
     if (thread != NULL) thread->set_saved_exception_pc(pc);
 
-    uc->uc_mcontext.pc = (__u64)stub;
+    uc->context_pc = (__u64)stub;
     return true;
   }
 
@@ -544,7 +559,7 @@ void os::print_context(outputStream *st, void *context) {
   ucontext_t *uc = (ucontext_t*)context;
   st->print_cr("Registers:");
   for (int r = 0; r < 31; r++)
-	  st->print_cr(  "R%d=" INTPTR_FORMAT, r, (int64_t)uc->uc_mcontext.regs[r]);
+	  st->print_cr(  "R%d=" INTPTR_FORMAT, r, (int64_t)uc->context_x[r]);
   st->cr();
 
   intptr_t *sp = (intptr_t *)os::Bsd::ucontext_get_sp(uc);
@@ -575,7 +590,7 @@ void os::print_register_info(outputStream *st, void *context) {
   // this is only for the "general purpose" registers
 
   for (int r = 0; r < 31; r++)
-	  st->print_cr(  "R%d=" INTPTR_FORMAT, r, (int64_t)uc->uc_mcontext.regs[r]);
+	  st->print_cr(  "R%d=" INTPTR_FORMAT, r, (int64_t)uc->context_x[r]);
   st->cr();
 }
 
