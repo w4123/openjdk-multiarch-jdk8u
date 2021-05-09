@@ -22,9 +22,15 @@
  *
  */
 
+#include "TargetConditionals.h"
+#ifdef TARGET_OS_IOS
+#include <objc/runtime.h>
+#include <objc/message.h>
+#else
 #include <objc/objc-runtime.h>
-#import <Foundation/Foundation.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
+#endif
+#import <Foundation/Foundation.h>
 
 #include <jni.h>
 
@@ -95,6 +101,24 @@ static task_t getTask(JNIEnv *env, jobject this_obj) {
 #define CHECK_EXCEPTION_CLEAR if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); } 
 #define CHECK_EXCEPTION_CLEAR_VOID if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return; } 
 #define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return value; } 
+
+#ifdef TARGET_OS_IOS
+#define JNF_COCOA_ENTER(env)
+#define JNF_COCOA_EXIT(env)
+
+static NSString* JNFJavaToNSString(JNIEnv* env, jstring str) {
+  NSString *result = NULL;
+  const char *str_cstr = (*env)->GetStringUTFChars(env, str, 0);
+  CHECK_EXCEPTION_(0);
+
+  if (str_cstr != NULL) {
+    result = @(str_cstr);
+    (*env)->ReleaseStringUTFChars(env, str, str_cstr);
+  }
+
+  return result;
+}
+#endif
 
 static void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
   jclass exceptionClass = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");
@@ -605,39 +629,39 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
 #define NPRGREG sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_NPRGREG
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_##reg
 
-  primitiveArray[REG_INDEX(R0)] = state.__r0;
-  primitiveArray[REG_INDEX(R1)] = state.__r1;
-  primitiveArray[REG_INDEX(R2)] = state.__r2;
-  primitiveArray[REG_INDEX(R3)] = state.__r3;
-  primitiveArray[REG_INDEX(R4)] = state.__r4;
-  primitiveArray[REG_INDEX(R5)] = state.__r5;
-  primitiveArray[REG_INDEX(R6)] = state.__r6;
-  primitiveArray[REG_INDEX(R7)] = state.__r7;
-  primitiveArray[REG_INDEX(R8)] = state.__r8;
-  primitiveArray[REG_INDEX(R9)] = state.__r9;
-  primitiveArray[REG_INDEX(R10)] = state.__r10;
-  primitiveArray[REG_INDEX(R11)] = state.__r11;
-  primitiveArray[REG_INDEX(R12)] = state.__r12;
-  primitiveArray[REG_INDEX(R13)] = state.__r13;
-  primitiveArray[REG_INDEX(R14)] = state.__r14;
-  primitiveArray[REG_INDEX(R15)] = state.__r15;
-  primitiveArray[REG_INDEX(R16)] = state.__r16;
-  primitiveArray[REG_INDEX(R17)] = state.__r17;
-  primitiveArray[REG_INDEX(R18)] = state.__r18;
-  primitiveArray[REG_INDEX(R19)] = state.__r19;
-  primitiveArray[REG_INDEX(R20)] = state.__r20;
-  primitiveArray[REG_INDEX(R21)] = state.__r21;
-  primitiveArray[REG_INDEX(R22)] = state.__r22;
-  primitiveArray[REG_INDEX(R23)] = state.__r23;
-  primitiveArray[REG_INDEX(R24)] = state.__r24;
-  primitiveArray[REG_INDEX(R25)] = state.__r25;
-  primitiveArray[REG_INDEX(R26)] = state.__r26;
-  primitiveArray[REG_INDEX(R27)] = state.__r27;
-  primitiveArray[REG_INDEX(R28)] = state.__r28;
-  primitiveArray[REG_INDEX(FP)] = state.__rfp;
-  primitiveArray[REG_INDEX(LR)] = state.__rlr;
-  primitiveArray[REG_INDEX(SP)] = state.__rsp;
-  primitiveArray[REG_INDEX(PC)] = state.__rpc;
+primitiveArray[REG_INDEX(R0)] = state.__x[0];
+primitiveArray[REG_INDEX(R1)] = state.__x[1];
+primitiveArray[REG_INDEX(R2)] = state.__x[2];
+primitiveArray[REG_INDEX(R3)] = state.__x[3];
+primitiveArray[REG_INDEX(R4)] = state.__x[4];
+primitiveArray[REG_INDEX(R5)] = state.__x[5];
+primitiveArray[REG_INDEX(R6)] = state.__x[6];
+primitiveArray[REG_INDEX(R7)] = state.__x[7];
+primitiveArray[REG_INDEX(R8)] = state.__x[8];
+primitiveArray[REG_INDEX(R9)] = state.__x[9];
+primitiveArray[REG_INDEX(R10)] = state.__x[10];
+primitiveArray[REG_INDEX(R11)] = state.__x[11];
+primitiveArray[REG_INDEX(R12)] = state.__x[12];
+primitiveArray[REG_INDEX(R13)] = state.__x[13];
+primitiveArray[REG_INDEX(R14)] = state.__x[14];
+primitiveArray[REG_INDEX(R15)] = state.__x[15];
+primitiveArray[REG_INDEX(R16)] = state.__x[16];
+primitiveArray[REG_INDEX(R17)] = state.__x[17];
+primitiveArray[REG_INDEX(R18)] = state.__x[18];
+primitiveArray[REG_INDEX(R19)] = state.__x[19];
+primitiveArray[REG_INDEX(R20)] = state.__x[20];
+primitiveArray[REG_INDEX(R21)] = state.__x[21];
+primitiveArray[REG_INDEX(R22)] = state.__x[22];
+primitiveArray[REG_INDEX(R23)] = state.__x[23];
+primitiveArray[REG_INDEX(R24)] = state.__x[24];
+primitiveArray[REG_INDEX(R25)] = state.__x[25];
+primitiveArray[REG_INDEX(R26)] = state.__x[26];
+primitiveArray[REG_INDEX(R27)] = state.__x[27];
+primitiveArray[REG_INDEX(R28)] = state.__x[28];
+primitiveArray[REG_INDEX(FP)] = state.__fp;
+primitiveArray[REG_INDEX(LR)] = state.__lr;
+primitiveArray[REG_INDEX(SP)] = state.__sp;
+primitiveArray[REG_INDEX(PC)] = state.__pc;
 
 #else
 #error UNSUPPORTED_ARCH
