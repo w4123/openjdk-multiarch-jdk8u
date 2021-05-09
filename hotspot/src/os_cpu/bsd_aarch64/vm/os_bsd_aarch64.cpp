@@ -505,32 +505,11 @@ size_t os::Bsd::default_guard_size(os::ThreadType thr_type) {
 //    pthread_attr_getstack()
 
 static void current_stack_region(address * bottom, size_t * size) {
-  if (os::is_primordial_thread()) {
-     // primordial thread needs special handling because pthread_getattr_np()
-     // may return bogus value.
-     *bottom = os::Bsd::initial_thread_stack_bottom();
-     *size   = os::Bsd::initial_thread_stack_size();
-  } else {
-     pthread_attr_t attr;
+  pthread_t self = pthread_self();
+  void *stacktop = pthread_get_stackaddr_np(self);
+  *size = pthread_get_stacksize_np(self);
+  *bottom = (address) stacktop - *size;
 
-     int rslt = pthread_getattr_np(pthread_self(), &attr);
-
-     // JVM needs to know exact stack location, abort if it fails
-     if (rslt != 0) {
-       if (rslt == ENOMEM) {
-         vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
-       } else {
-         fatal(err_msg("pthread_getattr_np failed with errno = %d", rslt));
-       }
-     }
-
-     if (pthread_attr_getstack(&attr, (void **)bottom, size) != 0) {
-         fatal("Can not locate current stack attributes!");
-     }
-
-     pthread_attr_destroy(&attr);
-
-  }
   assert(os::current_stack_pointer() >= *bottom &&
          os::current_stack_pointer() < *bottom + *size, "just checking");
 }
