@@ -1173,40 +1173,39 @@ static bool core_handle_prstatus(struct ps_prochandle* ph, const char* buf, size
 #endif
 
 #ifdef aarch64
-// FIXME not done yet
-  print_debug(" r_r0:  0x%" PRIx64 "\n", newthr->regs.r_r0);
-  print_debug(" r_r1:  0x%" PRIx64 "\n", newthr->regs.r_r1);
-  print_debug(" r_r2:  0x%" PRIx64 "\n", newthr->regs.r_r2);
-  print_debug(" r_r3:  0x%" PRIx64 "\n", newthr->regs.r_r3);
-  print_debug(" r_r4:  0x%" PRIx64 "\n", newthr->regs.r_r4);
-  print_debug(" r_r5:  0x%" PRIx64 "\n", newthr->regs.r_r5);
-  print_debug(" r_r6:  0x%" PRIx64 "\n", newthr->regs.r_r6);
-  print_debug(" r_r7:  0x%" PRIx64 "\n", newthr->regs.r_r7);
-  print_debug(" r_r8:  0x%" PRIx64 "\n", newthr->regs.r_r8);
-  print_debug(" r_r9:  0x%" PRIx64 "\n", newthr->regs.r_r9);
-  print_debug(" r_r10: 0x%" PRIx64 "\n", newthr->regs.r_r10);
-  print_debug(" r_r11: 0x%" PRIx64 "\n", newthr->regs.r_r11);
-  print_debug(" r_r12: 0x%" PRIx64 "\n", newthr->regs.r_r12);
-  print_debug(" r_r13: 0x%" PRIx64 "\n", newthr->regs.r_r13);
-  print_debug(" r_r14: 0x%" PRIx64 "\n", newthr->regs.r_r14);
-  print_debug(" r_r15: 0x%" PRIx64 "\n", newthr->regs.r_r15);
-  print_debug(" r_r16: 0x%" PRIx64 "\n", newthr->regs.r_r16);
-  print_debug(" r_r17: 0x%" PRIx64 "\n", newthr->regs.r_r17);
-  print_debug(" r_r18: 0x%" PRIx64 "\n", newthr->regs.r_r18);
-  print_debug(" r_r19: 0x%" PRIx64 "\n", newthr->regs.r_r19);
-  print_debug(" r_r20: 0x%" PRIx64 "\n", newthr->regs.r_r20);
-  print_debug(" r_r21: 0x%" PRIx64 "\n", newthr->regs.r_r21);
-  print_debug(" r_r22: 0x%" PRIx64 "\n", newthr->regs.r_r22);
-  print_debug(" r_r23: 0x%" PRIx64 "\n", newthr->regs.r_r23);
-  print_debug(" r_r24: 0x%" PRIx64 "\n", newthr->regs.r_r24);
-  print_debug(" r_r25: 0x%" PRIx64 "\n", newthr->regs.r_r25);
-  print_debug(" r_r26: 0x%" PRIx64 "\n", newthr->regs.r_r26);
-  print_debug(" r_r27: 0x%" PRIx64 "\n", newthr->regs.r_r27);
-  print_debug(" r_r28: 0x%" PRIx64 "\n", newthr->regs.r_r28);
-  print_debug(" r_fp:  0x%" PRIx64 "\n", newthr->regs.r_fp);
-  print_debug(" r_lr:  0x%" PRIx64 "\n", newthr->regs.r_lr);
-  print_debug(" r_sp:  0x%" PRIx64 "\n", newthr->regs.r_sp);
-  print_debug(" r_pc:  0x%" PRIx64 "\n", newthr->regs.r_pc);
+      print_debug("\tr0 = 0x%lx\n", newthr->regs.r_r0);
+      print_debug("\tr1 = 0x%lx\n", newthr->regs.r_r1);
+      print_debug("\tr2 = 0x%lx\n", newthr->regs.r_r2);
+      print_debug("\tr3 = 0x%lx\n", newthr->regs.r_r3);
+      print_debug("\tr4 = 0x%lx\n", newthr->regs.r_r4);
+      print_debug("\tr5 = 0x%lx\n", newthr->regs.r_r5);
+      print_debug("\tr6 = 0x%lx\n", newthr->regs.r_r6);
+      print_debug("\tr7 = 0x%lx\n", newthr->regs.r_r7);
+      print_debug("\tr8 = 0x%lx\n", newthr->regs.r_r8);
+      print_debug("\tr9 = 0x%lx\n", newthr->regs.r_r9);
+      print_debug("\tr10 = 0x%lx\n", newthr->regs.r_r10);
+      print_debug("\tr11 = 0x%lx\n", newthr->regs.r_r11);
+      print_debug("\tr12 = 0x%lx\n", newthr->regs.r_r12);
+      print_debug("\tr13 = 0x%lx\n", newthr->regs.r_r13);
+      print_debug("\tr14 = 0x%lx\n", newthr->regs.r_r14);
+      print_debug("\tr15 = 0x%lx\n", newthr->regs.r_r15);
+      print_debug("\tr16 = 0x%lx\n", newthr->regs.r_r16);
+      print_debug("\tr17 = 0x%lx\n", newthr->regs.r_r17);
+      print_debug("\tr18 = 0x%lx\n", newthr->regs.r_r18);
+      print_debug("\tr19 = 0x%lx\n", newthr->regs.r_r19);
+      print_debug("\tr20 = 0x%lx\n", newthr->regs.r_r20);
+      print_debug("\tr21 = 0x%lx\n", newthr->regs.r_r21);
+      print_debug("\tr22 = 0x%lx\n", newthr->regs.r_r22);
+      print_debug("\tr23 = 0x%lx\n", newthr->regs.r_r23);
+      print_debug("\tr24 = 0x%lx\n", newthr->regs.r_r24);
+      print_debug("\tr25 = 0x%lx\n", newthr->regs.r_r25);
+      print_debug("\tr26 = 0x%lx\n", newthr->regs.r_r26);
+      print_debug("\tr27 = 0x%lx\n", newthr->regs.r_r27);
+      print_debug("\tr28 = 0x%lx\n", newthr->regs.r_r28);
+      print_debug("\tfp = 0x%lx\n", newthr->regs.r_fp);
+      print_debug("\tlr = 0x%lx\n", newthr->regs.r_lr);
+      print_debug("\tsp = 0x%lx\n", newthr->regs.r_sp);
+      print_debug("\tpc = 0x%lx\n", newthr->regs.r_pc);
 #endif
    }
 
