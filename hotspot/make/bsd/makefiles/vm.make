@@ -123,9 +123,6 @@ CFLAGS += $(EXTRA_CFLAGS)
 LFLAGS += $(EXTRA_CFLAGS) $(EXTRA_LDFLAGS)
 ASFLAGS += $(EXTRA_ASFLAGS)
 
- ## test: dynamic lookup
- # LDFLAGS += -undefined cdynamic_lookup
-
 # Don't set excutable bit on stack segment
 # the same could be done by separate execstack command
 # Darwin is non-executable-stack by default
@@ -337,7 +334,7 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	$(QUIETLY) {                                                    \
 	    echo Linking vm...;                                         \
 	    $(LINK_LIB.CXX/PRE_HOOK)                                     \
-	    $(LINK_VM) $(LD_SCRIPT_FLAG)                                \
+	    $(LINK_VM) $(LD_SCRIPT_FLAG) -undefined dynamic_lookup                                \
 		       $(LFLAGS_VM) -o $@ $(sort $(LIBJVM.o)) $(LIBS_VM); \
 	    $(LINK_LIB.CXX/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
