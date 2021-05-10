@@ -123,6 +123,9 @@ CFLAGS += $(EXTRA_CFLAGS)
 LFLAGS += $(EXTRA_CFLAGS) $(EXTRA_LDFLAGS)
 ASFLAGS += $(EXTRA_ASFLAGS)
 
+ ## test: dynamic lookup
+ # LDFLAGS += -undefined cdynamic_lookup
+
 # Don't set excutable bit on stack segment
 # the same could be done by separate execstack command
 # Darwin is non-executable-stack by default

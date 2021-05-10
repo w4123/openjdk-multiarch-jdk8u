@@ -375,6 +375,9 @@ JVM_handle_bsd_signal(int sig,
     return false; // Mute compiler
 }
 
+void os::Bsd::init_thread_fpu_state(void) {
+}
+
 // Check that the bsd kernel version is 2.4 or higher since earlier
 // versions do not support SSE without patches.
 bool os::supports_sse() {

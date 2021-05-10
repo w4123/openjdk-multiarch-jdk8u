@@ -24,6 +24,10 @@
  *
  */
 
+#ifdef __APPLE__
+#include <libkern/OSCacheControl.h>
+#endif
+
 #ifndef CPU_AARCH64_VM_ICACHE_AARCH64_HPP
 #define CPU_AARCH64_VM_ICACHE_AARCH64_HPP
 

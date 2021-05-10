@@ -420,12 +420,22 @@ bool fill_java_threads(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) 
     for (j = 0; j < len; j += 3) {
       lwpid_t  uid = cinfos[j];
       uint64_t beg = cinfos[j + 1];
-      uint64_t end = cinfos[j + 2]; 
-      if ((regs.r_rsp < end && regs.r_rsp >= beg) ||
+      uint64_t end = cinfos[j + 2];
+#if defined(amd64)
+        if ((regs.r_rsp < end && regs.r_rsp >= beg) ||
           (regs.r_rbp < end && regs.r_rbp >= beg)) {
         set_lwp_id(ph, i, uid);
         break;
       }
+#elif defined(aarch64)
+        if ((regs.r_sp < end && regs.r_sp >= beg) ||
+          (regs.r_fp < end && regs.r_fp >= beg)) {
+        set_lwp_id(ph, i, uid);
+        break;
+      }
+#else
+#error UNSUPPORTED_ARCH
+#endif
     }
   }
   (*env)->ReleaseLongArrayElements(env, thrinfos, (jlong*)cinfos, 0);
@@ -455,15 +465,15 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
     THROW_NEW_DEBUGGER_EXCEPTION_("get_thread_regs failed for a lwp", 0);
   }
 
-  array = (*env)->NewLongArray(env, NPRGREG);
-  CHECK_EXCEPTION_(0);
-  regs = (*env)->GetLongArrayElements(env, array, &isCopy);
-
 #undef NPRGREG
 #undef REG_INDEX
 #if amd64
 #define NPRGREG sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_NPRGREG
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_##reg
+
+  array = (*env)->NewLongArray(env, NPRGREG);
+  CHECK_EXCEPTION_(0);
+  regs = (*env)->GetLongArrayElements(env, array, &isCopy);
 
   regs[REG_INDEX(R15)] = gregs.r_r15;
   regs[REG_INDEX(R14)] = gregs.r_r14;
@@ -496,6 +506,11 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
 #elif defined(aarch64)
 #define NPRGREG sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_NPRGREG
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_##reg
+
+  array = (*env)->NewLongArray(env, NPRGREG);
+  CHECK_EXCEPTION_(0);
+  regs = (*env)->GetLongArrayElements(env, array, &isCopy);
+
   regs[REG_INDEX(R0)] = gregs.r_r0;
   regs[REG_INDEX(R1)] = gregs.r_r1;
   regs[REG_INDEX(R2)] = gregs.r_r2;
