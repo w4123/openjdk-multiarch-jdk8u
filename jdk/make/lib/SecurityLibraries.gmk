@@ -119,6 +119,7 @@ endif
 ##########################################################################################
 
 ifneq ($(BUILD_CRYPTO), no)
+ifneq ($(BUILD_IOS), 1)
   BUILD_LIBKRB5_NAME :=
   ifeq ($(OPENJDK_TARGET_OS), windows)
     BUILD_LIBKRB5_NAME := w2k_lsa_auth
@@ -155,6 +156,7 @@ ifneq ($(BUILD_CRYPTO), no)
 
     BUILD_LIBRARIES += $(BUILD_LIBKRB5)
   endif
+endif
 endif
 
 ##########################################################################################

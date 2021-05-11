@@ -34,7 +34,13 @@
 #include <Security/AuthSession.h>
 #endif
 #include <CoreFoundation/CoreFoundation.h>
+#ifndef TARGET_OS_IOS
 #include <SystemConfiguration/SystemConfiguration.h>
+#else
+#include <SystemConfiguration/OSXSCSchemaDefinitions.h>
+#include <SystemConfiguration/SCDynamicStore.h>
+CFDictionaryRef SCDynamicStoreCopyProxies(SCDynamicStoreRef	store);
+#endif
 #include <Foundation/Foundation.h>
 
 #include "java_props_macosx.h"
@@ -191,11 +197,16 @@ void setOSNameAndVersion(java_props_t *sprops) {
 
     char* osVersionCStr = NULL;
     // Mac OS 10.9 includes the [NSProcessInfo operatingSystemVersion] function,
-    // but it's not in the 10.9 SDK.  So, call it via objc_msgSend_stret.
+    // but it's not in the 10.9 SDK.  So, call it via NSInvocation.
     if ([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
-        OSVerStruct (*procInfoFn)(id rec, SEL sel) = (OSVerStruct(*)(id, SEL))objc_msgSend_stret;
-        OSVerStruct osVer = procInfoFn([NSProcessInfo processInfo],
-                                       @selector(operatingSystemVersion));
+        OSVerStruct osVer;
+        NSMethodSignature *sig = [[NSProcessInfo processInfo] methodSignatureForSelector:
+        @selector(operatingSystemVersion)];
+        NSInvocation *invoke = [NSInvocation invocationWithMethodSignature:sig];
+        invoke.selector = @selector(operatingSystemVersion);
+        [invoke invokeWithTarget:[NSProcessInfo processInfo]];
+        [invoke getReturnValue:&osVer];
+
         NSString *nsVerStr;
         if (osVer.patchVersion == 0) { // Omit trailing ".0"
             nsVerStr = [NSString stringWithFormat:@"%ld.%ld",

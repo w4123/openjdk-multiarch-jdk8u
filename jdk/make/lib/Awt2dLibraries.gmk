@@ -479,7 +479,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     LDFLAGS_SUFFIX_linux := -ljvm $(LIBM) $(LIBDL) -ljava, \
     LDFLAGS_SUFFIX_solaris := -ljvm $(LIBM) $(LIBDL) -ljava -lc, \
     LDFLAGS_SUFFIX_aix :=-ljvm $(LIBM) $(LIBDL) -ljava -lm,\
-    LDFLAGS_SUFFIX_macosx := -lmlib_image -ljvm $(LIBM), \
+    LDFLAGS_SUFFIX_macosx := -lmlib_image -ljvm -ljava $(LIBM), \
     LDFLAGS_SUFFIX_macosx_NOTIOS := -lmlib_image -ljvm $(LIBM) \
         -framework Cocoa \
         -framework OpenGL \
