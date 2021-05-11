@@ -22,15 +22,9 @@
  *
  */
 
-#include "TargetConditionals.h"
-#ifdef TARGET_OS_IOS
-#include <objc/runtime.h>
-#include <objc/message.h>
-#else
 #include <objc/objc-runtime.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-#endif
 #import <Foundation/Foundation.h>
+#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #include <jni.h>
 
@@ -101,24 +95,6 @@ static task_t getTask(JNIEnv *env, jobject this_obj) {
 #define CHECK_EXCEPTION_CLEAR if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); } 
 #define CHECK_EXCEPTION_CLEAR_VOID if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return; } 
 #define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return value; } 
-
-#ifdef TARGET_OS_IOS
-#define JNF_COCOA_ENTER(env)
-#define JNF_COCOA_EXIT(env)
-
-static NSString* JNFJavaToNSString(JNIEnv* env, jstring str) {
-  NSString *result = NULL;
-  const char *str_cstr = (*env)->GetStringUTFChars(env, str, 0);
-  CHECK_EXCEPTION_(0);
-
-  if (str_cstr != NULL) {
-    result = @(str_cstr);
-    (*env)->ReleaseStringUTFChars(env, str, str_cstr);
-  }
-
-  return result;
-}
-#endif
 
 static void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
   jclass exceptionClass = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");

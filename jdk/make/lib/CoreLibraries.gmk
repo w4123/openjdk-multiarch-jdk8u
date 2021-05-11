@@ -469,7 +469,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
     LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
-    LDFLAGS_macosx := -framework Cocoa -framework Security -framework ApplicationServices, \
+    LDFLAGS_macosx := -framework Foundation -framework Security, \
     LDFLAGS_SUFFIX_solaris := $(LIBZ) $(LIBDL) -lc, \
     LDFLAGS_SUFFIX_linux := $(LIBZ) $(LIBDL) -lc -lpthread, \
     LDFLAGS_SUFFIX_aix := $(LIBZ) $(LIBDL),\
