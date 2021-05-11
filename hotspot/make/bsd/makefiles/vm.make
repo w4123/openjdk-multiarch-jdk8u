@@ -183,6 +183,7 @@ CORE_PATHS+=$(GENERATED)/jvmtifiles $(GENERATED)/jfrfiles
 
 COMPILER1_PATHS := $(call altsrc,$(HS_COMMON_SRC)/share/vm/c1)
 COMPILER1_PATHS += $(HS_COMMON_SRC)/share/vm/c1
+COMPILER1_PATHS += $(HS_COMMON_SRC)/share/vm/gc_implementation/shenandoah/c1
 
 COMPILER2_PATHS := $(call altsrc,$(HS_COMMON_SRC)/share/vm/opto)
 COMPILER2_PATHS += $(call altsrc,$(HS_COMMON_SRC)/share/vm/libadt)
@@ -334,7 +335,7 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	$(QUIETLY) {                                                    \
 	    echo Linking vm...;                                         \
 	    $(LINK_LIB.CXX/PRE_HOOK)                                     \
-	    $(LINK_VM) $(LD_SCRIPT_FLAG) -undefined dynamic_lookup                                \
+	    $(LINK_VM) $(LD_SCRIPT_FLAG)                                \
 		       $(LFLAGS_VM) -o $@ $(sort $(LIBJVM.o)) $(LIBS_VM); \
 	    $(LINK_LIB.CXX/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
