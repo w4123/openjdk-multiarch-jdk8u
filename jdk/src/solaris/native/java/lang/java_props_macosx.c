@@ -23,12 +23,16 @@
  * questions.
  */
 
+#include "TargetConditionals.h"
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <objc/objc-runtime.h>
 
+#ifndef TARGET_OS_IOS
 #include <Security/AuthSession.h>
+#endif
 #include <CoreFoundation/CoreFoundation.h>
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <Foundation/Foundation.h>
@@ -159,6 +163,7 @@ int isInAquaSession() {
         // if "true" then tell the caller we're in an Aqua session without actually checking
         return 1;
     }
+#ifndef TARGET_OS_IOS
     // Is the WindowServer available?
     SecuritySessionId session_id;
     SessionAttributeBits session_info;
@@ -168,6 +173,7 @@ int isInAquaSession() {
             return 1;
         }
     }
+#endif
     return 0;
 }
 
