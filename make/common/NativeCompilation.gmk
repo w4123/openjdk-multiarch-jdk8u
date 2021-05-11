@@ -88,8 +88,12 @@ define add_native_source
     $1_OBJS_SO_FAR+=$$($1_$2_OBJ)
     ifeq (,$$(filter %.s,$2))
       # And this is the dependency file for this obj file.
-      $1_$2_DEP:=
-#$$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_$2_OBJ))
+      $1_$2_DEP:=$$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_$2_OBJ))
+      if ($(OPENJDK_TARGET_OS), macosx)
+        # Workaround for iOS port: dependency file does not exists.
+        $1_$2_DEP:=
+      endif
+
       # Include previously generated dependency information. (if it exists)
       -include $$($1_$2_DEP)
 
