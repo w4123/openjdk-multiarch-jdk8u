@@ -357,6 +357,9 @@ ifeq ($(OS_VENDOR), Darwin)
               -mmacosx-version-min=$(MACOSX_VERSION_MIN)
     LFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
   endif
+
+  # Quick way to replace finite() with isfinite()
+  CFLAGS += -Dfinite\(x\)=isfinite\(x\)
 endif
 
 
