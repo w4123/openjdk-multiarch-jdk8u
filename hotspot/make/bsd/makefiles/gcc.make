@@ -352,14 +352,14 @@ ifeq ($(OS_VENDOR), Darwin)
     HOSTCC += -DMAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(MACOSX_VERSION_MIN)) \
               -mmacosx-version-min=$(MACOSX_VERSION_MIN)
     HOSTCXX += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
+
+    # Quick way to replace finite() with isfinite()
+    CXX += -Dfinite\(x\)=isfinite\(x\)
   else
     CFLAGS += -DMAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(MACOSX_VERSION_MIN)) \
               -mmacosx-version-min=$(MACOSX_VERSION_MIN)
     LFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
   endif
-
-  # Quick way to replace finite() with isfinite()
-  CFLAGS += -Dfinite\(x\)=isfinite\(x\)
 endif
 
 
