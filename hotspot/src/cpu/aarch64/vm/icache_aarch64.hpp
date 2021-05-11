@@ -31,7 +31,7 @@
 #include <libkern/OSCacheControl.h>
 
 #define __clear_cache(start, end) \
-    sys_icache_invalidate(start, (uintptr_t)end - (uintptr_t)start);
+    sys_icache_invalidate(start, (char*)end - (char*)start);
 #endif
 
 // Interface for updating the instruction cache.  Whenever the VM
