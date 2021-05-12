@@ -99,7 +99,7 @@ define SetupLauncher
     endif
 
     $1_LDFLAGS += -Wl,-all_load $(JDK_OUTPUTDIR)/objs/libjli_static.a \
-        -framework Cocoa -framework Security -framework ApplicationServices \
+        -framework Foundation -framework Security \
         -sectcreate __TEXT __info_plist $(JDK_TOPDIR)/src/macosx/lib/$$($1_PLIST_FILE)
         $1_LDFLAGS_SUFFIX += -pthread
   endif
