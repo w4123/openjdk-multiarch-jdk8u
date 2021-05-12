@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include "TargetConditionals.h"
+
 #include <jawt.h>
 
 #include "awt_DrawingSurface.h"
@@ -33,7 +35,8 @@
  */
 JNIEXPORT jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
 {
-#if (defined(__ANDROID__) || defined(JAVASE_EMBEDDED)) && defined(HEADLESS)
+// todo remove check if ios port get x11 support
+#if defined(HEADLESS) || ((defined(__ANDROID__) || defined(TARGET_OS_IOS) || defined(JAVASE_EMBEDDED)) && defined(HEADLESS))
     /* there are no AWT libs available at all */
     return JNI_FALSE;
 #else

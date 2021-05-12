@@ -766,9 +766,9 @@ BUILD_LIBRARIES += $(BUILD_LIBJPEG)
 
 ##########################################################################################
 
-ifeq ($(BUILD_HEADLESS), true)
+# ifeq ($(BUILD_HEADLESS), true)
   # Mac and Windows only use the native AWT lib, do not build libawt_headless
-  ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx_NOTIOS),)
+  # ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx_NOTIOS),)
 
     LIBAWT_HEADLESS_DIRS := $(JDK_TOPDIR)/src/share/native/sun/font \
         $(JDK_TOPDIR)/src/share/native/sun/java2d/opengl \
@@ -856,9 +856,10 @@ ifeq ($(BUILD_HEADLESS), true)
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
         LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
-        LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN)., \
+        LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
         REORDER := $(LIBAWT_HEADLESS_REORDER), \
         LDFLAGS_SUFFIX_linux := -ljvm -lawt -lm $(LIBDL) -ljava, \
+        LDFLAGS_SUFFIX_macosx := -ljvm -lawt -ljava,\
         LDFLAGS_SUFFIX_aix := -ljvm -lawt -ljava,\
         LDFLAGS_SUFFIX_solaris := $(LIBDL) -ljvm -lawt -lm -ljava $(LIBCXX) -lc, \
         OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libawt_headless, \
@@ -867,9 +868,8 @@ ifeq ($(BUILD_HEADLESS), true)
     $(BUILD_LIBAWT_HEADLESS): $(BUILD_LIBAWT)
 
     BUILD_LIBRARIES += $(BUILD_LIBAWT_HEADLESS)
-
-  endif
-endif
+#  endif
+#endif
 
 ##########################################################################################
 
@@ -1059,9 +1059,12 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
 else # OPENJDK_TARGET_OS not windows
 
-  ifeq ($(OPENJDK_TARGET_OS), macosx_NOTIOS)
-    JAWT_FILES := jawt.m
-    JAWT_LIBS := -lawt_lwawt
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+# JAWT_FILES := jawt.m
+# JAWT_LIBS := -lawt_lwawt
+    JAWT_FILES := jawt.c
+    JAWT_LIBS := -lawt_headless
+# maybe -lawt_xawt later?
   else
     JAWT_FILES := jawt.c
     JAWT_LIBS :=
@@ -1095,7 +1098,7 @@ else # OPENJDK_TARGET_OS not windows
       LDFLAGS_SUFFIX_aix := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX),\
       LDFLAGS_SUFFIX_solaris := $(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX) -lXrender, \
       LDFLAGS_SUFFIX_macosx := -Xlinker -rpath -Xlinker @loader_path $(JAWT_LIBS) \
-          -framework Cocoa $(LDFLAGS_JDKLIB_SUFFIX), \
+          -framework Foundation $(LDFLAGS_JDKLIB_SUFFIX), \
       OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjawt, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
