@@ -23,7 +23,9 @@
  * questions.
  */
 
+#ifdef __APPLE__
 #include "TargetConditionals.h"
+#endif
 
 #include <jawt.h>
 
