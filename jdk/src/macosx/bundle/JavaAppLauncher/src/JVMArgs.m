@@ -35,6 +35,8 @@ NSString *kClassPathKey = @"ClassPath";
 NSString *kArchClassPathKey = @"ClassPath.i386";
 #elif __x86_64__
 NSString *kArchClassPathKey = @"ClassPath.x86_64";
+#elif __aarch64__
+NSString *kArchClassPathKey = @"ClassPath.aarch64";
 #endif
 
 NSString *kVMOptionsKey = @"VMOptions";
@@ -42,6 +44,8 @@ NSString *kVMOptionsKey = @"VMOptions";
 NSString *kArchVMOptionsKey = @"VMOptions.i386";
 #elif __x86_64__
 NSString *kArchVMOptionsKey = @"VMOptions.x86_64";
+#elif __aarch64__
+NSString *kArchVMOptionsKey = @"VMOptions.aarch64";
 #endif
 
 
