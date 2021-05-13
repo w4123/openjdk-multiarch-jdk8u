@@ -30,12 +30,6 @@
 
 #if defined(__ANDROID__) || (!defined(HEADLESS_IGNORED) && !defined(MACOSX_NOTIOS))
 typedef struct {
-	int depth;
-	int bits_per_pixel;
-	int scanline_pad;
-} XPixmapFormatValues;
-
-typedef struct {
     unsigned int Depth;
     XPixmapFormatValues wsImageFormat;
     ImgColorData clrdata;
