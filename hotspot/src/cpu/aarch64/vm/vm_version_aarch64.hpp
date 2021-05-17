@@ -98,21 +98,51 @@ public:
   static int cpu_cpuFeatures()                { return _cpuFeatures; }
   static ByteSize dczid_el0_offset() { return byte_offset_of(PsrInfo, dczid_el0); }
   static ByteSize ctr_el0_offset()   { return byte_offset_of(PsrInfo, ctr_el0); }
+
+#ifdef __APPLE__
+  static int zva_length_no_assert() {
+      uint64_t dczid_el0;
+      __asm__ (
+      "mrs %0, DCZID_EL0\n"
+      : "=r"(dczid_el0)
+      );
+      if (!(dczid_el0 & 0x10)) {
+          return 4 << (dczid_el0 & 0xf);
+      }
+      return -1;
+  }
+#endif
   static bool is_zva_enabled() {
+#ifndef __APPLE__
     // Check the DZP bit (bit 4) of dczid_el0 is zero
     // and block size (bit 0~3) is not zero.
     return ((_psr_info.dczid_el0 & 0x10) == 0 &&
             (_psr_info.dczid_el0 & 0xf) != 0);
+#else
+    return 0 <= zva_length_no_assert();
+#endif
   }
   static int zva_length() {
     assert(is_zva_enabled(), "ZVA not available");
+#ifndef __APPLE__
     return 4 << (_psr_info.dczid_el0 & 0xf);
+#else
+    return zva_length_no_assert();
+#endif
   }
   static int icache_line_size() {
+#ifndef __APPLE__
     return (1 << (_psr_info.ctr_el0 & 0x0f)) * 4;
+#else
+    return 16; // minimal line lenght CCSIDR_EL1 can hold
+#endif
   }
   static int dcache_line_size() {
+#ifndef __APPLE__
     return (1 << ((_psr_info.ctr_el0 >> 16) & 0x0f)) * 4;
+#else
+    return icache_line_size();
+#endif
   }
 };
 
