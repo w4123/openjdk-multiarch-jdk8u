@@ -134,7 +134,9 @@ void VM_Version::get_processor_features() {
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
 
+#ifndef __APPLE__
   getPsrInfo_stub(&_psr_info);
+#endif
 
   int dcache_line = VM_Version::dcache_line_size();
 
@@ -220,17 +222,8 @@ void VM_Version::get_processor_features() {
   if (sysctl(hw_conf_cache_line, 2, &cache_line_size, &sysctllen, NULL, 0)) {
     cache_line_size = 16;
   }
-  _icache_line_size = 16; // minimal line lenght CCSIDR_EL1 can hold
-  _dcache_line_size = cache_line_size;
-
-  uint64_t dczid_el0;
-  __asm__ (
-    "mrs %0, DCZID_EL0\n"
-    : "=r"(dczid_el0)
-  );
-  if (!(dczid_el0 & 0x10)) {
-    _zva_length = 4 << (dczid_el0 & 0xf);
-  }
+  //_icache_line_size = 16; // minimal line lenght CCSIDR_EL1 can hold
+  //_dcache_line_size = cache_line_size;
 
   int family;
   sysctllen = sizeof(family);
@@ -238,9 +231,10 @@ void VM_Version::get_processor_features() {
     family = 0;
   }
   _model = family;
-  _cpu = CPU_APPLE;
+  _cpu = 'a' /* CPU_APPLE */;
 #endif
 
+    DEBUG();
   // Enable vendor specific features
   if (_cpu == CPU_CAVIUM) {
     if (_variant == 0) _cpuFeatures |= CPU_DMB_ATOMICS;
