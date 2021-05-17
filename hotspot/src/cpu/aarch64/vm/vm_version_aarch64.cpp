@@ -231,7 +231,7 @@ void VM_Version::get_processor_features() {
     family = 0;
   }
   _model = family;
-  _cpu = 'a' /* CPU_APPLE */;
+  _cpu = CPU_APPLE;
 #endif
 
     DEBUG();
