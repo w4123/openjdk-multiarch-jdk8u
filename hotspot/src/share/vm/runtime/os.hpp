@@ -93,6 +93,11 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+enum WXMode {
+  WXWrite,
+  WXExec
+};
+
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
 const bool ExecMem = true;
