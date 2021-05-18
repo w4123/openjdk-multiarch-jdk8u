@@ -234,7 +234,6 @@ void VM_Version::get_processor_features() {
   _cpu = CPU_APPLE;
 #endif
 
-    DEBUG();
   // Enable vendor specific features
   if (_cpu == CPU_CAVIUM) {
     if (_variant == 0) _cpuFeatures |= CPU_DMB_ATOMICS;
