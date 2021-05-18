@@ -209,6 +209,11 @@ JVM_handle_bsd_signal(int sig,
                       int abort_if_unrecognized) {
     ucontext_t* uc = (ucontext_t*) ucVoid;
 
+    // Enable WXWrite: this function is called by the signal handler at arbitrary
+    // point of execution.
+    // iOS port: FIXME should be there?
+    // ThreadWXEnable wx(WXWrite, thread);
+
     Thread* t = ThreadLocalStorage::get_thread_slow();
 
     // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
@@ -372,7 +377,7 @@ JVM_handle_bsd_signal(int sig,
         return true;
     }
 
-    return false; // Mute compiler
+    return true; // Mute compiler
 }
 
 void os::Bsd::init_thread_fpu_state(void) {
@@ -519,6 +524,10 @@ void os::verify_stack_alignment() {
     assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
 }
 #endif
+
+void os::current_thread_enable_wx(WXMode mode) {
+  pthread_jit_write_protect_np(mode == WXExec);
+}
 
 extern "C" {
 int SpinPause() {
