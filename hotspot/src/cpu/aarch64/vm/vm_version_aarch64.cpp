@@ -41,8 +41,9 @@
 #ifdef __linux__
 #include <sys/auxv.h>
 #include <asm/hwcap.h>
-#else
+#elif defined(__APPLE__)
 #include <sys/sysctl.h>
+#include <TargetConditionals.h>
 #endif
 
 #ifndef HWCAP_AES
@@ -116,7 +117,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 };
 
 
-#ifndef __linux__
+#ifdef __APPLE__
 static bool cpu_has(const char* optional) {
   uint32_t val;
   size_t len = sizeof(val);
@@ -207,12 +208,16 @@ void VM_Version::get_processor_features() {
   // hw.optional.floatingpoint always returns 1, see
   // https://github.com/apple/darwin-xnu/blob/master/bsd/kern/kern_mib.c#L416.
   // ID_AA64PFR0_EL1 describes AdvSIMD always equals to FP field.
+#ifndef TARGET_OS_IOS
   assert(cpu_has("hw.optional.floatingpoint"), "should be");
   assert(cpu_has("hw.optional.neon"), "should be");
+#endif
   auxv = CPU_FP | CPU_ASIMD;
 
   // Only few features are available via sysctl, see line 614
   // https://opensource.apple.com/source/xnu/xnu-6153.141.1/bsd/kern/kern_mib.c.auto.html
+  // [iOS port] FIXME: sysctl could not be read no matter if sandbox was disabled or not,
+  // so these below will always false!
   if (cpu_has("hw.optional.armv8_crc32"))     auxv |= CPU_CRC32;
   if (cpu_has("hw.optional.armv8_1_atomics")) auxv |= CPU_LSE;
 
