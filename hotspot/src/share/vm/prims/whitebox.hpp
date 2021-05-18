@@ -34,7 +34,9 @@
 
 // Entry macro to transition from JNI to VM state.
 
-#define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header)
+#define WB_ENTRY(result_type, header) JNI_ENTRY(result_type, header) \
+   MACOS_AARCH64_ONLY(ThreadWXEnable _wx(WXWrite, thread));
+
 #define WB_END JNI_END
 #define WB_METHOD_DECLARE(result_type) extern "C" result_type JNICALL
 
