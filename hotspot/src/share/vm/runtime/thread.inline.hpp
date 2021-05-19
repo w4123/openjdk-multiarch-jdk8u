@@ -59,6 +59,27 @@ inline jlong Thread::cooked_allocated_bytes() {
   return allocated_bytes;
 }
 
+#if defined(__APPLE__) && defined(AARCH64)
+inline void Thread::init_wx() {
+  assert(this == Thread::current(), "should only be called for current thread");
+  assert(!_wx_init, "second init");
+  _wx_state = WXWrite;
+  os::current_thread_enable_wx(_wx_state);
+  DEBUG_ONLY(_wx_init = true);
+}
+
+inline WXMode Thread::enable_wx(WXMode new_state) {
+  assert(this == Thread::current(), "should only be called for current thread");
+  assert(_wx_init, "should be inited");
+  WXMode old = _wx_state;
+  if (_wx_state != new_state) {
+    _wx_state = new_state;
+    os::current_thread_enable_wx(new_state);
+  }
+  return old;
+}
+#endif // __APPLE__ && AARCH64
+
 #if defined(PPC64) || defined (AARCH64)
 inline JavaThreadState JavaThread::thread_state() const    {
   return (JavaThreadState) OrderAccess::load_acquire((volatile jint*)&_thread_state);
