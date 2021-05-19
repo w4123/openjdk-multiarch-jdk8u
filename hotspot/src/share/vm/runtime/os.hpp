@@ -958,6 +958,11 @@ class os: AllStatic {
     bool _done;
   };
 
+#if defined(__APPLE__) && defined(AARCH64)
+    // Enables write or execute access to writeable and executable pages.
+  static void current_thread_enable_wx(WXMode mode);
+#endif // __APPLE__ && AARCH64
+
 #ifndef TARGET_OS_FAMILY_windows
   // Suspend/resume support
   // Protocol:

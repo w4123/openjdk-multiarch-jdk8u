@@ -25,7 +25,7 @@
 #ifndef TCG_APPLE_JIT_H
 #define TCG_APPLE_JIT_H
 
-#if defined(__aarch64__) && defined(CONFIG_DARWIN)
+#if defined(__aarch64__) && defined(__APPLE__)
 
 #define _COMM_PAGE_START_ADDRESS        (0x0000000FFFFFC000ULL) /* In TTBR0 */
 #define _COMM_PAGE_APRR_SUPPORT         (_COMM_PAGE_START_ADDRESS + 0x10C)
@@ -69,7 +69,7 @@ static __attribute__((__always_inline__)) void jit_write_protect(int enabled)
     }
 }
 
-#else /* defined(__aarch64__) && defined(CONFIG_DARWIN) */
+#else /* defined(__aarch64__) && defined(__APPLE__) */
 
 static __attribute__((__always_inline__)) bool jit_write_protect_supported(void)
 {

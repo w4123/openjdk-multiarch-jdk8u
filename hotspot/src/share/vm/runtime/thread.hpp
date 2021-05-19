@@ -715,6 +715,19 @@ protected:
   static void muxAcquire  (volatile intptr_t * Lock, const char * Name) ;
   static void muxAcquireW (volatile intptr_t * Lock, ParkEvent * ev) ;
   static void muxRelease  (volatile intptr_t * Lock) ;
+
+#if defined(__APPLE__) && defined(AARCH64)
+ private:
+  DEBUG_ONLY(bool _wx_init);
+  WXMode _wx_state;
+ public:
+  void init_wx();
+  WXMode enable_wx(WXMode new_state);
+
+  void assert_wx_state(WXMode expected) {
+    assert(_wx_state == expected, "wrong state");
+  }
+#endif // __APPLE__ && AARCH64
 };
 
 // Inline implementation of Thread::current()

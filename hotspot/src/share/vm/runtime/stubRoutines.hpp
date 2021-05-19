@@ -30,7 +30,6 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/top.hpp"
 #ifdef TARGET_ARCH_x86
 # include "nativeInst_x86.hpp"
@@ -474,20 +473,12 @@ class StubRoutines: AllStatic {
 
 inline int SafeFetch32(int* adr, int errValue) {
   assert(StubRoutines::SafeFetch32_stub(), "stub not yet generated");
-#if defined(__APPLE__) && defined(AARCH64)
-  Thread* thread = Thread::current_or_null_safe();
-  assert(thread != NULL, "required for W^X management");
-  ThreadWXEnable wx(WXExec, thread);
-#endif // __APPLE__ && AARCH64
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
   return StubRoutines::SafeFetch32_stub()(adr, errValue);
 }
 inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
   assert(StubRoutines::SafeFetchN_stub(), "stub not yet generated");
-#if defined(__APPLE__) && defined(AARCH64)
-  Thread* thread = Thread::current_or_null_safe();
-  assert(thread != NULL, "required for W^X management");
-  ThreadWXEnable wx(WXExec, thread);
-#endif // __APPLE__ && AARCH64
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
   return StubRoutines::SafeFetchN_stub()(adr, errValue);
 }
 

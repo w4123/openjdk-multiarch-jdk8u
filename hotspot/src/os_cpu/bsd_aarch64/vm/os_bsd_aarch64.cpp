@@ -76,6 +76,8 @@
 # include <fpu_control.h>
 #endif
 
+# include "tcg-apple-jit.h"
+
 #define REG_FP 29
 
 #define NOINLINE __attribute__ ((noinline))
@@ -526,7 +528,8 @@ void os::verify_stack_alignment() {
 #endif
 
 void os::current_thread_enable_wx(WXMode mode) {
-  pthread_jit_write_protect_np(mode == WXExec);
+  //pthread_jit_write_protect_np(mode == WXExec);
+  jit_write_protect(mode == WXExec);
 }
 
 extern "C" {

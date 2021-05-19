@@ -1799,7 +1799,7 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
 
 Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, jint trap_request) {
   // Enable WXWrite: current function is called from methods compiled by C2 directly
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
   // Still in Java no safepoints
   {
