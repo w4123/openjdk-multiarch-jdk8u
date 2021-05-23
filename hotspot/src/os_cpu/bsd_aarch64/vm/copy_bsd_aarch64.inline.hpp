@@ -159,7 +159,7 @@
 }
 
 static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
-  __asm volatile( "prfm pldl1strm, [%[s], #0];\n" :: [s]"r"(from) : "memory");
+  __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
   if (__builtin_expect(count <= 8, 1)) {
     COPY_SMALL(from, to, count);
     return;
@@ -172,7 +172,7 @@ static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
     memcpy(to, from, count * sizeof(HeapWord));
     return;
   }
-  __asm volatile( "prfm pldl1strm, [%[s], #0];\n" :: [s]"r"(from) : "memory");
+  __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
   if (__builtin_expect(count <= 8, 1)) {
     COPY_SMALL(from, to, count);
     return;
@@ -181,7 +181,7 @@ static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
 }
 
 static void pd_disjoint_words_atomic(HeapWord* from, HeapWord* to, size_t count) {
-  __asm volatile( "prfm pldl1strm, [%[s], #0];\n" :: [s]"r"(from) : "memory");
+  __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
   if (__builtin_expect(count <= 8, 1)) {
     COPY_SMALL(from, to, count);
     return;
