@@ -69,6 +69,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadLocalStorage.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -312,6 +313,8 @@ Thread::Thread() {
   _force_satb_flush = false;
   _paced_time = 0;
 #endif
+
+  MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
 
 void Thread::set_oom_during_evac(bool oom) {
@@ -2491,6 +2494,9 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
 // Note only the native==>VM/Java barriers can call this function and when
 // thread state is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
+  // Enable WXWrite: called directly from interpreter native wrapper.
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
+
   check_safepoint_and_suspend_for_native_trans(thread);
 
   if (thread->has_async_exception()) {
@@ -3406,6 +3412,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module before using TLS
   os::init();
 
+  MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXWrite));
+
   // Initialize system properties.
   Arguments::init_system_properties();
 
@@ -3486,6 +3494,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->initialize_thread_local_storage();
 
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
+  MACOS_AARCH64_ONLY(main_thread->init_wx());
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(
