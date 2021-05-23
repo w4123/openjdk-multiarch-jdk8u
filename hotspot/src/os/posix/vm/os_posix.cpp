@@ -128,7 +128,7 @@ void os::wait_for_keypress_at_exit(void) {
 // Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
 // so on posix, unmap the section at the start and at the end of the chunk that we mapped
 // rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment MACOS_AARCH64_ONLY(, bool exec)) {
   assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
       "Alignment must be a multiple of allocation granularity (page size)");
   assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
@@ -136,7 +136,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
 
-  char* extra_base = os::reserve_memory(extra_size, NULL, alignment);
+  char* extra_base = os::reserve_memory(extra_size, NULL, alignment MACOS_AARCH64_ONLY(, exec));
 
   if (extra_base == NULL) {
     return NULL;
