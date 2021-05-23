@@ -127,15 +127,9 @@ class os: AllStatic {
     _page_sizes[1] = 0; // sentinel
   }
 
-#if !defined(__APPLE__) || !defined(AARCH64)
   static char*  pd_reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0);
-  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
-#else
-  static char*  pd_reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0, bool executable = false);
-  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr, bool executable = false);
-#endif
+                               size_t alignment_hint = 0 MACOS_AARCH64_ONLY(, bool executable = false));
+  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr MACOS_AARCH64_ONLY(, bool executable = false));
   static void   pd_split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
