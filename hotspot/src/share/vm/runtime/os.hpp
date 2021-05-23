@@ -127,9 +127,15 @@ class os: AllStatic {
     _page_sizes[1] = 0; // sentinel
   }
 
+#if !defined(__APPLE__) || !defined(AARCH64)
   static char*  pd_reserve_memory(size_t bytes, char* addr = 0,
                                size_t alignment_hint = 0);
   static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
+#else
+  static char*  pd_reserve_memory(size_t bytes, char* addr = 0,
+                               size_t alignment_hint = 0, bool executable = false);
+  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr, bool executable = false);
+#endif
   static void   pd_split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
@@ -143,6 +149,9 @@ class os: AllStatic {
                                          size_t alignment_hint,
                                          bool executable, const char* mesg);
   static bool   pd_uncommit_memory(char* addr, size_t bytes);
+#if defined(__APPLE__) && defined(AARCH64)
+  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool executable);
+#endif
   static bool   pd_release_memory(char* addr, size_t bytes);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
@@ -323,6 +332,13 @@ class os: AllStatic {
   static char*  reserve_memory(size_t bytes, char* addr,
                                size_t alignment_hint, MEMFLAGS flags);
   static char*  reserve_memory_aligned(size_t size, size_t alignment);
+#if defined(__APPLE__) && defined(AARCH64)
+  static char*  reserve_memory(size_t bytes, char* addr = 0,
+                               size_t alignment_hint = 0, bool executable = false);
+  static char*  reserve_memory(size_t bytes, char* addr,
+                               size_t alignment_hint, MEMFLAGS flags, bool executable = false);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
+#endif
   static char*  attempt_reserve_memory_at(size_t bytes, char* addr);
   static void   split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
@@ -337,6 +353,9 @@ class os: AllStatic {
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
   static bool   uncommit_memory(char* addr, size_t bytes);
+#if defined(__APPLE__) && defined(AARCH64)
+  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
+#endif
   static bool   release_memory(char* addr, size_t bytes);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
