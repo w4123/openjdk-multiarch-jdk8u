@@ -2354,11 +2354,12 @@ static address _highest_vm_reserved_address = NULL;
 // 'requested_addr' is only treated as a hint, the return value may or
 // may not start from the requested address. Unlike Bsd mmap(), this
 // function returns NULL to indicate failure.
-static char* anon_mmap(char* requested_addr, size_t bytes, bool fixed) {
+static char* anon_mmap(char* requested_addr, size_t bytes, bool fixed MACOS_AARCH64_ONLY(, bool exec)) {
   char * addr;
   int flags;
 
-  flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS;
+  flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
+    MACOS_AARCH64_ONLY(| (exec ? MAP_JIT : 0));
   if (fixed) {
     assert((uintptr_t)requested_addr % os::Bsd::page_size() == 0, "unaligned address");
     flags |= MAP_FIXED;
@@ -2392,8 +2393,8 @@ static int anon_munmap(char * addr, size_t size) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, char* requested_addr,
-                         size_t alignment_hint) {
-  return anon_mmap(requested_addr, bytes, (requested_addr != NULL));
+                         size_t alignment_hint MACOS_AARCH64_ONLY(, bool executable)) {
+  return anon_mmap(requested_addr, bytes, (requested_addr != NULL) MACOS_AARCH64_ONLY(, executable));
 }
 
 bool os::pd_release_memory(char* addr, size_t size) {
@@ -2547,7 +2548,7 @@ bool os::can_execute_large_page_memory() {
 // Reserve memory at an arbitrary address, only if that area is
 // available (and not reserved for something else).
 
-char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
+char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr MACOS_AARCH64_ONLY(, bool exec)) {
   const int max_tries = 10;
   char* base[max_tries];
   size_t size[max_tries];
@@ -2573,7 +2574,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
 
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
-  char * addr = anon_mmap(requested_addr, bytes, false);
+  char * addr = anon_mmap(requested_addr, bytes, false MACOS_AARCH64_ONLY(, exec));
   if (addr == requested_addr) {
      return requested_addr;
   }
