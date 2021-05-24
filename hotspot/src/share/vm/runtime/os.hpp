@@ -322,18 +322,11 @@ class os: AllStatic {
 
   static int    vm_allocation_granularity();
   static char*  reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0);
+                               size_t alignment_hint = 0 MACOS_AARCH64_ONLY(, bool executable = false));
   static char*  reserve_memory(size_t bytes, char* addr,
-                               size_t alignment_hint, MEMFLAGS flags);
-  static char*  reserve_memory_aligned(size_t size, size_t alignment);
-#if defined(__APPLE__) && defined(AARCH64)
-  static char*  reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0, bool executable = false);
-  static char*  reserve_memory(size_t bytes, char* addr,
-                               size_t alignment_hint, MEMFLAGS flags, bool executable = false);
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
-#endif
-  static char*  attempt_reserve_memory_at(size_t bytes, char* addr);
+                               size_t alignment_hint, MEMFLAGS flags MACOS_AARCH64_ONLY(, bool executable = false));
+  static char*  reserve_memory_aligned(size_t size, size_t alignment MACOS_AARCH64_ONLY(, bool executable = false));
+  static char*  attempt_reserve_memory_at(size_t bytes, char* addr MACOS_AARCH64_ONLY(, bool executable = false));
   static void   split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
