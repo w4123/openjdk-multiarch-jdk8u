@@ -189,13 +189,13 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
     // important.  If available space is not detected, return NULL.
 
     if (requested_address != 0) {
-      base = os::attempt_reserve_memory_at(size, requested_address);
+      base = os::attempt_reserve_memory_at(size, requested_address MACOS_AARCH64_ONLY(, executable));
       if (failed_to_reserve_as_requested(base, requested_address, size, false)) {
         // OS ignored requested address. Try different address.
         base = NULL;
       }
     } else {
-      base = os::reserve_memory(size, NULL, alignment);
+      base = os::reserve_memory(size, NULL, alignment MACOS_AARCH64_ONLY(, executable));
     }
 
     if (base == NULL) return;
@@ -206,7 +206,7 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
       if (!os::release_memory(base, size)) fatal("os::release_memory failed");
       // Make sure that size is aligned
       size = align_size_up(size, alignment);
-      base = os::reserve_memory_aligned(size, alignment);
+      base = os::reserve_memory_aligned(size, alignment MACOS_AARCH64_ONLY(, executable));
 
       if (requested_address != 0 &&
           failed_to_reserve_as_requested(base, requested_address, size, false)) {
@@ -712,7 +712,7 @@ void VirtualSpace::shrink_by(size_t size) {
     assert(middle_high_boundary() <= aligned_upper_new_high &&
            aligned_upper_new_high + upper_needs <= upper_high_boundary(),
            "must not shrink beyond region");
-    if (!os::uncommit_memory(aligned_upper_new_high, upper_needs)) {
+    if (!os::uncommit_memory(aligned_upper_new_high, upper_needs MACOS_AARCH64_ONLY(, _executable))) {
       debug_only(warning("os::uncommit_memory failed"));
       return;
     } else {
@@ -723,7 +723,7 @@ void VirtualSpace::shrink_by(size_t size) {
     assert(lower_high_boundary() <= aligned_middle_new_high &&
            aligned_middle_new_high + middle_needs <= middle_high_boundary(),
            "must not shrink beyond region");
-    if (!os::uncommit_memory(aligned_middle_new_high, middle_needs)) {
+    if (!os::uncommit_memory(aligned_middle_new_high, middle_needs MACOS_AARCH64_ONLY(, _executable))) {
       debug_only(warning("os::uncommit_memory failed"));
       return;
     } else {
@@ -734,7 +734,7 @@ void VirtualSpace::shrink_by(size_t size) {
     assert(low_boundary() <= aligned_lower_new_high &&
            aligned_lower_new_high + lower_needs <= lower_high_boundary(),
            "must not shrink beyond region");
-    if (!os::uncommit_memory(aligned_lower_new_high, lower_needs)) {
+    if (!os::uncommit_memory(aligned_lower_new_high, lower_needs MACOS_AARCH64_ONLY(, _executable))) {
       debug_only(warning("os::uncommit_memory failed"));
       return;
     } else {
