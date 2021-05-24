@@ -1,6 +1,6 @@
 ## openjdk-multiarch-jdk8u
-- OpenJDK-jdk8u modified to enable Android cross-compilation.
-- This repo is merge from [AdoptOpenJDK/openjdk-aarch64-jdk8u:aarch64-shenandoah-jdk8u272-b10](https://github.com/AdoptOpenJDK/openjdk-aarch64-jdk8u/tree/aarch64-shenandoah-jdk8u272-b10) and [AdoptOpenJDK/openjdk-aarch32-jdk8u:jdk8u265-ga-aarch32-20200729](https://github.com/AdoptOpenJDK/openjdk-aarch32-jdk8u/tree/jdk8u265-ga-aarch32-20200729) (will update aarch32 to jdk8u272b10 later).
+- OpenJDK-jdk8u modified to enable Android and iOS cross-compilation.
+- Also, added os-cpu `bsd-aarch64` which is for jailbroken iOS 12+ (may also for older versions).
 - The build script is at [PojavLauncherTeam/android-openjdk-build-multiarch:buildjre8](https://github.com/PojavLauncherTeam/android-openjdk-build-multiarch/tree/buildjre8).
 - **Warning:** merge of aarch32 is unfinished yet, so it is not possible to cross-compile for aarch32 at the moment.
 - The original README contents is at below.
