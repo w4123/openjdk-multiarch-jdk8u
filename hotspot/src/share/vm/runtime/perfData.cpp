@@ -112,12 +112,15 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
 }
 
 PerfData::~PerfData() {
+  // iOS port: FIXME crash as breakpoint
+#ifndef __APPLE__
   if (_name != NULL) {
     FREE_C_HEAP_ARRAY(char, _name, mtInternal);
   }
   if (is_on_c_heap()) {
     FREE_C_HEAP_ARRAY(PerfDataEntry, _pdep, mtInternal);
   }
+#endif
 }
 
 void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
