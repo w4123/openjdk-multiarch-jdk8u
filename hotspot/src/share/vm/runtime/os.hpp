@@ -346,10 +346,7 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes);
-#if defined(__APPLE__) && defined(AARCH64)
-  static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
-#endif
+  static bool   uncommit_memory(char* addr, size_t bytes MACOS_AARCH64_ONLY(, bool executable = false));
   static bool   release_memory(char* addr, size_t bytes);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
