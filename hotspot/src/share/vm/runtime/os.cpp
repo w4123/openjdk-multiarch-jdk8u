@@ -1449,8 +1449,8 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
-  char* result = pd_reserve_memory(bytes, addr, alignment_hint);
+char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint MACOS_AARCH64_ONLY(, bool executable)) {
+  char* result = pd_reserve_memory(bytes, addr, alignment_hint MACOS_AARCH64_ONLY(, executable));
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   }
@@ -1459,8 +1459,8 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
 }
 
 char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
-   MEMFLAGS flags) {
-  char* result = pd_reserve_memory(bytes, addr, alignment_hint);
+   MEMFLAGS flags MACOS_AARCH64_ONLY(, bool executable)) {
+  char* result = pd_reserve_memory(bytes, addr, alignment_hint MACOS_AARCH64_ONLY(, executable));
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
     MemTracker::record_virtual_memory_type((address)result, flags);
@@ -1469,8 +1469,8 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
   return result;
 }
 
-char* os::attempt_reserve_memory_at(size_t bytes, char* addr) {
-  char* result = pd_attempt_reserve_memory_at(bytes, addr);
+char* os::attempt_reserve_memory_at(size_t bytes, char* addr MACOS_AARCH64_ONLY(, bool executable)) {
+  char* result = pd_attempt_reserve_memory_at(bytes, addr MACOS_AARCH64_ONLY(, executable));
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   }
@@ -1511,16 +1511,16 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes) {
+bool os::uncommit_memory(char* addr, size_t bytes MACOS_AARCH64_ONLY(, bool executable)) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
     Tracker tkr = MemTracker::get_virtual_memory_uncommit_tracker();
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes MACOS_AARCH64_ONLY(, executable));
     if (res) {
       tkr.record((address)addr, bytes);
     }
   } else {
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes MACOS_AARCH64_ONLY(, executable));
   }
   return res;
 }
