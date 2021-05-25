@@ -70,6 +70,8 @@ void perfMemory_exit() {
   // but it is not disengaged if this method is invoked during a
   // VM abort.
   //
+  // iOS port: FIXME crash as EXC_BREAKPOINT. Skipping this will cause
+  // a small memory leak but will be cleaned once JVM exit.
 #ifndef __APPLE__
   if (!StatSampler::is_active())
     PerfDataManager::destroy();
