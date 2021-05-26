@@ -142,10 +142,7 @@ class os: AllStatic {
   static void   pd_commit_memory_or_exit(char* addr, size_t size,
                                          size_t alignment_hint,
                                          bool executable, const char* mesg);
-  static bool   pd_uncommit_memory(char* addr, size_t bytes);
-#if defined(__APPLE__) && defined(AARCH64)
-  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool executable);
-#endif
+  static bool   pd_uncommit_memory(char* addr, size_t bytes MACOS_AARCH64_ONLY(, bool executable));
   static bool   pd_release_memory(char* addr, size_t bytes);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
