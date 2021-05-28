@@ -377,6 +377,30 @@ JVM_handle_bsd_signal(int sig,
         return true;
     }
 
+    // signal-chaining
+    if (os::Bsd::chained_handler(sig, info, ucVoid)) {
+        return true;
+    }
+
+    if (!abort_if_unrecognized) {
+        // caller wants another chance, so give it to him
+        return false;
+    }
+
+    if (pc == NULL && uc != NULL) {
+        pc = os::Bsd::ucontext_get_pc(uc);
+    }
+
+    // unmask current signal
+    sigset_t newset;
+    sigemptyset(&newset);
+    sigaddset(&newset, sig);
+    sigprocmask(SIG_UNBLOCK, &newset, NULL);
+
+    VMError err(t, sig, pc, info, ucVoid);
+    err.report_and_die();
+
+    ShouldNotReachHere();
     return true; // Mute compiler
 }
 
