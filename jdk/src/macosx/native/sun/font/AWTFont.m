@@ -23,6 +23,7 @@
  * questions.
  */
 
+#ifdef MACOSX_NOTIOS // prevent merge conflicts
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "java_awt_Font.h"
@@ -665,3 +666,4 @@ Java_sun_font_CFont_getCascadeList
         (*env)->DeleteLocalRef(env, jFontName);
     }
 }
+#endif
