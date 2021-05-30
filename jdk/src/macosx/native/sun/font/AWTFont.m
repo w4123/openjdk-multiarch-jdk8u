@@ -98,11 +98,32 @@ static void freeCFontLayoutTableCache(TTLayoutTableCache* ltc) {
     [super finalize];
 }
 
+static NSString* uiName = nil;
+static NSString* uiBoldName = nil;
+
 + (AWTFont *) awtFontForName:(NSString *)name
                        style:(int)style
 {
     // create font with family & size
-    NSFont *nsFont = [NSFont fontWithName:name size:1.0];
+    NSFont *nsFont = nil;
+
+    if ((uiName != nil && [name isEqualTo:uiName]) ||
+        (uiBoldName != nil && [name isEqualTo:uiBoldName])) {
+        if (style & java_awt_Font_BOLD) {
+            nsFont = [NSFont boldSystemFontOfSize:1.0];
+        } else {
+            nsFont = [NSFont systemFontOfSize:1.0];
+        }
+#ifdef DEBUG
+        NSLog(@"nsFont-name is : %@", nsFont.familyName);
+        NSLog(@"nsFont-family is : %@", nsFont.fontName);
+        NSLog(@"nsFont-desc-name is : %@", nsFont.fontDescriptor.postscriptName);
+#endif
+
+
+    } else {
+           nsFont = [NSFont fontWithName:name size:1.0];
+    }
 
     if (nsFont == nil) {
         // if can't get font of that name, substitute system default font
@@ -194,7 +215,7 @@ GetFamilyNameForFontName(NSString* fontname)
     return [sFontFamilyTable objectForKey:fontname];
 }
 
-static void addFont(CTFontUIFontType uiType, 
+static void addFont(CTFontUIFontType uiType,
                     NSMutableArray *allFonts,
                     NSMutableDictionary* fontFamilyTable) {
 
@@ -220,6 +241,12 @@ static void addFont(CTFontUIFontType uiType,
             CFRelease(font);
             return;
         }
+        if (uiType == kCTFontUIFontSystem) {
+            uiName = (NSString*)name;
+        }
+        if (uiType == kCTFontUIFontEmphasizedSystem) {
+            uiBoldName = (NSString*)name;
+        }
         [allFonts addObject:name];
         [fontFamilyTable setObject:family forKey:name];
 #ifdef DEBUG
@@ -231,7 +258,7 @@ static void addFont(CTFontUIFontType uiType,
         CFRelease(desc);
         CFRelease(font);
 }
- 
+
 static NSArray*
 GetFilteredFonts()
 {
@@ -274,7 +301,6 @@ GetFilteredFonts()
          */
         addFont(kCTFontUIFontSystem, allFonts, fontFamilyTable);
         addFont(kCTFontUIFontEmphasizedSystem, allFonts, fontFamilyTable);
-        addFont(kCTFontUIFontUserFixedPitch, allFonts, fontFamilyTable);
 
         sFilteredFonts = allFonts;
         sFontFamilyTable = fontFamilyTable;
@@ -662,7 +688,7 @@ Java_sun_font_CFont_getCascadeList
         NSLog(@"Font is : %@", (NSString*)fontname);
 #endif
         jstring jFontName = (jstring)JNFNSToJavaString(env, fontname);
-        (*env)->CallBooleanMethod(env, arrayListOfString, addMID, jFontName); 
+        (*env)->CallBooleanMethod(env, arrayListOfString, addMID, jFontName);
         (*env)->DeleteLocalRef(env, jFontName);
     }
 }

@@ -1049,7 +1049,7 @@ Handle SharedRuntime::find_callee_info(JavaThread* thread, Bytecodes::Code& bc, 
   // last java frame on stack (which includes native call frames)
   vframeStream vfst(thread, true);  // Do not skip and javaCalls
 
-  return find_callee_info_helper(thread, vfst, bc, callinfo, CHECK_(Handle()));
+  return find_callee_info_helper(thread, vfst, bc, callinfo, THREAD);
 }
 
 
@@ -1890,7 +1890,7 @@ int SharedRuntime::_monitor_exit_ctr=0;
 #endif
 // Handles the uncommon cases of monitor unlocking in compiled code
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* _obj, BasicLock* lock))
-  oop obj(_obj);
+   oop obj(_obj);
 #ifndef PRODUCT
   _monitor_exit_ctr++;              // monitor exit slow
 #endif

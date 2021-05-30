@@ -72,7 +72,7 @@ class oopDesc {
   markOop  mark() const         { return _mark; }
   markOop* mark_addr() const    { return (markOop*) &_mark; }
 
-  void set_mark(volatile markOop m)      { _mark = m; }
+  void set_mark(volatile markOop m)      { _mark = m;   }
 
   void    release_set_mark(markOop m);
   markOop cas_set_mark(markOop new_mark, markOop old_mark);
@@ -83,10 +83,12 @@ class oopDesc {
 
   Klass* klass() const;
   Klass* klass_or_null() const volatile;
+  Klass* klass_or_null_acquire() const volatile;
   Klass** klass_addr();
   narrowKlass* compressed_klass_addr();
 
   void set_klass(Klass* k);
+  void release_set_klass(Klass* k);
 
   // For klass field compression
   int klass_gap() const;

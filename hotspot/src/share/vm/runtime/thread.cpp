@@ -1553,7 +1553,7 @@ JavaThread::JavaThread(bool is_attaching_via_jni) :
   Thread()
 #if INCLUDE_ALL_GCS
   , _satb_mark_queue(&_satb_mark_queue_set),
-    _dirty_card_queue(&_dirty_card_queue_set)
+  _dirty_card_queue(&_dirty_card_queue_set)
 #endif // INCLUDE_ALL_GCS
 {
   initialize();
@@ -1610,7 +1610,7 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
   Thread()
 #if INCLUDE_ALL_GCS
   , _satb_mark_queue(&_satb_mark_queue_set),
-    _dirty_card_queue(&_dirty_card_queue_set)
+  _dirty_card_queue(&_dirty_card_queue_set)
 #endif // INCLUDE_ALL_GCS
 {
   if (TraceThreadEvents) {

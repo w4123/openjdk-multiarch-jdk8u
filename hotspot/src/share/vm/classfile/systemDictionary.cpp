@@ -236,15 +236,15 @@ Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader
                  class_name->as_C_string(),
                  class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string()));
   if (FieldType::is_array(class_name)) {
-    return resolve_array_class_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
+    return resolve_array_class_or_null(class_name, class_loader, protection_domain, THREAD);
   } else if (FieldType::is_obj(class_name)) {
     ResourceMark rm(THREAD);
     // Ignore wrapping L and ;.
     TempNewSymbol name = SymbolTable::new_symbol(class_name->as_C_string() + 1,
                                    class_name->utf8_length() - 2, CHECK_NULL);
-    return resolve_instance_class_or_null(name, class_loader, protection_domain, CHECK_NULL);
+    return resolve_instance_class_or_null(name, class_loader, protection_domain, THREAD);
   } else {
-    return resolve_instance_class_or_null(class_name, class_loader, protection_domain, CHECK_NULL);
+    return resolve_instance_class_or_null(class_name, class_loader, protection_domain, THREAD);
   }
 }
 
@@ -360,7 +360,7 @@ Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
        ((quicksuperk = InstanceKlass::cast(childk)->super()) != NULL) &&
 
          ((quicksuperk->name() == class_name) &&
-          (quicksuperk->class_loader() == class_loader()))) {
+            (quicksuperk->class_loader()  == class_loader()))) {
            return quicksuperk;
     } else {
       PlaceholderEntry* probe = placeholders()->get_entry(p_index, p_hash, child_name, loader_data);
@@ -501,7 +501,7 @@ void SystemDictionary::double_lock_wait(Handle lockObject, TRAPS) {
   bool calledholdinglock
       = ObjectSynchronizer::current_thread_holds_lock((JavaThread*)THREAD, lockObject);
   assert(calledholdinglock,"must hold lock for notify");
-  assert((lockObject() != _system_loader_lock_obj && !is_parallelCapable(lockObject)), "unexpected double_lock_wait");
+  assert((!(lockObject() == _system_loader_lock_obj) && !is_parallelCapable(lockObject)), "unexpected double_lock_wait");
   ObjectSynchronizer::notifyall(lockObject, THREAD);
   intptr_t recursions =  ObjectSynchronizer::complete_exit(lockObject, THREAD);
   SystemDictionary_lock->wait();
@@ -834,7 +834,7 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
       // If everything was OK (no exceptions, no null return value), and
       // class_loader is NOT the defining loader, do a little more bookkeeping.
       if (!HAS_PENDING_EXCEPTION && !k.is_null() &&
-          k->class_loader() != class_loader()) {
+        k->class_loader() != class_loader()) {
 
         check_constraints(d_index, d_hash, k, class_loader, false, THREAD);
 
@@ -1026,14 +1026,21 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
   //
   // Note: "name" is updated.
 
-  instanceKlassHandle k = ClassFileParser(st).parseClassFile(class_name,
-                                                             loader_data,
-                                                             protection_domain,
-                                                             host_klass,
-                                                             cp_patches,
-                                                             parsed_name,
-                                                             true,
-                                                             THREAD);
+  instanceKlassHandle k;
+  {
+  // Callers are expected to declare a ResourceMark to determine
+  // the lifetime of any updated (resource) allocated under
+  // this call to parseClassFile
+  ResourceMark rm(THREAD);
+  k = ClassFileParser(st).parseClassFile(class_name,
+                                         loader_data,
+                                         protection_domain,
+                                         host_klass,
+                                         cp_patches,
+                                         parsed_name,
+                                         true,
+                                         THREAD);
+  }
 
 
   if (host_klass.not_null() && k.not_null()) {
@@ -1120,6 +1127,10 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   //
   // Note: "name" is updated.
 
+  // Callers are expected to declare a ResourceMark to determine
+  // the lifetime of any updated (resource) allocated under
+  // this call to parseClassFile
+  ResourceMark rm(THREAD);
   ClassFileParser parser(st);
   instanceKlassHandle k = parser.parseClassFile(class_name,
                                                 loader_data,

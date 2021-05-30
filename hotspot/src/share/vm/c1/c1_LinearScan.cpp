@@ -4560,7 +4560,7 @@ void Interval::print(outputStream* out) const {
       opr = LIR_OprFact::single_xmm(assigned_reg() - pd_first_xmm_reg);
 #endif
     } else {
-#ifndef AARCH64
+#if !defined(AARCH64)
       ShouldNotReachHere();
 #endif
     }
