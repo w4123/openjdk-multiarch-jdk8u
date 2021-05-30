@@ -89,6 +89,12 @@ define add_native_source
     ifeq (,$$(filter %.s,$2))
       # And this is the dependency file for this obj file.
       $1_$2_DEP:=$$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_$2_OBJ))
+
+      ifeq ($(OPENJDK_TARGET_OS), macosx)
+        # Workaround for iOS port: dependency file does not exists.
+        $1_$2_DEP:=""
+      endif
+
       # Include previously generated dependency information. (if it exists)
       -include $$($1_$2_DEP)
 
@@ -518,6 +524,10 @@ define SetupNativeCompilation
     $1_EXTRA_LDFLAGS+=$$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
     ifeq ($(OPENJDK_TARGET_OS), windows)
       $1_EXTRA_LDFLAGS+="-implib:$$($1_OBJECT_DIR)/$$($1_LIBRARY).lib"
+    endif
+
+    ifeq ($(OPENJDK_TARGET_OS), macosx)
+      $1_EXTRA_LDFLAGS+="-dynamiclib"
     endif
 
     $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)
