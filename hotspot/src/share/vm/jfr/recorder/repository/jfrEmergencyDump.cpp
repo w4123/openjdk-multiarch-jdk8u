@@ -40,6 +40,11 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/growableArray.hpp"
 
+#ifdef __ANDROID__
+# define S_IREAD S_IRUSR
+# define S_IWRITE S_IWUSR
+#endif
+
 static const char vm_error_filename_fmt[] = "hs_err_pid%p.jfr";
 static const char vm_oom_filename_fmt[] = "hs_oom_pid%p.jfr";
 static const char vm_soe_filename_fmt[] = "hs_soe_pid%p.jfr";
