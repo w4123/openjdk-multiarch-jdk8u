@@ -23,6 +23,7 @@
  * questions.
  */
 
+#ifdef MACOSX_NOTIOS // prevent merge conflicts
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
@@ -1506,4 +1507,5 @@ JNF_COCOA_ENTER(env);
 
 JNF_COCOA_EXIT(env);
 }
+#endif
 
