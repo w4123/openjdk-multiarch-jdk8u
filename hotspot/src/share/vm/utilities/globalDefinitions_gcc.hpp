@@ -162,7 +162,7 @@ typedef uint32_t juint;
 // which will cause compile errors. Therefore, we should switch back to old
 // type `unsigned long`. On 64-bit, `long` is 8-byte long, which is same as
 // `long long`, so just change it.
-#id !defined(__APPLE__) || !defined(AARCH64)
+#if !defined(__APPLE__) || !defined(AARCH64)
 typedef uint64_t julong;
 #else
 typedef unsigned long julong;
