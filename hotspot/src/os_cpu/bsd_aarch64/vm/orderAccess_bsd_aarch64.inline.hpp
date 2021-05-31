@@ -64,7 +64,7 @@ inline jushort   OrderAccess::load_acquire(volatile jushort*  p)
 { jushort data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
 inline juint     OrderAccess::load_acquire(volatile juint*    p)
 { juint data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline unsigned long   OrderAccess::load_acquire(volatile julong*  p)
+inline julong   OrderAccess::load_acquire(volatile julong*  p)
 { julong data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
 inline jfloat   OrderAccess::load_acquire(volatile jfloat*  p)
 { jfloat data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
