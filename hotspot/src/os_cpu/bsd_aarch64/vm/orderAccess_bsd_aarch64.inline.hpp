@@ -31,12 +31,6 @@
 #include "runtime/os.hpp"
 #include "vm_version_aarch64.hpp"
 
-#ifndef __APPLE__
-# typedef fjulong julong
-#else
-# typedef fjulong unsigned long
-#endif
-
 // Implementation of class OrderAccess.
 
 inline void OrderAccess::loadload()   { acquire(); }
@@ -70,8 +64,8 @@ inline jushort   OrderAccess::load_acquire(volatile jushort*  p)
 { jushort data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
 inline juint     OrderAccess::load_acquire(volatile juint*    p)
 { juint data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
-inline unsigned long   OrderAccess::load_acquire(volatile fjulong*  p)
-{ fjulong data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
+inline unsigned long   OrderAccess::load_acquire(volatile julong*  p)
+{ julong data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
 inline jfloat   OrderAccess::load_acquire(volatile jfloat*  p)
 { jfloat data; __atomic_load(p, &data, __ATOMIC_ACQUIRE); return data; }
 inline jdouble  OrderAccess::load_acquire(volatile jdouble* p)
@@ -97,7 +91,7 @@ inline void     OrderAccess::release_store(volatile jushort* p, jushort v)
 { __atomic_store(p, &v, __ATOMIC_RELEASE); }
 inline void     OrderAccess::release_store(volatile juint*   p, juint   v)
 { __atomic_store(p, &v, __ATOMIC_RELEASE); }
-inline void     OrderAccess::release_store(volatile fjulong*  p, fjulong  v)
+inline void     OrderAccess::release_store(volatile julong*  p, julong  v)
 { __atomic_store(p, &v, __ATOMIC_RELEASE); }
 inline void     OrderAccess::release_store(volatile jfloat*  p, jfloat  v)
 { __atomic_store(p, &v, __ATOMIC_RELEASE); }
@@ -122,7 +116,7 @@ inline void     OrderAccess::store_fence(jushort* p, jushort v)
 { __atomic_store(p, &v, __ATOMIC_RELAXED); fence(); }
 inline void     OrderAccess::store_fence(juint*   p, juint   v)
 { __atomic_store(p, &v, __ATOMIC_RELAXED); fence(); }
-inline void     OrderAccess::store_fence(fjulong*  p, fjulong  v)
+inline void     OrderAccess::store_fence(julong*  p, julong  v)
 { __atomic_store(p, &v, __ATOMIC_RELAXED); fence(); }
 inline void     OrderAccess::store_fence(jfloat*  p, jfloat  v)
 { __atomic_store(p, &v, __ATOMIC_RELAXED); fence(); }
@@ -140,7 +134,7 @@ inline void     OrderAccess::release_store_fence(volatile jlong*   p, jlong   v)
 inline void     OrderAccess::release_store_fence(volatile jubyte*  p, jubyte  v) { release_store(p, v); fence(); }
 inline void     OrderAccess::release_store_fence(volatile jushort* p, jushort v) { release_store(p, v); fence(); }
 inline void     OrderAccess::release_store_fence(volatile juint*   p, juint   v) { release_store(p, v); fence(); }
-inline void     OrderAccess::release_store_fence(volatile fjulong* p, fjulong v) { release_store(p, v); fence(); }
+inline void     OrderAccess::release_store_fence(volatile julong*  p, julong  v) { release_store(p, v); fence(); }
 inline void     OrderAccess::release_store_fence(volatile jfloat*  p, jfloat  v) { release_store(p, v); fence(); }
 inline void     OrderAccess::release_store_fence(volatile jdouble* p, jdouble v) { release_store(p, v); fence(); }
 
