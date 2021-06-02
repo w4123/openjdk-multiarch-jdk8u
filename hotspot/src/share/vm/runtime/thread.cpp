@@ -1678,6 +1678,8 @@ JavaThread::~JavaThread() {
 
 // The first routine called by a new Java thread
 void JavaThread::run() {
+  MACOS_AARCH64_ONLY(this->init_wx());
+
   // initialize thread-local alloc buffer related fields
   this->initialize_tlab();
 
