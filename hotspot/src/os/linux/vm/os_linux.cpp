@@ -1407,6 +1407,12 @@ void os::Linux::clock_init() {
   if (handle == NULL) {
     handle = dlopen("librt.so", RTLD_LAZY);
   }
+#ifdef __ANDROID__
+  if (handle == NULL) {
+    // libc has clock_getres and clock_gettime
+    handle = RTLD_DEFAULT;
+  }
+#endif
 
   if (handle) {
     int (*clock_getres_func)(clockid_t, struct timespec*) =
@@ -1431,7 +1437,9 @@ void os::Linux::clock_init() {
         return;
       } else {
         // close librt if there is no monotonic clock
+#ifndef __ANDROID__ // we should not close RTLD_DEFAULT :)
         dlclose(handle);
+#endif
       }
     }
   }
