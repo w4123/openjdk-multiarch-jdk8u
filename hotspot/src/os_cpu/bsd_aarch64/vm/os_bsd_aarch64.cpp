@@ -287,7 +287,8 @@ JVM_handle_bsd_signal(int sig,
       // check if fault address is within thread stack
       if (addr < thread->stack_base() &&
           addr >= thread->stack_base() - thread->stack_size()) {
-        Thread::WXWriteFromExecSetter wx_write;
+        // Thread::WXWriteFromExecSetter wx_write;
+        ThreadWXEnable wx(WXWrite, thread);
         // stack overflow
         if (thread->in_stack_yellow_zone(addr)) {
           thread->disable_stack_yellow_zone();
@@ -316,7 +317,8 @@ JVM_handle_bsd_signal(int sig,
     if (thread->thread_state() == _thread_in_Java && stub == NULL) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
-      Thread::WXWriteFromExecSetter wx_write;
+      // Thread::WXWriteFromExecSetter wx_write;
+      ThreadWXEnable wx(WXWrite, thread);
 
       // Handle signal from NativeJump::patch_verified_entry().
       if ((sig == SIGILL)
