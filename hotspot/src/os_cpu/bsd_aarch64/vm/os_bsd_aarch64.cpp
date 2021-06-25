@@ -80,6 +80,7 @@
 
 // needed by current_stack_region() workaround for Mavericks
 #if defined(__APPLE__)
+# include "tcg-apple-jit.h"
 # include <errno.h>
 # include <sys/types.h>
 # include <sys/sysctl.h>
@@ -687,6 +688,11 @@ void os::verify_stack_alignment() {
   assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
 }
 #endif
+
+void os::current_thread_enable_wx(WXMode mode) {
+  //pthread_jit_write_protect_np(mode == WXExec);
+  jit_write_protect(mode == WXExec);
+}
 
 extern "C" {
   int SpinPause() {
