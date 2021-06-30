@@ -236,12 +236,25 @@ oop PSPromotionManager::copy_to_survivor_space(oop o) {
       // Try to deallocate the space.  If it was directly allocated we cannot
       // deallocate it, so we have to test.  If the deallocation fails,
       // overwrite with a filler object.
+      // On 64-bit systems it is possible that the size of an array of longs or
+      // objects exceeds the maximum size of a single filler object, so we have
+      // to use CollectedHeap::fill_with_objects() here.
       if (new_obj_is_tenured) {
         if (!_old_lab.unallocate_object((HeapWord*) new_obj, new_obj_size)) {
-          CollectedHeap::fill_with_object((HeapWord*) new_obj, new_obj_size);
+          CollectedHeap::fill_with_objects((HeapWord*) new_obj, new_obj_size);
+#ifdef _LP64
+          // If there are more than one filler objects,
+          // then update the object start array
+          size_t offset = new_obj->size();
+          while (offset < new_obj_size) {
+            HeapWord* p = ((HeapWord*) new_obj) + offset;
+            old_gen()->start_array()->allocate_block(p);
+            offset += oop(p)->size();
+          }
+#endif
         }
       } else if (!_young_lab.unallocate_object((HeapWord*) new_obj, new_obj_size)) {
-        CollectedHeap::fill_with_object((HeapWord*) new_obj, new_obj_size);
+        CollectedHeap::fill_with_objects((HeapWord*) new_obj, new_obj_size);
       }
 
       // don't update this before the unallocation!

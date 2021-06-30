@@ -64,6 +64,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#endif
 
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
 
@@ -80,6 +83,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true)) {
 
   JFR_ONLY(INIT_ID(this);)
+  CRS_ONLY(CRS_INIT_ID(this);)
 }
 
 void ClassLoaderData::init_dependencies(TRAPS) {
@@ -471,6 +475,7 @@ void ClassLoaderData::free_deallocate_list() {
       // There are only three types of metadata that we deallocate directly.
       // Cast them so they can be used by the template function.
       if (m->is_method()) {
+        CRS_ONLY(ConnectedRuntime::notify_metaspace_eviction((Method*)m);)
         MetadataFactory::free_metadata(this, (Method*)m);
       } else if (m->is_constantPool()) {
         MetadataFactory::free_metadata(this, (ConstantPool*)m);

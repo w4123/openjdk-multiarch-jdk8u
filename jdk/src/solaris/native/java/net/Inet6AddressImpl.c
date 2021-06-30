@@ -23,6 +23,12 @@
  * questions.
  */
 
+/*
+ * This file has been modified by Azul Systems, Inc. in 2014. These
+ * modifications are Copyright (c) 2014 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above. 
+ */
+
 #include <errno.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -101,7 +107,7 @@ Java_java_net_Inet6AddressImpl_getLocalHostName(JNIEnv *env, jobject this) {
 
 #ifdef MACOSX
 /* also called from Inet4AddressImpl.c */
-__private_extern__ jobjectArray
+__attribute__((visibility("hidden"))) jobjectArray
 lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
 {
     jobjectArray result = NULL;

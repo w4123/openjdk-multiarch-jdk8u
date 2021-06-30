@@ -38,4 +38,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
+#if defined(SOLARIS)
+#define SUPPORT_RESERVED_STACK_AREA
+#endif
+
 #endif // CPU_SPARC_VM_GLOBALDEFINITIONS_SPARC_HPP

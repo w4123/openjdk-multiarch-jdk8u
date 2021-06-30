@@ -29,7 +29,7 @@ package com.sun.org.apache.xml.internal.security.utils;
  * touch this unless you're a grizzled classloading guru veteran who is going to
  * verify any change on 6 different application servers.
  */
-final class ClassLoaderUtils {
+public final class ClassLoaderUtils {
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(ClassLoaderUtils.class);
@@ -51,7 +51,7 @@ final class ClassLoaderUtils {
      * @param callingClass The Class object of the calling object
      * @throws ClassNotFoundException If the class cannot be found anywhere.
      */
-    static Class<?> loadClass(String className, Class<?> callingClass)
+    public static Class<?> loadClass(String className, Class<?> callingClass)
         throws ClassNotFoundException {
         try {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();

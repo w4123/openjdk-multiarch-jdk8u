@@ -35,6 +35,11 @@
 . ${TESTSRC}/../common/CommonSetup.sh
 . ${TESTSRC}/../common/ApplicationSetup.sh
 
+if ! [ -f $HSDB ]; then
+  printf "No HSDB (%s), not applicable\n" $HSDB
+  exit 0
+fi
+
 # Start application and use PORTFILE for coordination
 PORTFILE="${TESTCLASSES}"/shutdown.port
 startApplication SimpleApplication "${PORTFILE}"

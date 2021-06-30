@@ -41,6 +41,7 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE })
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
+@jdk.Exported
 public @interface StackTrace {
     /**
      * Settings name {@code "stackTrace"} to be used for enabling event stack traces.

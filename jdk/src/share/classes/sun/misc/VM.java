@@ -318,6 +318,12 @@ public class VM {
 
         // used by sun.misc.URLClassPath
         props.remove("sun.cds.enableSharedLookupCache");
+
+        // used by java.sesurity.Security to enable OpenJSSE provider
+        props.remove("org.openjsse.provider");
+
+        // used by java.sesurity.Security to enable Legacy8uJSSE provider
+        props.remove("org.legacy8ujsse.provider");
     }
 
     // Initialize any miscellenous operating system settings that need to be

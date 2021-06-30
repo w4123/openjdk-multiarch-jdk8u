@@ -26,6 +26,7 @@ package jdk.jfr.jvm;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -46,7 +47,6 @@ import jdk.test.lib.process.ProcessTools;
  *
  * @library /lib /
  *
-
  *
  * @run main/othervm jdk.jfr.jvm.TestDumpOnCrash
  */
@@ -137,4 +137,3 @@ public class TestDumpOnCrash {
         return Long.parseLong(pid);
     }
 }
-

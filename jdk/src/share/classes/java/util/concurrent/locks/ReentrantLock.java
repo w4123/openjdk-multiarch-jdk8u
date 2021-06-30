@@ -36,6 +36,7 @@
 package java.util.concurrent.locks;
 import java.util.concurrent.TimeUnit;
 import java.util.Collection;
+import jdk.internal.vm.annotation.ReservedStackAccess;
 
 /**
  * A reentrant mutual exclusion {@link Lock} with the same basic
@@ -126,6 +127,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * Performs non-fair tryLock.  tryAcquire is implemented in
          * subclasses, but both need nonfair try for trylock method.
          */
+        @ReservedStackAccess
         final boolean nonfairTryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
             int c = getState();
@@ -145,6 +147,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             return false;
         }
 
+        @ReservedStackAccess
         protected final boolean tryRelease(int releases) {
             int c = getState() - releases;
             if (Thread.currentThread() != getExclusiveOwnerThread())
@@ -202,6 +205,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * Performs lock.  Try immediate barge, backing up to normal
          * acquire on failure.
          */
+        @ReservedStackAccess
         final void lock() {
             if (compareAndSetState(0, 1))
                 setExclusiveOwnerThread(Thread.currentThread());
@@ -228,6 +232,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * Fair version of tryAcquire.  Don't grant access unless
          * recursive call or no waiters or is first.
          */
+        @ReservedStackAccess
         protected final boolean tryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
             int c = getState();

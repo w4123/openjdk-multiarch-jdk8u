@@ -41,5 +41,6 @@ import java.lang.annotation.Target;
 @Label("Flag")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+@jdk.Exported
 public @interface BooleanFlag {
 }

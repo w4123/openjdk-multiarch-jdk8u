@@ -41,18 +41,18 @@ import java.util.zip.ZipOutputStream;
  * from a test library, but want to use this class in a sub-process.
  *
  * For example, to build the following library class:
- * test/lib/sun/hotspot/WhiteBox.java
+ * testlibrary/whitebox/sun/hotspot/WhiteBox.java
  *
  * You would use the following tags:
  *
- * @library /test/lib
+ * @library /testlibrary/whitebox
  * @build sun.hotspot.WhiteBox
  *
  * JTREG would build the class file under
- * ${JTWork}/classes/test/lib/sun/hotspot/WhiteBox.class
+ * ${JTWork}/classes/testlibrary/whitebox/sun/hotspot/WhiteBox.class
  *
  * With you run your main test class using "@run main MyMainClass", JTREG would setup the
- * -classpath to include "${JTWork}/classes/test/lib/", so MyMainClass would be able to
+ * -classpath to include "${JTWork}/classes/testlibrary/whitebox", so MyMainClass would be able to
  * load the WhiteBox class.
  *
  * However, if you run a sub process, and do not wish to use the exact same -classpath,

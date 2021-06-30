@@ -193,4 +193,5 @@
  *
  * @since 8
  */
+@jdk.Exported
 package jdk.jfr;

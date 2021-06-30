@@ -533,6 +533,9 @@ public:
   static void initialize();
 
   // Override Abstract_VM_Version implementation
+  static void print_platform_virtualization_info(outputStream*);
+
+  // Override Abstract_VM_Version implementation
   static bool use_biased_locking();
 
   // Asserts
@@ -751,6 +754,11 @@ public:
     intx count = PrefetchFieldsAhead;
     return count >= 0 ? count : 1;
   }
+
+  // support functions for virtualization detection
+private:
+  static void check_virt_cpuid(uint32_t idx, uint32_t *regs);
+  static void check_virtualizations();
 };
 
 #endif // CPU_X86_VM_VM_VERSION_X86_HPP

@@ -493,4 +493,32 @@ endef
 
 ################################################################################
 
+isTargetOs = \
+  $(strip $(if $(filter $(OPENJDK_TARGET_OS), $1), true, false))
+
+# Find non directories using the find utility in the shell. Safe to call for
+# non existing directories, or directories containing wildcards.
+#
+# Files containing space will get spaces replaced with ? because GNU Make
+# cannot handle lists of files with space in them. By using ?, make will match
+# the wildcard to space in many situations so we don't need to replace back
+# to space on every use. While not a complete solution it does allow some uses
+# of FindFiles to function with spaces in file names, including for
+# SetupCopyFiles. Unfortunately this does not work for WildcardFindFiles so
+# if files with spaces are anticipated, use ShellFindFiles directly.
+#
+# $1 - Directories to start search in.
+# $2 - Optional search patterns, empty means find everything. Patterns use
+#      standard file wildcards (* and ?) and should not be quoted.
+# $3 - Optional options to find.
+ShellFindFiles = \
+    $(if $(wildcard $1), \
+      $(sort \
+          $(shell $(FIND) $3 $(patsubst %/,%,$(wildcard $1)) \( -type f -o -type l \) \
+              $(if $(strip $2), -a \( -name "$(firstword $2)" \
+              $(foreach p, $(filter-out $(firstword $2), $2), -o -name "$(p)") \)) \
+              | $(TR) ' ' '?' \
+          ) \
+      ) \
+    )
 endif # _MAKEBASE_GMK

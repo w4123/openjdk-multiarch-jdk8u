@@ -39,7 +39,6 @@ import sun.security.util.Debug;
 import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
-import sun.security.x509.AlgIdDSA;
 import sun.security.jca.JCAUtil;
 
 /**
@@ -203,10 +202,9 @@ abstract class DSA extends SignatureSpi {
     /**
      * Sign all the data thus far updated. The signature is formatted
      * according to the Canonical Encoding Rules, returned as a DER
-     * sequence of Integer, r and s.
+     * sequence of Integers, r and s.
      *
-     * @return a signature block formatted according to the Canonical
-     * Encoding Rules.
+     * @return a signature block
      *
      * @exception SignatureException if the signature object was not
      * properly initialized, or if another exception occurs.
@@ -219,12 +217,13 @@ abstract class DSA extends SignatureSpi {
         BigInteger r = generateR(presetP, presetQ, presetG, k);
         BigInteger s = generateS(presetX, presetQ, r, k);
 
+        // Return the DER-encoded ASN.1 form
         try {
             DerOutputStream outseq = new DerOutputStream(100);
             outseq.putInteger(r);
             outseq.putInteger(s);
             DerValue result = new DerValue(DerValue.tag_Sequence,
-                                           outseq.toByteArray());
+                    outseq.toByteArray());
 
             return result.toByteArray();
 
@@ -236,7 +235,7 @@ abstract class DSA extends SignatureSpi {
     /**
      * Verify all the data thus far updated.
      *
-     * @param signature the alledged signature, encoded using the
+     * @param signature the alleged signature, encoded using the
      * Canonical Encoding Rules, as a sequence of integers, r and s.
      *
      * @exception SignatureException if the signature object was not
@@ -253,8 +252,9 @@ abstract class DSA extends SignatureSpi {
     /**
      * Verify all the data thus far updated.
      *
-     * @param signature the alledged signature, encoded using the
-     * Canonical Encoding Rules, as a sequence of integers, r and s.
+     * @param signature the alleged signature, the signature is formatted
+     * according to the Canonical Encoding Rules, as a DER sequence of
+     * Integers, r and s.
      *
      * @param offset the offset to start from in the array of bytes.
      *
@@ -271,6 +271,7 @@ abstract class DSA extends SignatureSpi {
 
         BigInteger r = null;
         BigInteger s = null;
+
         // first decode the signature.
         try {
             // Enforce strict DER checking for signatures
@@ -474,9 +475,9 @@ abstract class DSA extends SignatureSpi {
     }
 
     /**
-     * RawDSA implementation.
+     * Raw DSA.
      *
-     * RawDSA requires the data to be exactly 20 bytes long. If it is
+     * Raw DSA requires the data to be exactly 20 bytes long. If it is
      * not, a SignatureException is thrown when sign()/verify() is called
      * per JCA spec.
      */
@@ -553,5 +554,7 @@ abstract class DSA extends SignatureSpi {
         public RawDSA() throws NoSuchAlgorithmException {
             super(new NullDigest20());
         }
+
     }
 }
+

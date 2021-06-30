@@ -43,6 +43,7 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE, ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @MetadataDefinition
+@jdk.Exported
 public @interface Name {
     /**
      * Returns the name.

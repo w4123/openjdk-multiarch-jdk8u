@@ -28,7 +28,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
+#include "runtime/stubRoutines.inline.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER2
@@ -53,6 +53,7 @@ address StubRoutines::_throw_AbstractMethodError_entry          = NULL;
 address StubRoutines::_throw_IncompatibleClassChangeError_entry = NULL;
 address StubRoutines::_throw_NullPointerException_at_call_entry = NULL;
 address StubRoutines::_throw_StackOverflowError_entry           = NULL;
+address StubRoutines::_throw_delayed_StackOverflowError_entry   = NULL;
 address StubRoutines::_handler_for_unsafe_access_entry          = NULL;
 jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_verify_oop_subroutine_entry              = NULL;
@@ -124,6 +125,7 @@ address StubRoutines::_aescrypt_encryptBlock               = NULL;
 address StubRoutines::_aescrypt_decryptBlock               = NULL;
 address StubRoutines::_cipherBlockChaining_encryptAESCrypt = NULL;
 address StubRoutines::_cipherBlockChaining_decryptAESCrypt = NULL;
+address StubRoutines::_counterMode_AESCrypt                = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 
 address StubRoutines::_sha1_implCompress     = NULL;
@@ -237,6 +239,8 @@ void StubRoutines::initialize2() {
 
 #ifdef ASSERT
 
+  os::current_thread_enable_wx(WXExec);
+
 #define TEST_ARRAYCOPY(type)                                                    \
   test_arraycopy_func(          type##_arraycopy(),          sizeof(type));     \
   test_arraycopy_func(          type##_disjoint_arraycopy(), sizeof(type));     \
@@ -309,6 +313,8 @@ void StubRoutines::initialize2() {
   // Aligned to BytesPerLong
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
   test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
+
+  os::current_thread_enable_wx(WXWrite);
 
 #endif
 }

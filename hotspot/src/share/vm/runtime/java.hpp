@@ -76,6 +76,7 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
   static JDK_Version _current;
   static const char* _runtime_name;
   static const char* _runtime_version;
+  static const char* _vendor_version;
 
   // In this class, we promote the minor version of release to be the
   // major version for releases >= 5 in anticipation of the JDK doing the
@@ -195,6 +196,13 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
   }
   static void set_runtime_version(const char* version) {
     _runtime_version = version;
+  }
+
+  static const char* vendor_version() {
+      return _vendor_version;
+  }
+  static void set_vendor_version(const char* version) {
+      _vendor_version = version;
   }
 
   // Convenience methods for queries on the current major/minor version

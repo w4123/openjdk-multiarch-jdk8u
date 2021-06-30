@@ -183,7 +183,7 @@ void SafepointSynchronize::begin() {
     // In the future we should investigate whether CMS can use the
     // more-general mechanism below.  DLD (01/05).
     ConcurrentMarkSweepThread::synchronize(false);
-  } else if (UseG1GC || (UseShenandoahGC && UseStringDeduplication)) {
+  } else if (UseG1GC) {
     SuspendibleThreadSet::synchronize();
   }
 #endif // INCLUDE_ALL_GCS
@@ -589,7 +589,7 @@ void SafepointSynchronize::end() {
   // If there are any concurrent GC threads resume them.
   if (UseConcMarkSweepGC) {
     ConcurrentMarkSweepThread::desynchronize(false);
-  } else if (UseG1GC || (UseShenandoahGC && UseStringDeduplication)) {
+  } else if (UseG1GC) {
     SuspendibleThreadSet::desynchronize();
   }
 #endif // INCLUDE_ALL_GCS
@@ -880,6 +880,8 @@ void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   assert(thread->is_Java_thread(), "polling reference encountered by VM thread");
   assert(thread->thread_state() == _thread_in_Java, "should come from Java code");
   assert(SafepointSynchronize::is_synchronizing(), "polling encountered outside safepoint synchronization");
+
+  Thread::WXWriteFromExecSetter wx_write;
 
   if (ShowSafepointMsgs) {
     tty->print("handle_polling_page_exception: ");

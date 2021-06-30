@@ -56,7 +56,6 @@ public enum VMOps {
   G1CollectFull,
   G1CollectForAllocation,
   G1IncCollectionPause,
-  ShenandoahOperation,
   EnableBiasedLocking,
   RevokeBias,
   BulkRevokeBias,
@@ -80,7 +79,6 @@ public enum VMOps {
   HeapWalkOperation,
   HeapIterateOperation,
   ReportJavaOutOfMemory,
-  JFRCheckpoint,
   Exit,
   LinuxDllLoad,
   Terminating

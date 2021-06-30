@@ -30,10 +30,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.URL;
+import jdk.internal.event.EventHelper;
+import jdk.jfr.events.SecurityPropertyModificationEvent;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 
 import sun.security.jca.*;
+import sun.misc.VM;
 
 /**
  * <p>This class centralizes all security properties and common security
@@ -177,6 +180,28 @@ public final class Security {
                     }
                 }
             }
+            // OpenJSSE provider hook
+            // Enable OpenJSSE provider from standard location:
+            // <java.home>/lib/security/openjsse.security
+            // <java.home>/lib/ext/openjsse.jar
+            boolean openJSSEEnabled = "true".equals(VM.getSavedProperty("org.openjsse.provider"));
+
+            // Legacy8uJSSE provider hook
+            // Enable Legacy8uJSSE provider from standard location:
+            // <java.home>/lib/security/legacy8ujsse.security
+            // <java.home>/lib/ext/legacy8ujsse.jar
+            boolean legacy8uJSSEEnabled = "true".equals(VM.getSavedProperty("org.legacy8ujsse.provider"));
+
+            if (openJSSEEnabled && legacy8uJSSEEnabled) {
+                throw new ProviderException(
+                        "Unable to use OpenJSSE and Legacy8uJSSE providers simultaneously");
+            } else if (openJSSEEnabled) {
+                if(setJSSEProvider("OpenJSSE", "openjsse", "org.openjsse.net.www.protocol", props))
+                    loadedProps = true;
+            } else if (legacy8uJSSEEnabled) {
+                if (setJSSEProvider("Legacy8uJSSE", "legacy8ujsse", null, props))
+                    loadedProps = true;
+            }
         }
 
         if (!loadedProps) {
@@ -187,6 +212,44 @@ public final class Security {
             }
         }
 
+    }
+
+    private static boolean setJSSEProvider(String name, String pname, String pkg, Properties props) {
+        File jssePropFile = securityPropFile(pname + ".security");
+        String sep = File.separator;
+        File jsseJarFile = new File(
+                jssePropFile.getParentFile().getParent(),
+                sep + "ext" + sep + pname + ".jar");
+        boolean loadedProps = false;
+        if (jssePropFile.exists() && jsseJarFile.exists()) {
+            try (FileInputStream fis = new FileInputStream(jssePropFile);
+                 InputStream is = new BufferedInputStream(fis);) {
+                props.load(is);
+                loadedProps = true;
+                if (pkg != null) {
+                    String handlerPkgs =
+                            System.getProperty("java.protocol.handler.pkgs");
+                    if (handlerPkgs == null || handlerPkgs.isEmpty()) {
+                        System.setProperty("java.protocol.handler.pkgs", pkg);
+                    } else if (!handlerPkgs.contains(pkg)) {
+                        System.setProperty("java.protocol.handler.pkgs",
+                                pkg + "|" + handlerPkgs);
+                    }
+                }
+                if (sdebug != null) {
+                    sdebug.println("reading " + pname + " properties file: " +
+                            jssePropFile.getName());
+                }
+            } catch (IOException e) {
+                throw new ProviderException(
+                        "Unable to load " + name + " provider properties");
+            }
+
+        } else {
+            throw new ProviderException(
+                    name + " provider requested but not found");
+        }
+        return loadedProps;
     }
 
     /*
@@ -789,9 +852,19 @@ public final class Security {
      * @see java.security.SecurityPermission
      */
     public static void setProperty(String key, String datum) {
-        check("setProperty."+key);
+        check("setProperty." + key);
         props.put(key, datum);
         invalidateSMCache(key);  /* See below. */
+
+        SecurityPropertyModificationEvent spe = new SecurityPropertyModificationEvent();
+        // following is a no-op if event is disabled
+        spe.key = key;
+        spe.value = datum;
+        spe.commit();
+
+        if (EventHelper.isLoggingSecurity()) {
+            EventHelper.logSecurityPropertyEvent(key, datum);
+        }
     }
 
     /*

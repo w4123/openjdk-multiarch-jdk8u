@@ -60,6 +60,7 @@ import jdk.jfr.internal.WriteableUserPath;
  *
  * @since 8
  */
+@jdk.Exported
 public final class Recording implements Closeable {
 
     private static class RecordingSettings extends EventSettings {

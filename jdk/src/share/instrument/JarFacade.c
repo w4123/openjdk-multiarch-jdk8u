@@ -23,7 +23,7 @@
  * questions.
  */
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 /*
  * Win* needs this include. However, Linux and Solaris do not.
  * Having this include on Solaris SPARC breaks having non US-ASCII

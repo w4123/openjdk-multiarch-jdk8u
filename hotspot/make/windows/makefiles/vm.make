@@ -23,6 +23,12 @@
 #
 #
 
+#
+# This file has been modified by Azul Systems, Inc. in 2016. These
+# modifications are Copyright (c) 2016 Azul Systems, Inc., and are made
+# available on the same license terms set forth above.
+#
+
 # Resource file containing VERSIONINFO
 Res_Files=.\version.res
 
@@ -31,7 +37,7 @@ Res_Files=.\version.res
 COMMONSRC=$(WorkSpace)\src
 ALTSRC=$(WorkSpace)\src\closed
 
-!ifdef RELEASE
+!if "$(BUILD_FLAVOR)" == "product"
 CXX_FLAGS=$(CXX_FLAGS) /D "PRODUCT"
 !else
 CXX_FLAGS=$(CXX_FLAGS) /D "ASSERT"
@@ -62,6 +68,14 @@ CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_LIB_ARCH=\"$(HOTSPOT_LIB_ARCH)\""
 CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_BUILD_TARGET=\"$(BUILD_FLAVOR)\""
 CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_BUILD_USER=\"$(BuildUser)\""
 CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_VM_DISTRO=\"$(HOTSPOT_VM_DISTRO)\""
+
+!ifdef AZUL_VM_INFO_SUFFIX
+CXX_FLAGS=$(CXX_FLAGS) /D "AZUL_VM_INFO_SUFFIX=\", $(AZUL_VM_INFO_SUFFIX)\""
+!endif
+
+!ifdef PRODUCT_VENDOR_VERSION
+CXX_FLAGS=$(CXX_FLAGS) /D "PRODUCT_VENDOR_VERSION=\"$(PRODUCT_VENDOR_VERSION)\""
+!endif
 
 CXX_FLAGS=$(CXX_FLAGS) $(CXX_INCLUDE_DIRS)
 
@@ -153,11 +167,6 @@ VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/shared
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/parNew
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/concurrentMarkSweep
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/g1
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/shenandoah
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/shenandoah/c1
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/shenandoah/c2
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/shenandoah/heuristics
-VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_implementation/shenandoah/mode
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/gc_interface
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/asm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/memory
@@ -253,21 +262,6 @@ arguments.obj: $(WorkSpace)\src\share\vm\runtime\arguments.cpp
 {$(COMMONSRC)\share\vm\gc_implementation\g1}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
-{$(COMMONSRC)\share\vm\gc_implementation\shenandoah}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(COMMONSRC)\share\vm\gc_implementation\shenandoah\c1}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(COMMONSRC)\share\vm\gc_implementation\shenandoah\c2}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(COMMONSRC)\share\vm\gc_implementation\shenandoah\heuristics}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(COMMONSRC)\share\vm\gc_implementation\shenandoah\mode}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
 {$(COMMONSRC)\share\vm\gc_interface}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
@@ -349,12 +343,6 @@ arguments.obj: $(WorkSpace)\src\share\vm\runtime\arguments.cpp
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\gc_implementation\g1}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(ALTSRC)\share\vm\gc_implementation\shenandoah}.cpp.obj::
-        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
-
-{$(ALTSRC)\share\vm\gc_implementation\shenandoah\heuristics}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\gc_interface}.cpp.obj::

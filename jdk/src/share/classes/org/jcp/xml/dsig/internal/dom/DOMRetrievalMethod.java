@@ -31,7 +31,7 @@
  * ===========================================================================
  */
 /*
- * $Id: DOMRetrievalMethod.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * $Id: DOMRetrievalMethod.java 1862080 2019-06-25 16:50:17Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -279,8 +279,7 @@ public final class DOMRetrievalMethod extends DOMStructure
         boolean secVal = Utils.secureValidation(context);
         ApacheData data = (ApacheData)dereference(context);
         try (InputStream is = new ByteArrayInputStream(data.getXMLSignatureInput().getBytes())) {
-            db = XMLUtils.createDocumentBuilder(false, secVal);
-            Document doc = db.parse(is);
+            Document doc = XMLUtils.read(is, secVal);
             Element kiElem = doc.getDocumentElement();
             if (kiElem.getLocalName().equals("X509Data")
                 && XMLSignature.XMLNS.equals(kiElem.getNamespaceURI())) {
@@ -322,3 +321,4 @@ public final class DOMRetrievalMethod extends DOMStructure
         return result;
     }
 }
+

@@ -330,6 +330,13 @@ INCLUDE_JFR=0
 !endif
 CXX_FLAGS=$(CXX_FLAGS) /D INCLUDE_JFR=$(INCLUDE_JFR)
 
+!if "$(ENABLE_CRS)" == "true"
+INCLUDE_CRS=1
+!else
+INCLUDE_CRS=0
+!endif
+CXX_FLAGS=$(CXX_FLAGS) /D INCLUDE_CRS=$(INCLUDE_CRS)
+
 # If NO_OPTIMIZATIONS is defined in the environment, turn everything off
 !ifdef NO_OPTIMIZATIONS
 PRODUCT_OPT_OPTION   = $(DEBUG_OPT_OPTION)

@@ -41,6 +41,7 @@ import java.lang.annotation.Target;
 @Description("A duration, measured in nanoseconds by default")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+@jdk.Exported
 public @interface Timespan {
     /**
      * Unit for ticks.

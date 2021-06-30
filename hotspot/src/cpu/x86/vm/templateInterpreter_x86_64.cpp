@@ -460,8 +460,8 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ subptr(rax, stack_size);
 
   // Use the maximum number of pages we might bang.
-  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages) ? StackShadowPages :
-                                                                              (StackRedPages+StackYellowPages);
+  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages+StackReservedPages) ? StackShadowPages :
+                        (StackRedPages+StackYellowPages+StackReservedPages);
 
   // add in the red and yellow zone sizes
   __ addptr(rax, max_pages * page_size);
@@ -790,7 +790,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   const int referent_offset = java_lang_ref_Reference::referent_offset;
   guarantee(referent_offset > 0, "referent offset not initialized");
 
-  if (UseG1GC || UseShenandoahGC) {
+  if (UseG1GC) {
     Label slow_path;
     // rbx: method
 
@@ -815,16 +815,12 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.
-    if (!UseShenandoahGC || ShenandoahSATBBarrier) {
-      if (UseShenandoahGC) __ push_IU_state();
     __ g1_write_barrier_pre(noreg /* obj */,
                             rax /* pre_val */,
                             r15_thread /* thread */,
                             rbx /* tmp */,
                             true /* tosca_live */,
                             true /* expand_call */);
-      if (UseShenandoahGC) __ pop_IU_state();
-    }
 
     // _areturn
     __ pop(rdi);                // get return address
@@ -1485,6 +1481,24 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ bind(L);
   }
 #endif
+
+#if INCLUDE_CRS
+  if (UseCRS) {
+    // free registers:
+    // rcx
+    // rdx
+    // important registers:
+    // rbx Method*
+
+    Label Lalready;
+    // no MT sync here. there is no harm to occasionally report same method twice
+    __ cmpb(Address(rbx, Method::use_flag_offset()), 0);
+    __ jcc(Assembler::notZero, Lalready);
+    __ movb(Address(rbx, Method::use_flag_offset()), 1);
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::first_call_interpreter_entry), rbx);
+    __ bind(Lalready);
+  }
+#endif // USE_CRS
 
   // Since at this point in the method invocation the exception
   // handler would try to exit the monitor of synchronized methods

@@ -25,6 +25,7 @@
  * @test
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
+ * @requires !(os.family == "mac" & os.arch=="aarch64")
  * @library /testlibrary
  */
 

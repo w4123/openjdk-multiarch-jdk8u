@@ -37,8 +37,10 @@
 #import "JavaTextAccessibility.h"
 #import "JavaAccessibilityUtilities.h"
 #import "GeomUtilities.h"
-#import "OSVersion.h"
 #import "CGLLayer.h"
+
+// keyboard layout
+static NSString *kbdLayout;
 
 @interface AWTView()
 @property (retain) CDropTarget *_dropTarget;
@@ -55,10 +57,7 @@
 //#define EXTRA_DEBUG
 
 static BOOL shouldUsePressAndHold() {
-    static int shouldUsePressAndHold = -1;
-    if (shouldUsePressAndHold != -1) return shouldUsePressAndHold;
-    shouldUsePressAndHold = !isSnowLeopardOrLower();
-    return shouldUsePressAndHold;
+    return YES;
 }
 
 @implementation AWTView
@@ -965,8 +964,16 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     NSUInteger utf16Length = [aString lengthOfBytesUsingEncoding:NSUTF16StringEncoding];
     NSUInteger utf8Length = [aString lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
     BOOL aStringIsComplex = NO;
+
+    unichar codePoint = [aString characterAtIndex:0];
+
+#ifdef IM_DEBUG
+     NSLog(@"insertText kbdlayout %@ ",(NSString *)kbdLayout);
+#endif // IM_DEBUG
+
     if ((utf16Length > 2) ||
-        ((utf8Length > 1) && [self isCodePointInUnicodeBlockNeedingIMEvent:[aString characterAtIndex:0]])) {
+        ((utf8Length > 1) && [self isCodePointInUnicodeBlockNeedingIMEvent:codePoint]) ||
+        ((codePoint == 0x5c) && ([(NSString *)kbdLayout containsString:@"Kotoeri"]))) {
         aStringIsComplex = YES;
     }
 
@@ -999,6 +1006,15 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
 
     fPAHNeedsToSelect = NO;
 
+}
+
++ (void)keyboardInputSourceChanged:(NSNotification *)notification
+{
+#ifdef IM_DEBUG
+    NSLog(@"keyboardInputSourceChangeNotification received");
+#endif
+    NSTextInputContext *curContxt = [NSTextInputContext currentInputContext];
+    kbdLayout = curContxt.selectedKeyboardInputSource;
 }
 
 - (void) doCommandBySelector:(SEL)aSelector
@@ -1289,7 +1305,7 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
     jint index = JNFCallIntMethod(env, fInputMethodLOCKABLE, jm_characterIndexForPoint, (jint)flippedLocation.x, (jint)flippedLocation.y); // AWT_THREADING Safe (AWTRunLoopMode)
 
 #ifdef IM_DEBUG
-    fprintf(stderr, "characterIndexForPoint returning %ld\n", index);
+    fprintf(stderr, "characterIndexForPoint returning %d\n", index);
 #endif // IM_DEBUG
 
     if (index == -1) {
@@ -1326,6 +1342,13 @@ JNF_CLASS_CACHE(jc_CInputMethod, "sun/lwawt/macosx/CInputMethod");
         fInputMethodLOCKABLE = JNFNewGlobalRef(env, inputMethod);
     else
         fInputMethodLOCKABLE = NULL;
+
+    NSTextInputContext *curContxt = [NSTextInputContext currentInputContext];
+    kbdLayout = curContxt.selectedKeyboardInputSource;
+    [[NSNotificationCenter defaultCenter] addObserver:[AWTView class]
+                                           selector:@selector(keyboardInputSourceChanged:)
+                                               name:NSTextInputContextKeyboardSelectionDidChangeNotification
+                                             object:nil];
 }
 
 - (void)abandonInput

@@ -30,6 +30,7 @@
 #include "oops/oop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/tableStatistics.hpp"
 
 // This is a generic hashtable, designed to be used for the symbol
 // and string tables.
@@ -178,6 +179,8 @@ protected:
   void verify_lookup_length(double load);
 #endif
 
+  TableRateStatistics _stats_rate;
+
   void initialize(int table_size, int entry_size, int number_of_entries);
 
   // Accessor
@@ -267,6 +270,8 @@ public:
   // addresses, and appear first in the list.
   void reverse(void* boundary = NULL);
 
+  TableStatistics statistics_calculate(T (*literal_load_barrier)(HashtableEntry<T, F>*) = NULL);
+
 protected:
 
   unsigned int compute_hash(Symbol* name) {
@@ -314,18 +319,8 @@ template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F
 
   // Function to move these elements into the new table.
   void move_to(RehashableHashtable<T, F>* new_table);
-  static bool use_alternate_hashcode()  { return _seed != 0; }
-  static juint seed()                    { return _seed; }
-
-  static int literal_size(Symbol *symbol);
-  static int literal_size(oop oop);
-
-  // The following two are currently not used, but are needed anyway because some
-  // C++ compilers (MacOS and Solaris) force the instantiation of
-  // Hashtable<ConstantPool*, mtClass>::dump_table() even though we never call this function
-  // in the VM code.
-  static int literal_size(ConstantPool *cp) {Unimplemented(); return 0;}
-  static int literal_size(Klass *k)         {Unimplemented(); return 0;}
+  static bool use_alternate_hashcode();
+  static juint seed();
 
   void dump_table(outputStream* st, const char *table_name);
 
@@ -333,6 +328,9 @@ template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F
   static juint _seed;
 };
 
+template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::_seed = 0;
+template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::seed() { return _seed; };
+template <class T, MEMFLAGS F> bool  RehashableHashtable<T, F>::use_alternate_hashcode() { return _seed != 0; };
 
 //  Verions of hashtable where two handles are used to compute the index.
 

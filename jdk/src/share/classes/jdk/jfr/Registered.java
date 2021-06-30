@@ -43,6 +43,7 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE })
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
+@jdk.Exported
 public @interface Registered {
     /**
      * Returns {@code true} if the event is to be registered when the event class is

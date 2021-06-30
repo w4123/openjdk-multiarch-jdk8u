@@ -80,7 +80,9 @@
 #ifdef TARGET_OS_FAMILY_bsd
 # include "os_bsd.inline.hpp"
 #endif
-
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#endif
 
 // Entry points in zip.dll for loading zip/jar file entries
 
@@ -327,6 +329,7 @@ u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_ter
     // enable call to C land
   JavaThread* thread = JavaThread::current();
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   // check whether zip archive contains name
   jint name_len;
   jzentry* entry = (*FindEntry)(_zip, name, filesize, &name_len);
@@ -374,6 +377,7 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
   JavaThread* thread = JavaThread::current();
   HandleMark  handle_mark(thread);
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   for (int n = 0; ; n++) {
     jzentry * ze = ((*GetNextEntry)(_zip, n));
     if (ze == NULL) break;
@@ -725,6 +729,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
     {
       // enable call to C land
       ThreadToNativeFromVM ttn(thread);
+      Thread::WXExecFromWriteSetter wx_exec;
       HandleMark hm(thread);
       zip = (*ZipOpen)(canonical_path, &error_msg);
     }
@@ -776,6 +781,7 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path) {
           // enable call to C land
           JavaThread* thread = JavaThread::current();
           ThreadToNativeFromVM ttn(thread);
+          Thread::WXExecFromWriteSetter wx_exec;
           HandleMark hm(thread);
           zip = (*ZipOpen)(canonical_path, &error_msg);
         }
@@ -1179,6 +1185,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     Handle protection_domain;
     TempNewSymbol parsed_name = NULL;
+    CRS_ONLY(parser.set_need_file_hash(THREAD));
     // Callers are expected to declare a ResourceMark to determine
     // the lifetime of any updated (resource) allocated under
     // this call to parseClassFile
@@ -1204,7 +1211,14 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
     ON_KLASS_CREATION(ik, parser, THREAD);
     result = instanceKlassHandle(ik);
   }
+
+    // CRS note. Actually here we might have ik pointing to class retransformed by JFR
+    // so technically it's hash is different from one calculated by parser used here.
+    // however for purpose of consistency we deal with original class file
 #endif
+    CRS_ONLY(ConnectedRuntime::notify_class_load(result,
+            parser.get_file_hash(), parser.get_file_hash_length(),
+            e->name(), THREAD));
 
     h = context.record_result(classpath_index, e, result, THREAD);
   } else {

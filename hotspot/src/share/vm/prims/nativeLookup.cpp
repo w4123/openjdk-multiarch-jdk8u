@@ -44,6 +44,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
 #endif
@@ -243,6 +246,9 @@ static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_sun_hotspot_WhiteBox_registerNatives",                 NULL, FN_PTR(JVM_RegisterWhiteBoxMethods)     },
 #if INCLUDE_JFR
   { CC"Java_jdk_jfr_internal_JVM_registerNatives",                 NULL, FN_PTR(jfr_register_natives)            },
+#endif
+#if INCLUDE_CRS
+  { CC"Java_com_azul_crs_agent_AgentLoader_registerNatives",       NULL, FN_PTR(crs_register_natives)            }
 #endif
 };
 

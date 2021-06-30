@@ -200,6 +200,12 @@ else
   INCLUDE_JFR = 0
 endif
 
+ifeq ($(ENABLE_CRS), true)
+  INCLUDE_CRS = 1
+else
+  INCLUDE_CRS = 0
+endif
+
 flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
@@ -283,6 +289,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo; \
 	[ -n "$(INCLUDE_JFR)" ] && \
 	    echo && echo "INCLUDE_JFR = $(INCLUDE_JFR)"; \
+	echo && echo "INCLUDE_CRS = $(INCLUDE_CRS)"; \
 	[ -n "$(SPEC)" ] && \
 	    echo "include $(SPEC)"; \
 	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(VARIANT).make"; \

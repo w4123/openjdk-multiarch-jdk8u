@@ -33,6 +33,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Enumeration;
+import java.security.NoSuchProviderException;
 
 /*
  * @test
@@ -67,6 +68,7 @@ public class ReadP12Test {
 
     private final static String IN_KETYSTORE_TYPE = "pkcs12";
     private final static String IN_KEYSTORE_PRV = "SunJSSE";
+    private final static String IN_KEYSTORE_ALT_PRV = "OpenJSSE";
     private final static String IN_STORE_PASS = "pass";
 
     public static void main(String args[]) throws Exception {
@@ -124,8 +126,18 @@ public class ReadP12Test {
         String dir = System.getProperty("test.src", ".");
         String keystorePath = dir + File.separator + "certs" + File.separator
                 + "readP12";
-        inputKeyStore = KeyStore
-                .getInstance(IN_KETYSTORE_TYPE, IN_KEYSTORE_PRV);
+        try {
+            inputKeyStore = KeyStore
+                    .getInstance(IN_KETYSTORE_TYPE, IN_KEYSTORE_PRV);
+            } catch(NoSuchProviderException nspe) {
+                try {
+            inputKeyStore = KeyStore
+                    .getInstance(IN_KETYSTORE_TYPE, IN_KEYSTORE_ALT_PRV);
+                } catch(NoSuchProviderException altnspe) {
+                    // throw initial NSPE
+                    throw nspe;
+                }
+            }
         // KeyStore have encoded by Base64.getMimeEncoder().encode(),need decode
         // first.
         byte[] input = Files.readAllBytes(Paths.get(keystorePath, inKeyStore));

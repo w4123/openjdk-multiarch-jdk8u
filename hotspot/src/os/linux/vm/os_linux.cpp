@@ -59,6 +59,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
@@ -95,7 +96,6 @@
 # include <string.h>
 # include <syscall.h>
 # include <sys/sysinfo.h>
-# include <gnu/libc-version.h>
 # include <sys/ipc.h>
 # include <sys/shm.h>
 # include <link.h>
@@ -104,6 +104,8 @@
 # include <sys/ioctl.h>
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
+PRAGMA_FORMAT_NONLITERAL_IGNORED
 
 #ifndef _GNU_SOURCE
   #define _GNU_SOURCE
@@ -144,8 +146,8 @@ const int os::Linux::_vm_default_page_size = (8 * K);
 bool os::Linux::_is_floating_stack = false;
 bool os::Linux::_is_NPTL = false;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
-const char * os::Linux::_glibc_version = NULL;
-const char * os::Linux::_libpthread_version = NULL;
+const char * os::Linux::_glibc_version = "unknown";
+const char * os::Linux::_libpthread_version = "unknown";
 pthread_condattr_t os::Linux::_condattr[1];
 
 static jlong initial_time_count=0;
@@ -597,12 +599,6 @@ void os::Linux::libpthread_init() {
      char *str = (char *)malloc(n, mtInternal);
      confstr(_CS_GNU_LIBC_VERSION, str, n);
      os::Linux::set_glibc_version(str);
-  } else {
-     // _CS_GNU_LIBC_VERSION is not supported, try gnu_get_libc_version()
-     static char _gnu_libc_version[32];
-     jio_snprintf(_gnu_libc_version, sizeof(_gnu_libc_version),
-              "glibc %s %s", gnu_get_libc_version(), gnu_get_libc_release());
-     os::Linux::set_glibc_version(_gnu_libc_version);
   }
 
   n = confstr(_CS_GNU_LIBPTHREAD_VERSION, NULL, 0);
@@ -2092,8 +2088,8 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf, int ebu
     JavaThread *jt = Threads::first();
 
     while (jt) {
-      if (!jt->stack_guard_zone_unused() &&        // Stack not yet fully initialized
-          jt->stack_yellow_zone_enabled()) {       // No pending stack overflow exceptions
+      if (!jt->stack_guard_zone_unused() &&     // Stack not yet fully initialized
+          jt->stack_guards_enabled()) {         // No pending stack overflow exceptions
         if (!os::guard_memory((char *) jt->stack_red_zone_base() - jt->stack_red_zone_size(),
                               jt->stack_yellow_zone_size() + jt->stack_red_zone_size())) {
           warning("Attempt to reguard stack yellow zone failed.");
@@ -2218,6 +2214,8 @@ void os::print_os_info(outputStream* st) {
   os::Linux::print_full_memory_info(st);
 
   os::Linux::print_container_info(st);
+
+  VM_Version::print_platform_virtualization_info(st);
 }
 
 // Try to identify popular distros.
@@ -2974,20 +2972,36 @@ extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
 extern "C" JNIEXPORT void numa_error(char *where) { }
 extern "C" JNIEXPORT int fork1() { return fork(); }
 
+static void* dlvsym_if_available(void* handle, const char* name, const char* version) {
+  typedef void* (*dlvsym_func_type)(void* handle, const char* name, const char* version);
+  static dlvsym_func_type dlvsym_func;
+  static bool initialized = false;
+
+  if (!initialized) {
+    dlvsym_func = (dlvsym_func_type)dlsym(RTLD_NEXT, "dlvsym");
+    initialized = true;
+  }
+
+  if (dlvsym_func != NULL) {
+    void *f = dlvsym_func(handle, name, version);
+    if (f != NULL) {
+      return f;
+    }
+  }
+
+  return dlsym(handle, name);
+}
+
 // Handle request to load libnuma symbol version 1.1 (API v1). If it fails
 // load symbol from base version instead.
 void* os::Linux::libnuma_dlsym(void* handle, const char *name) {
-  void *f = dlvsym(handle, name, "libnuma_1.1");
-  if (f == NULL) {
-    f = dlsym(handle, name);
-  }
-  return f;
+  return dlvsym_if_available(handle, name, "libnuma_1.1");
 }
 
 // Handle request to load libnuma symbol version 1.2 (API v2) only.
 // Return NULL if the symbol is not defined in this particular version.
 void* os::Linux::libnuma_v2_dlsym(void* handle, const char* name) {
-  return dlvsym(handle, name, "libnuma_1.2");
+  return dlvsym_if_available(handle, name, "libnuma_1.2");
 }
 
 bool os::Linux::libnuma_init() {
@@ -3143,7 +3157,7 @@ unsigned long* os::Linux::_numa_all_nodes;
 struct bitmask* os::Linux::_numa_all_nodes_ptr;
 struct bitmask* os::Linux::_numa_nodes_ptr;
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                 MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   return res  != (uintptr_t) MAP_FAILED;
@@ -3261,7 +3275,7 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
     return ::munmap(addr, size) == 0;
   }
 
-  return os::uncommit_memory(addr, size);
+  return os::uncommit_memory(addr, size, !ExecMem);
 }
 
 static address _highest_vm_reserved_address = NULL;
@@ -3352,7 +3366,8 @@ static int anon_munmap(char * addr, size_t size) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, char* requested_addr,
-                         size_t alignment_hint) {
+                         size_t alignment_hint,
+                         bool executable) {
   return anon_mmap(requested_addr, bytes, (requested_addr != NULL));
 }
 
@@ -5022,18 +5037,61 @@ void os::Linux::check_signal_handler(int sig) {
 
 extern void report_error(char* file_name, int line_no, char* title, char* format, ...);
 
-extern bool signal_name(int signo, char* buf, size_t len);
+// Some linux distributions (notably: Alpine Linux) include the
+// grsecurity in the kernel by default. Of particular interest from a
+// JVM perspective is PaX (https://pax.grsecurity.net/), which adds
+// some security features related to page attributes. Specifically,
+// the MPROTECT PaX functionality
+// (https://pax.grsecurity.net/docs/mprotect.txt) prevents dynamic
+// code generation by disallowing a (previously) writable page to be
+// marked as executable. This is, of course, exactly what HotSpot does
+// for both JIT compiled method, as well as for stubs, adapters, etc.
+//
+// Instead of crashing "lazily" when trying to make a page executable,
+// this code probes for the presence of PaX and reports the failure
+// eagerly.
+static void check_pax(void) {
+  // Zero doesn't generate code dynamically, so no need to perform the PaX check
+#ifndef ZERO
+  size_t size = os::Linux::page_size();
 
-const char* os::exception_name(int exception_code, char* buf, size_t size) {
-  if (0 < exception_code && exception_code <= SIGRTMAX) {
-    // signal
-    if (!signal_name(exception_code, buf, size)) {
-      jio_snprintf(buf, size, "SIG%d", exception_code);
-    }
-    return buf;
-  } else {
-    return NULL;
+  void* p = ::mmap(NULL, size, PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  if (p == MAP_FAILED) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "failed to allocate memory for PaX check.");
   }
+
+  int res = ::mprotect(p, size, PROT_WRITE|PROT_EXEC);
+  if (res == -1) {
+    vm_exit_during_initialization("Failed to mark memory page as executable",
+                                  "Please check if grsecurity/PaX is enabled in your kernel.\n"
+                                  "\n"
+                                  "For example, you can do this by running (note: you may need root privileges):\n"
+                                  "\n"
+                                  "    sysctl kernel.pax.softmode\n"
+                                  "\n"
+                                  "If PaX is included in the kernel you will see something like this:\n"
+                                  "\n"
+                                  "    kernel.pax.softmode = 0\n"
+                                  "\n"
+                                  "In particular, if the value is 0 (zero), then PaX is enabled.\n"
+                                  "\n"
+                                  "PaX includes security functionality which interferes with the dynamic code\n"
+                                  "generation the JVM relies on. Specifically, the MPROTECT functionality as\n"
+                                  "described on https://pax.grsecurity.net/docs/mprotect.txt is not compatible\n"
+                                  "with the JVM. If you want to allow the JVM to run you will have to disable PaX.\n"
+                                  "You can do this on a per-executable basis using the paxctl tool, for example:\n"
+                                  "\n"
+                                  "    paxctl -cm bin/java\n"
+                                  "\n"
+                                  "Please note that this modifies the executable binary in-place, so you may want\n"
+                                  "to make a backup of it first. Also note that you have to repeat this for other\n"
+                                  "executables like javac, jar, jcmd, etc.\n"
+                                  );
+
+  }
+
+  ::munmap(p, size);
+#endif
 }
 
 // this is called _before_ most of the global arguments have been parsed
@@ -5098,6 +5156,11 @@ void os::init(void) {
   if (vm_page_size() > (int)Linux::vm_default_page_size()) {
     StackYellowPages = 1;
     StackRedPages = 1;
+#if defined(IA32) || defined(IA64)
+    StackReservedPages = 1;
+#else
+    StackReservedPages = 0;
+#endif
     StackShadowPages = round_to((StackShadowPages*Linux::vm_default_page_size()), vm_page_size()) / vm_page_size();
   }
 
@@ -5105,6 +5168,7 @@ void os::init(void) {
   Linux::_pthread_setname_np =
     (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
 
+  check_pax();
 }
 
 // To install functions for atexit system call
@@ -5160,7 +5224,7 @@ jint os::init_2(void)
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
-            (size_t)(StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
+                    (size_t)(StackReservedPages+StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
                     (2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::vm_default_page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;

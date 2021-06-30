@@ -30,6 +30,7 @@
 /* @(#) $Id$ */
 
 #include "zutil.h"
+#include "zinit.h"
 
 local uLong adler32_combine_ OF((uLong adler1, uLong adler2, z_off64_t len2));
 
@@ -160,6 +161,13 @@ uLong ZEXPORT adler32(adler, buf, len)
     const Bytef *buf;
     uInt len;
 {
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+        return zlibPtrs->adler32(adler, buf, len);
+    }
+#endif
+
     return adler32_z(adler, buf, len);
 }
 

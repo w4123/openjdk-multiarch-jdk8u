@@ -38,6 +38,8 @@
 #include "GraphicsPrimitiveMgr.h"
 #include "Region.h"
 
+#include "jvm.h"
+
 /**
  * The following methods are implemented in the windowing system (i.e. GLX
  * and WGL) source files.
@@ -140,6 +142,40 @@ OGLContext_InitAlphaChannel()
     }
 }
 
+/*
+ * Sets the clearing color to black and clears the window to the clearing color.
+ * This method is used to clear a window surface for Etnaviv vendor only.
+ */
+static void
+OGLContext_ClearWindow()
+{
+    GLboolean scissorEnabled;
+
+    J2dTraceLn(J2D_TRACE_INFO, "OGLContext_ClearWindow");
+
+    // it is possible for the scissor test to be enabled at this point;
+    // if it is, disable it temporarily since it can affect the glClear() op
+    scissorEnabled = j2d_glIsEnabled(GL_SCISSOR_TEST);
+    if (scissorEnabled) {
+        j2d_glDisable(GL_SCISSOR_TEST);
+    }
+
+    // set the color mask first
+    j2d_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+    // clear the color buffer with the color black, fully opaque
+    j2d_glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    j2d_glClear(GL_COLOR_BUFFER_BIT);
+
+    // restore the color mask (as it was set in OGLContext_SetViewport())
+    j2d_glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+
+    // re-enable scissor test, only if it was enabled earlier
+    if (scissorEnabled) {
+        j2d_glEnable(GL_SCISSOR_TEST);
+    }
+}
+
 /**
  * Fetches the OGLContext associated with the given destination surface,
  * makes the context current for those surfaces, updates the destination
@@ -151,6 +187,7 @@ OGLContext_SetSurfaces(JNIEnv *env, jlong pSrc, jlong pDst)
     OGLSDOps *srcOps = (OGLSDOps *)jlong_to_ptr(pSrc);
     OGLSDOps *dstOps = (OGLSDOps *)jlong_to_ptr(pDst);
     OGLContext *oglc = NULL;
+    jboolean windowCleared = JNI_FALSE;
 
     J2dTraceLn(J2D_TRACE_INFO, "OGLContext_SetSurfaces");
 
@@ -191,7 +228,14 @@ OGLContext_SetSurfaces(JNIEnv *env, jlong pSrc, jlong pDst)
 
     // perform additional one-time initialization, if necessary
     if (dstOps->needsInit) {
-        if (dstOps->isOpaque) {
+        if (OGLC_GET_VENDOR(oglc) == OGLC_VENDOR_ETNAVIV &&
+            dstOps->drawableType == OGLSD_WINDOW)
+        {
+            OGLContext_ClearWindow();
+            windowCleared = JNI_TRUE;
+        }
+
+        if (dstOps->isOpaque && !windowCleared) {
             // in this case we are treating the destination as opaque, but
             // to do so, first we need to ensure that the alpha channel
             // is filled with fully opaque values (see 6319663)
@@ -568,12 +612,20 @@ OGLContext_CreateBlitTexture(GLenum internalFormat, GLenum pixelFormat,
 jboolean
 OGLContext_InitBlitTileTexture(OGLContext *oglc)
 {
+    GLuint tileSize;
+
     J2dTraceLn(J2D_TRACE_INFO, "OGLContext_InitBlitTileTexture");
+
+    if (OGLC_GET_VENDOR(oglc) == OGLC_VENDOR_ETNAVIV) {
+        tileSize = ETNAVIV_BLIT_TILE_SIZE;
+    } else {
+        tileSize = OGLC_BLIT_TILE_SIZE;
+    }
 
     oglc->blitTextureID =
         OGLContext_CreateBlitTexture(GL_RGBA8, GL_RGBA,
-                                     OGLC_BLIT_TILE_SIZE,
-                                     OGLC_BLIT_TILE_SIZE);
+                                     tileSize,
+                                     tileSize);
 
     return JNI_TRUE;
 }
@@ -923,6 +975,8 @@ OGLContext_GetExtensionInfo(JNIEnv *env, jint *caps)
             vcap = OGLC_VENDOR_NVIDIA;
         } else if (strncmp(vendor, "Intel", 5) == 0) {
             vcap = OGLC_VENDOR_INTEL;
+        } else if (strncmp(vendor, "etnaviv", 7) == 0) {
+            vcap = OGLC_VENDOR_ETNAVIV;
         }
         // REMIND: new in 7 - check if needs fixing
         *caps |= ((vcap & OGLC_VCAP_MASK) << OGLC_VCAP_OFFSET);

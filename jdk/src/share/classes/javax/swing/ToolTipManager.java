@@ -28,6 +28,7 @@ package javax.swing;
 
 import java.awt.event.*;
 import java.awt.*;
+import java.util.Objects;
 import javax.swing.event.MenuKeyEvent;
 import javax.swing.event.MenuKeyListener;
 
@@ -487,7 +488,7 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
                             preferredLocation.equals(newPreferredLocation) :
                             (newPreferredLocation == null);
 
-                if (!sameComponent || !toolTipText.equals(newToolTipText) ||
+                if (!sameComponent || !Objects.equals(toolTipText, newToolTipText) ||
                          !sameLoc) {
                     toolTipText = newToolTipText;
                     preferredLocation = newPreferredLocation;

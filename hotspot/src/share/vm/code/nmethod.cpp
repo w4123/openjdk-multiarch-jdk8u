@@ -491,7 +491,7 @@ void nmethod::init_defaults() {
   _oops_do_mark_link       = NULL;
   _jmethod_id              = NULL;
   _osr_link                = NULL;
-  if (UseG1GC || UseShenandoahGC) {
+  if (UseG1GC) {
     _unloading_next        = NULL;
   } else {
     _scavenge_root_link    = NULL;
@@ -2836,7 +2836,7 @@ public:
 };
 
 void nmethod::verify_scavenge_root_oops() {
-  if (UseG1GC || UseShenandoahGC) {
+  if (UseG1GC) {
     return;
   }
 

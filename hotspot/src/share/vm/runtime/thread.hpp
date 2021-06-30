@@ -55,6 +55,9 @@
 #if INCLUDE_JFR
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#endif
 
 class ThreadSafepointState;
 class ThreadProfiler;
@@ -102,16 +105,6 @@ class WorkerThread;
 
 class Thread: public ThreadShadow {
   friend class VMStructs;
-
-#if INCLUDE_ALL_GCS
-protected:
-  // Support for Shenandoah barriers. This is only accessible from JavaThread,
-  // but we really want to keep this field at lower Thread offset (below first
-  // 128 bytes), because that makes barrier fastpaths optimally encoded.
-  char _gc_state;
-  static char _gc_state_global;
-#endif
-
  private:
   // Exception handling
   // (Note: _pending_exception and friends are in ThreadShadow)
@@ -267,27 +260,19 @@ protected:
   friend class GC_locker;
 
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
-  ThreadLocalAllocBuffer _gclab;                // Thread-local allocation buffer for GC (e.g. evacuation)
-  uint _worker_id;                              // Worker ID
-  bool _force_satb_flush;                       // Force SATB flush
-  double _paced_time;                           // Accumulated paced time
-
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
-  jlong _allocated_bytes_gclab;                 // Cumulative number of bytes allocated on
-                                                // the Java heap, in GCLABs
 
   // Thread-local buffer used by MetadataOnStackMark.
   MetadataOnStackBuffer* _metadata_on_stack_buffer;
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_FIELD_JFR;)      // Thread-local data for jfr
+  CRS_ONLY(DEFINE_CRS_THREAD_LOCALS;)
 
   ThreadExt _ext;
 
   int   _vm_operation_started_count;            // VM_Operation support
   int   _vm_operation_completed_count;          // VM_Operation support
-
-  char _oom_during_evac;
 
   ObjectMonitor* _current_pending_monitor;      // ObjectMonitor this thread
                                                 // is waiting to lock
@@ -405,14 +390,6 @@ protected:
     clear_suspend_flag(_critical_native_unlock);
   }
 
-  bool is_oom_during_evac() const;
-  void set_oom_during_evac(bool oom);
-
-#ifdef ASSERT
-  bool is_evac_allowed() const;
-  void set_evac_allowed(bool evac_allowed);
-#endif
-
   // Support for Unhandled Oop detection
 #ifdef CHECK_UNHANDLED_OOPS
  private:
@@ -462,42 +439,18 @@ protected:
   ThreadLocalAllocBuffer& tlab()                 { return _tlab; }
   void initialize_tlab() {
     if (UseTLAB) {
-      tlab().initialize(false);
-      if (UseShenandoahGC && (is_Java_thread() || is_Worker_thread())) {
-        gclab().initialize(true);
-      }
+      tlab().initialize();
     }
   }
-
-  // Thread-Local GC Allocation Buffer (GCLAB) support
-  ThreadLocalAllocBuffer& gclab()                {
-    assert (UseShenandoahGC, "Only for Shenandoah");
-    assert (!_gclab.is_initialized() || (is_Java_thread() || is_Worker_thread()),
-            "Only Java and GC worker threads are allowed to get GCLABs");
-    return _gclab;
-  }
-
-  void set_worker_id(uint id)           { _worker_id = id; }
-  uint worker_id()                      { return _worker_id; }
-
-  void set_force_satb_flush(bool value) { _force_satb_flush = value; }
-  bool is_force_satb_flush()            { return _force_satb_flush; }
-
-  void add_paced_time(double v)         { _paced_time += v; }
-  double paced_time()                   { return _paced_time; }
-  void reset_paced_time()               { _paced_time = 0; }
 
   jlong allocated_bytes()               { return _allocated_bytes; }
   void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
   void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
   inline jlong cooked_allocated_bytes();
 
-  jlong allocated_bytes_gclab()                { return _allocated_bytes_gclab; }
-  void set_allocated_bytes_gclab(jlong value)  { _allocated_bytes_gclab = value; }
-  void incr_allocated_bytes_gclab(jlong size)  { _allocated_bytes_gclab += size; }
-
   JFR_ONLY(DEFINE_THREAD_LOCAL_ACCESSOR_JFR;)
   JFR_ONLY(DEFINE_TRACE_SUSPEND_FLAG_METHODS)
+  CRS_ONLY(DEFINE_CRS_THREAD_LOCAL_ACCESSOR;)
 
   const ThreadExt& ext() const          { return _ext; }
   ThreadExt& ext()                      { return _ext; }
@@ -620,7 +573,7 @@ protected:
   void    set_lgrp_id(int value) { _lgrp_id = value; }
 
   // Printing
-  void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st) const;
   void print() const { print_on(tty); }
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
 
@@ -680,10 +633,6 @@ protected:
 
 #undef TLAB_FIELD_OFFSET
 
-  static ByteSize gclab_start_offset()         { return byte_offset_of(Thread, _gclab) + ThreadLocalAllocBuffer::start_offset(); }
-  static ByteSize gclab_top_offset()           { return byte_offset_of(Thread, _gclab) + ThreadLocalAllocBuffer::top_offset(); }
-  static ByteSize gclab_end_offset()           { return byte_offset_of(Thread, _gclab) + ThreadLocalAllocBuffer::end_offset(); }
-
   static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes ); }
 
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
@@ -715,6 +664,81 @@ protected:
   static void muxAcquire  (volatile intptr_t * Lock, const char * Name) ;
   static void muxAcquireW (volatile intptr_t * Lock, ParkEvent * ev) ;
   static void muxRelease  (volatile intptr_t * Lock) ;
+
+private:
+#ifdef ASSERT
+  bool _wx_init;
+  WXMode _wx_state;
+  static inline void verify_wx_init(WXMode state) {
+    Thread* current = Thread::current();
+    assert(!current->_wx_init, "second init");
+    current->_wx_init = true;
+    current->_wx_state = state;
+  }
+  static inline void verify_wx_transition(WXMode from, WXMode to) {
+    Thread* current = Thread::current();
+    assert(current->_wx_init, "no init");
+    assert(current->_wx_state == from, "wrong state");
+    current->_wx_init = true;
+    current->_wx_state = to;
+  }
+  static inline void verify_wx_state(WXMode now) {
+    Thread* current = Thread::current();
+    assert(current->_wx_init, "no init");
+    assert(current->_wx_state == now, "wrong state");
+  }
+#else
+  static inline void verify_wx_init(WXMode state) { }
+  static inline void verify_wx_transition(WXMode from, WXMode to) { }
+  static inline void verify_wx_state(WXMode now) { }
+#endif // ASSERT
+public:
+  void init_wx() {
+    WXMode init_mode = WXWrite;
+    verify_wx_init(init_mode);
+    os::current_thread_enable_wx(init_mode);
+  }
+  static inline void enable_wx_from_write(WXMode to) {
+    verify_wx_transition(WXWrite, to);
+    os::current_thread_enable_wx(to);
+  }
+  static inline void enable_wx_from_exec(WXMode to) {
+    verify_wx_transition(WXExec, to);
+    os::current_thread_enable_wx(to);
+  }
+
+  class WXWriteFromExecSetter {
+  public:
+    WXWriteFromExecSetter() {
+      enable_wx_from_exec(WXWrite);
+    }
+    ~WXWriteFromExecSetter() {
+      enable_wx_from_write(WXExec);
+    }
+  };
+
+  class WXExecFromWriteSetter {
+  public:
+    WXExecFromWriteSetter() {
+      enable_wx_from_write(WXExec);
+    }
+    ~WXExecFromWriteSetter() {
+      enable_wx_from_exec(WXWrite);
+    }
+  };
+
+  class WXWriteVerifier {
+  public:
+    WXWriteVerifier() {
+      verify_wx_state(WXWrite);
+    }
+  };
+  class WXExecVerifier {
+  public:
+    WXExecVerifier() {
+      verify_wx_state(WXExec);
+    }
+  };
 };
 
 // Inline implementation of Thread::current()
@@ -756,10 +780,12 @@ class NamedThread: public Thread {
   ~NamedThread();
   // May only be called once per thread.
   void set_name(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
+  void initialize_named_thread();
   virtual bool is_Named_thread() const { return true; }
   virtual char* name() const { return _name == NULL ? (char*)"Unknown Thread" : _name; }
   JavaThread *processed_thread() { return _processed_thread; }
   void set_processed_thread(JavaThread *thread) { _processed_thread = thread; }
+  virtual void print_on(outputStream* st) const;
 };
 
 // Worker threads are named and have an id of an assigned work.
@@ -804,7 +830,6 @@ class WatcherThread: public Thread {
   // Printing
   char* name() const { return (char*)"VM Periodic Task Thread"; }
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
   void unpark();
 
   // Returns the single instance of WatcherThread
@@ -952,6 +977,7 @@ class JavaThread: public Thread {
   // State of the stack guard pages for this thread.
   enum StackGuardState {
     stack_guard_unused,         // not needed
+    stack_guard_reserved_disabled,
     stack_guard_yellow_disabled,// disabled (temporarily) after stack overflow
     stack_guard_enabled         // enabled
   };
@@ -963,6 +989,7 @@ class JavaThread: public Thread {
   // Precompute the limit of the stack as used in stack overflow checks.
   // We load it from here to simplify the stack overflow check in assembly.
   address          _stack_overflow_limit;
+  address          _reserved_stack_activation;
 
   // Compiler exception handling (NOTE: The _exception_oop is *NOT* the same as _pending_exception. It is
   // used to temp. parsing values into and out of the runtime system during exception handling for compiled
@@ -1339,14 +1366,20 @@ class JavaThread: public Thread {
 
   // Stack overflow support
   inline size_t stack_available(address cur_sp);
+  address stack_reserved_zone_base()
+    { return stack_yellow_zone_base(); }
+  size_t stack_reserved_zone_size()
+    { return StackReservedPages * os::vm_page_size(); }
   address stack_yellow_zone_base()
     { return (address)(stack_base() - (stack_size() - (stack_red_zone_size() + stack_yellow_zone_size()))); }
   size_t  stack_yellow_zone_size()
-    { return StackYellowPages * os::vm_page_size(); }
+    { return StackYellowPages * os::vm_page_size() + stack_reserved_zone_size(); }
   address stack_red_zone_base()
     { return (address)(stack_base() - (stack_size() - stack_red_zone_size())); }
   size_t stack_red_zone_size()
     { return StackRedPages * os::vm_page_size(); }
+  bool in_stack_reserved_zone(address a)
+    { return (a <= stack_reserved_zone_base()) && (a >= (address)((intptr_t)stack_reserved_zone_base() - stack_reserved_zone_size())); }
   bool in_stack_yellow_zone(address a)
     { return (a <= stack_yellow_zone_base()) && (a >= stack_red_zone_base()); }
   bool in_stack_red_zone(address a)
@@ -1355,6 +1388,8 @@ class JavaThread: public Thread {
   void create_stack_guard_pages();
   void remove_stack_guard_pages();
 
+  void enable_stack_reserved_zone();
+  void disable_stack_reserved_zone();
   void enable_stack_yellow_zone();
   void disable_stack_yellow_zone();
   void enable_stack_red_zone();
@@ -1362,7 +1397,16 @@ class JavaThread: public Thread {
 
   inline bool stack_guard_zone_unused();
   inline bool stack_yellow_zone_disabled();
-  inline bool stack_yellow_zone_enabled();
+  inline bool stack_reserved_zone_disabled();
+  inline bool stack_guards_enabled();
+
+  address reserved_stack_activation() const { return _reserved_stack_activation; }
+  void      set_reserved_stack_activation(address addr) {
+    assert(_reserved_stack_activation == stack_base()
+            || _reserved_stack_activation == NULL
+            || addr == stack_base(), "Must not be set twice");
+    _reserved_stack_activation = addr;
+  }
 
   // Attempt to reguard the stack after a stack overflow may have occurred.
   // Returns true if (a) guard pages are not needed on this thread, (b) the
@@ -1379,6 +1423,7 @@ class JavaThread: public Thread {
   void set_stack_overflow_limit() {
     _stack_overflow_limit = _stack_base - _stack_size +
                             ((StackShadowPages +
+                              StackReservedPages +
                               StackYellowPages +
                               StackRedPages) * os::vm_page_size());
   }
@@ -1420,6 +1465,7 @@ class JavaThread: public Thread {
   static ByteSize stack_overflow_limit_offset()  { return byte_offset_of(JavaThread, _stack_overflow_limit); }
   static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
   static ByteSize stack_guard_state_offset()     { return byte_offset_of(JavaThread, _stack_guard_state   ); }
+  static ByteSize reserved_stack_activation_offset() { return byte_offset_of(JavaThread, _reserved_stack_activation); }
   static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags       ); }
 
   static ByteSize do_not_unlock_if_synchronized_offset() { return byte_offset_of(JavaThread, _do_not_unlock_if_synchronized); }
@@ -1430,9 +1476,6 @@ class JavaThread: public Thread {
 #if INCLUDE_ALL_GCS
   static ByteSize satb_mark_queue_offset()       { return byte_offset_of(JavaThread, _satb_mark_queue); }
   static ByteSize dirty_card_queue_offset()      { return byte_offset_of(JavaThread, _dirty_card_queue); }
-
-  static ByteSize gc_state_offset()              { return byte_offset_of(JavaThread, _gc_state); }
-
 #endif // INCLUDE_ALL_GCS
 
   // Returns the jni environment for this thread
@@ -1513,7 +1556,6 @@ class JavaThread: public Thread {
   // Misc. operations
   char* name() const { return (char*)get_thread_name(); }
   void print_on(outputStream* st) const;
-  void print() const { print_on(tty); }
   void print_value();
   void print_thread_state_on(outputStream* ) const      PRODUCT_RETURN;
   void print_thread_state() const                       PRODUCT_RETURN;
@@ -1731,15 +1773,6 @@ public:
   static DirtyCardQueueSet& dirty_card_queue_set() {
     return _dirty_card_queue_set;
   }
-
-  inline char gc_state() const;
-
-private:
-  void set_gc_state(char in_prog);
-
-public:
-  static void set_gc_state_all_threads(char in_prog);
-  static void set_force_satb_flush_all_threads(bool value);
 #endif // INCLUDE_ALL_GCS
 
   // This method initializes the SATB and dirty card queues before a
@@ -1798,6 +1831,9 @@ public:
 #endif
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "thread_bsd_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_aarch64
+# include "thread_bsd_aarch64.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "thread_bsd_zero.hpp"
@@ -1863,7 +1899,11 @@ inline bool JavaThread::stack_yellow_zone_disabled() {
   return _stack_guard_state == stack_guard_yellow_disabled;
 }
 
-inline bool JavaThread::stack_yellow_zone_enabled() {
+inline bool JavaThread::stack_reserved_zone_disabled() {
+  return _stack_guard_state == stack_guard_reserved_disabled;
+}
+
+inline bool JavaThread::stack_guards_enabled() {
 #ifdef ASSERT
   if (os::uses_stack_guard_pages() &&
       !(DisablePrimordialThreadGuardPages && os::is_primordial_thread())) {
@@ -1981,7 +2021,6 @@ class Threads: AllStatic {
   static bool includes(JavaThread* p);
   static JavaThread* first()                     { return _thread_list; }
   static void threads_do(ThreadClosure* tc);
-  static void java_threads_do(ThreadClosure* tc);
 
   // Initializes the vm and creates the vm thread
   static jint create_vm(JavaVMInitArgs* args, bool* canTryAgain);

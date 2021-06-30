@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ GCTaskThread::GCTaskThread(GCTaskManager* manager,
     guarantee(_time_stamps != NULL, "Sanity");
   }
   set_id(which);
-  set_name("GC task thread#%d (ParallelGC)", which);
+  set_name("ParGC Thread#%d", which);
 }
 
 GCTaskThread::~GCTaskThread() {
@@ -89,12 +89,6 @@ void GCTaskThread::print_task_time_stamps() {
   _time_stamp_index = 0;
 }
 
-void GCTaskThread::print_on(outputStream* st) const {
-  st->print("\"%s\" ", name());
-  Thread::print_on(st);
-  st->cr();
-}
-
 // GC workers get tasks from the GCTaskManager and execute
 // them in this method.  If there are no tasks to execute,
 // the GC workers wait in the GCTaskManager's get_task()
@@ -104,6 +98,9 @@ void GCTaskThread::run() {
   // Set up the thread for stack overflow support
   this->record_stack_base_and_size();
   this->initialize_thread_local_storage();
+  this->initialize_named_thread();
+  this->init_wx();
+
   // Bind yourself to your processor.
   if (processor_id() != GCTaskManager::sentinel_worker()) {
     if (TraceGCTaskThread) {

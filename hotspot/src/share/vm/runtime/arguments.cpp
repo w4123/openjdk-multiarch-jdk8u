@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  *
+ */
+
+/*
+ * This file has been modified by Azul Systems, Inc. in 2014. These
+ * modifications are Copyright (c) 2014 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above. 
  */
 
 #include "precompiled.hpp"
@@ -66,17 +72,10 @@
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#include "gc_implementation/shenandoah/shenandoahHeap.hpp"
-#include "gc_implementation/shenandoah/shenandoahLogging.hpp"
-#include "gc_implementation/shenandoah/shenandoahHeapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 
 // Note: This is a special bug reporting site for the JVM
-#ifdef VENDOR_URL_VM_BUG
-# define DEFAULT_VENDOR_URL_BUG VENDOR_URL_VM_BUG
-#else
-# define DEFAULT_VENDOR_URL_BUG "http://bugreport.java.com/bugreport/crash.jsp"
-#endif
+#define DEFAULT_VENDOR_URL_BUG "http://www.azulsystems.com/support/"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
 // Disable options not supported in this release, with a warning if they
@@ -198,17 +197,26 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
       _sun_java_launcher_pid = atoi(tail);
       continue;
     }
+    if (match_option(option, "-XX:+OverrideVMProperties", &tail)) {
+      FLAG_SET_CMDLINE(bool, OverrideVMProperties, true);
+    }
   }
 }
 
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
+  // If OverrideVMProperties is enabled, make the properties writeable.
+  // This may be needed to appease some tools.
+  const bool writable = OverrideVMProperties;
 
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
-                                                                 "Java Virtual Machine Specification",  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.name", VM_Version::vm_name(),  false));
-  PropertyList_add(&_system_properties, new SystemProperty("java.vm.info", VM_Version::vm_info_string(),  true));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.specification.name", "Java Virtual Machine Specification",  writable));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.version", VM_Version::vm_release(),  writable));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.name", VM_Version::vm_name(),  writable));
+  PropertyList_add(&_system_properties,
+      new SystemProperty("java.vm.info", VM_Version::vm_info_string(),  true));
 
   // following are JVMTI agent writeable properties.
   // Properties values are set to NULL and they are
@@ -249,12 +257,16 @@ void Arguments::init_version_specific_system_properties() {
   }
   jio_snprintf(buffer, bufsz, "1." UINT32_FORMAT, spec_version);
 
+  // If OverrideVMProperties is enabled, make the properties writeable.
+  // This may be needed to appease some tools.
+  const bool writable = OverrideVMProperties;
+
   PropertyList_add(&_system_properties,
-      new SystemProperty("java.vm.specification.vendor",  spec_vendor, false));
+      new SystemProperty("java.vm.specification.vendor",  spec_vendor, writable));
   PropertyList_add(&_system_properties,
-      new SystemProperty("java.vm.specification.version", buffer, false));
+      new SystemProperty("java.vm.specification.version", buffer,      writable));
   PropertyList_add(&_system_properties,
-      new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),  false));
+      new SystemProperty("java.vm.vendor", VM_Version::vm_vendor(),    writable));
 }
 
 /**
@@ -1545,6 +1557,7 @@ void Arguments::set_use_compressed_oops() {
 #endif // ZERO
 }
 
+
 // NOTE: set_use_compressed_klass_ptrs() must be called after calling
 // set_use_compressed_oops().
 void Arguments::set_use_compressed_klass_ptrs() {
@@ -1584,8 +1597,6 @@ void Arguments::set_conservative_max_heap_alignment() {
     heap_alignment = ParallelScavengeHeap::conservative_max_heap_alignment();
   } else if (UseG1GC) {
     heap_alignment = G1CollectedHeap::conservative_max_heap_alignment();
-  } else if (UseShenandoahGC) {
-    heap_alignment = ShenandoahHeap::conservative_max_heap_alignment();
   }
 #endif // INCLUDE_ALL_GCS
   _conservative_max_heap_alignment = MAX4(heap_alignment,
@@ -1737,178 +1748,6 @@ void Arguments::set_g1_gc_flags() {
   }
 }
 
-void Arguments::set_shenandoah_gc_flags() {
-
-#if !(defined AARCH64 || defined AMD64 || defined IA32)
-  UNSUPPORTED_GC_OPTION(UseShenandoahGC);
-#endif
-
-#if 0 // leave this block as stepping stone for future platforms
-  warning("Shenandoah GC is not fully supported on this platform:");
-  warning("  concurrent modes are not supported, only STW cycles are enabled;");
-  warning("  arch-specific barrier code is not implemented, disabling barriers;");
-
-#if INCLUDE_ALL_GCS
-  FLAG_SET_DEFAULT(ShenandoahGCHeuristics,           "passive");
-
-  FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
-  FLAG_SET_DEFAULT(ShenandoahLoadRefBarrier,         false);
-  FLAG_SET_DEFAULT(ShenandoahStoreValEnqueueBarrier, false);
-  FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
-  FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
-
-  FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers,     false);
-#endif
-#endif
-
-#if INCLUDE_ALL_GCS
-  if (!FLAG_IS_DEFAULT(ShenandoahGarbageThreshold)) {
-    if (0 > ShenandoahGarbageThreshold || ShenandoahGarbageThreshold > 100) {
-      vm_exit_during_initialization("The flag -XX:ShenandoahGarbageThreshold is out of range", NULL);
-    }
-  }
-
-  if (!FLAG_IS_DEFAULT(ShenandoahAllocationThreshold)) {
-    if (0 > ShenandoahAllocationThreshold || ShenandoahAllocationThreshold > 100) {
-      vm_exit_during_initialization("The flag -XX:ShenandoahAllocationThreshold is out of range", NULL);
-    }
-  }
-
-  if (!FLAG_IS_DEFAULT(ShenandoahMinFreeThreshold)) {
-    if (0 > ShenandoahMinFreeThreshold || ShenandoahMinFreeThreshold > 100) {
-      vm_exit_during_initialization("The flag -XX:ShenandoahMinFreeThreshold is out of range", NULL);
-    }
-  }
-#endif
-
-#if INCLUDE_ALL_GCS
-  if (UseLargePages && (MaxHeapSize / os::large_page_size()) < ShenandoahHeapRegion::MIN_NUM_REGIONS) {
-    warning("Large pages size (" SIZE_FORMAT "K) is too large to afford page-sized regions, disabling uncommit",
-            os::large_page_size() / K);
-    FLAG_SET_DEFAULT(ShenandoahUncommit, false);
-  }
-#endif
-
-  // Enable NUMA by default. While Shenandoah is not NUMA-aware, enabling NUMA makes
-  // storage allocation code NUMA-aware.
-  if (FLAG_IS_DEFAULT(UseNUMA)) {
-    FLAG_SET_DEFAULT(UseNUMA, true);
-  }
-
-  // Set up default number of concurrent threads. We want to have cycles complete fast
-  // enough, but we also do not want to steal too much CPU from the concurrently running
-  // application. Using 1/4 of available threads for concurrent GC seems a good
-  // compromise here.
-  bool ergo_conc = FLAG_IS_DEFAULT(ConcGCThreads);
-  if (ergo_conc) {
-    FLAG_SET_DEFAULT(ConcGCThreads, MAX2(1, os::initial_active_processor_count() / 4));
-  }
-
-  if (ConcGCThreads == 0) {
-    vm_exit_during_initialization("Shenandoah expects ConcGCThreads > 0, check -XX:ConcGCThreads=#");
-  }
-
-  // Set up default number of parallel threads. We want to have decent pauses performance
-  // which would use parallel threads, but we also do not want to do too many threads
-  // that will overwhelm the OS scheduler. Using 1/2 of available threads seems to be a fair
-  // compromise here. Due to implementation constraints, it should not be lower than
-  // the number of concurrent threads.
-  bool ergo_parallel = FLAG_IS_DEFAULT(ParallelGCThreads);
-  if (ergo_parallel) {
-    FLAG_SET_DEFAULT(ParallelGCThreads, MAX2(1, os::initial_active_processor_count() / 2));
-  }
-
-  if (ParallelGCThreads == 0) {
-    vm_exit_during_initialization("Shenandoah expects ParallelGCThreads > 0, check -XX:ParallelGCThreads=#");
-  }
-
-  // Make sure ergonomic decisions do not break the thread count invariants.
-  // This may happen when user overrides one of the flags, but not the other.
-  // When that happens, we want to adjust the setting that was set ergonomically.
-  if (ParallelGCThreads < ConcGCThreads) {
-    if (ergo_conc && !ergo_parallel) {
-      FLAG_SET_DEFAULT(ConcGCThreads, ParallelGCThreads);
-    } else if (!ergo_conc && ergo_parallel) {
-      FLAG_SET_DEFAULT(ParallelGCThreads, ConcGCThreads);
-    } else if (ergo_conc && ergo_parallel) {
-      // Should not happen, check the ergonomic computation above. Fail with relevant error.
-      vm_exit_during_initialization("Shenandoah thread count ergonomic error");
-    } else {
-      // User settings error, report and ask user to rectify.
-      vm_exit_during_initialization("Shenandoah expects ConcGCThreads <= ParallelGCThreads, check -XX:ParallelGCThreads, -XX:ConcGCThreads");
-    }
-  }
-
-  if (FLAG_IS_DEFAULT(ParallelRefProcEnabled)) {
-    FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
-  }
-
-#if INCLUDE_ALL_GCS
-  if (ShenandoahRegionSampling && FLAG_IS_DEFAULT(PerfDataMemorySize)) {
-    // When sampling is enabled, max out the PerfData memory to get more
-    // Shenandoah data in, including Matrix.
-    FLAG_SET_DEFAULT(PerfDataMemorySize, 2048*K);
-  }
-#endif
-
-#ifdef COMPILER2
-  // Shenandoah cares more about pause times, rather than raw throughput.
-  // Enabling safepoints in counted loops makes it more responsive with
-  // long loops. However, it is risky in 8u, due to bugs it brings, for
-  // example JDK-8176506. Warn user about this, and proceed.
-  if (UseCountedLoopSafepoints) {
-    warning("Enabling -XX:UseCountedLoopSafepoints is known to cause JVM bugs. Use at your own risk.");
-  }
-
-#ifdef ASSERT
-  // C2 barrier verification is only reliable when all default barriers are enabled
-  if (ShenandoahVerifyOptoBarriers &&
-          (!FLAG_IS_DEFAULT(ShenandoahSATBBarrier)    ||
-           !FLAG_IS_DEFAULT(ShenandoahLoadRefBarrier) ||
-           !FLAG_IS_DEFAULT(ShenandoahStoreValEnqueueBarrier) ||
-           !FLAG_IS_DEFAULT(ShenandoahCASBarrier)     ||
-           !FLAG_IS_DEFAULT(ShenandoahCloneBarrier)
-          )) {
-    warning("Unusual barrier configuration, disabling C2 barrier verification");
-    FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers, false);
-  }
-#else
-  guarantee(!ShenandoahVerifyOptoBarriers, "Should be disabled");
-#endif // ASSERT
-#endif // COMPILER2
-
-#if INCLUDE_ALL_GCS
-  if ((InitialHeapSize == MaxHeapSize) && ShenandoahUncommit) {
-    if (PrintGC) {
-      tty->print_cr("Min heap equals to max heap, disabling ShenandoahUncommit");
-    }
-    FLAG_SET_DEFAULT(ShenandoahUncommit, false);
-  }
-
-  // If class unloading is disabled, no unloading for concurrent cycles as well.
-  if (!ClassUnloading) {
-    FLAG_SET_DEFAULT(ClassUnloadingWithConcurrentMark, false);
-  }
-
-  // TLAB sizing policy makes resizing decisions before each GC cycle. It averages
-  // historical data, assigning more recent data the weight according to TLABAllocationWeight.
-  // Current default is good for generational collectors that run frequent young GCs.
-  // With Shenandoah, GC cycles are much less frequent, so we need we need sizing policy
-  // to converge faster over smaller number of resizing decisions.
-  if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
-    FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
-  }
-
-  if (FLAG_IS_DEFAULT(ShenandoahSoftMaxHeapSize)) {
-    FLAG_SET_DEFAULT(ShenandoahSoftMaxHeapSize, MaxHeapSize);
-  } else {
-    if (ShenandoahSoftMaxHeapSize > MaxHeapSize) {
-      vm_exit_during_initialization("ShenandoahSoftMaxHeapSize must be less than or equal to the maximum heap size\n");
-    }
-  }
-#endif
-}
-
 #if !INCLUDE_ALL_GCS
 #ifdef ASSERT
 static bool verify_serial_gc_flags() {
@@ -1930,8 +1769,6 @@ void Arguments::set_gc_specific_flags() {
     set_parnew_gc_flags();
   } else if (UseG1GC) {
     set_g1_gc_flags();
-  } else if (UseShenandoahGC) {
-    set_shenandoah_gc_flags();
   }
   check_deprecated_gcs();
   check_deprecated_gc_flags();
@@ -1952,7 +1789,6 @@ void Arguments::set_gc_specific_flags() {
     FLAG_SET_CMDLINE(bool, CMSClassUnloadingEnabled, false);
     FLAG_SET_CMDLINE(bool, ClassUnloadingWithConcurrentMark, false);
     FLAG_SET_CMDLINE(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false);
-    FLAG_SET_CMDLINE(uintx, ShenandoahUnloadClassesFrequency, 0);
   }
 #else // INCLUDE_ALL_GCS
   assert(verify_serial_gc_flags(), "SerialGC unset");
@@ -2333,11 +2169,6 @@ void check_gclog_consistency() {
     jio_fprintf(defaultStream::output_stream(),
                 "GCLogFileSize changed to minimum 8K\n");
   }
-
-  // Record more information about previous cycles for improved debugging pleasure
-  if (FLAG_IS_DEFAULT(LogEventsBufferEntries)) {
-    FLAG_SET_DEFAULT(LogEventsBufferEntries, 250);
-  }
 }
 
 // This function is called for -Xloggc:<filename>, it can be used
@@ -2433,7 +2264,6 @@ bool Arguments::check_gc_consistency() {
   if (UseConcMarkSweepGC || UseParNewGC) i++;
   if (UseParallelGC || UseParallelOldGC) i++;
   if (UseG1GC)                           i++;
-  if (UseShenandoahGC)                   i++;
   if (i > 1) {
     jio_fprintf(defaultStream::error_stream(),
                 "Conflicting collector combinations in option list; "
@@ -2821,11 +2651,11 @@ bool Arguments::check_vm_args_consistency() {
                 "Invalid ReservedCodeCacheSize=%dK. Must be at least %uK.\n", ReservedCodeCacheSize/K,
                 min_code_cache_size/K);
     status = false;
-  } else if (ReservedCodeCacheSize > CODE_CACHE_SIZE_LIMIT) {
-    // Code cache size larger than CODE_CACHE_SIZE_LIMIT is not supported.
+  } else if (ReservedCodeCacheSize > 2*G) {
+    // Code cache size larger than MAXINT is not supported.
     jio_fprintf(defaultStream::error_stream(),
                 "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
-                CODE_CACHE_SIZE_LIMIT/M);
+                (2*G)/M);
     status = false;
   }
 
@@ -2846,6 +2676,12 @@ bool Arguments::check_vm_args_consistency() {
   // Check the minimum number of compiler threads
   status &=verify_min_value(CICompilerCount, min_number_of_compiler_threads, "CICompilerCount");
 
+#ifndef SUPPORT_RESERVED_STACK_AREA
+  if (StackReservedPages != 0) {
+    FLAG_SET_CMDLINE(intx, StackReservedPages, 0);
+    warning("Reserved Stack Area not supported on this platform");
+  }
+#endif
   return status;
 }
 

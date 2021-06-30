@@ -261,7 +261,7 @@ public final class DOMX509Data extends DOMStructure implements X509Data {
         }
         X509Data oxd = (X509Data)o;
 
-        @SuppressWarnings("unchecked") List<Object> ocontent = oxd.getContent();
+        List<?> ocontent = oxd.getContent();
         int size = content.size();
         if (size != ocontent.size()) {
             return false;

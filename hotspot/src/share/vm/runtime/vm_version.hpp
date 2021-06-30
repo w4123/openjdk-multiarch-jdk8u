@@ -28,6 +28,17 @@
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
 
+typedef enum {
+  NoDetectedVirtualization,
+  XenHVM,
+  KVM,
+  VMWare,
+  HyperV,
+  PowerVM, // on AIX or Linux ppc64(le)
+  PowerFullPartitionMode, // on Linux ppc64(le)
+  PowerKVM
+} VirtualizationType;
+
 // VM_Version provides information about the VM.
 
 class Abstract_VM_Version: AllStatic {
@@ -54,7 +65,9 @@ class Abstract_VM_Version: AllStatic {
   static unsigned int nof_parallel_worker_threads(unsigned int num,
                                                   unsigned int dem,
                                                   unsigned int switch_pt);
- public:
+  static VirtualizationType _detected_virtualization;
+
+public:
   // Called as part of the runtime services initialization which is
   // called from the management module initialization (via init_globals())
   // after argument parsing and attaching of the main thread has
@@ -95,6 +108,14 @@ class Abstract_VM_Version: AllStatic {
   // Internal version providing additional build information
   static const char* internal_vm_info_string();
   static const char* jre_release_version();
+
+  static VirtualizationType get_detected_virtualization() {
+    return _detected_virtualization;
+  }
+
+  // platforms that need to specialize this
+  // define VM_Version::print_platform_virtualization_info()
+  static void print_platform_virtualization_info(outputStream*) { }
 
   // does HW support an 8-byte compare-exchange operation?
   static bool supports_cx8()  {
@@ -143,6 +164,8 @@ class Abstract_VM_Version: AllStatic {
   // Calculates and returns the number of parallel threads.  May
   // be VM version specific.
   static unsigned int calc_parallel_worker_threads();
+
+  static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]);
 };
 
 #endif // SHARE_VM_RUNTIME_VM_VERSION_HPP

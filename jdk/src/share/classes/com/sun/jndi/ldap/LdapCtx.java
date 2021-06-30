@@ -49,6 +49,7 @@ import java.util.Enumeration;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import com.sun.jndi.ldap.sasl.LdapSasl;
 import com.sun.jndi.toolkit.ctx.*;
 import com.sun.jndi.toolkit.dir.HierMemDirCtx;
 import com.sun.jndi.toolkit.dir.SearchFilter;
@@ -2828,6 +2829,9 @@ final public class LdapCtx extends ComponentDirContext
                 (String)envprops.get(Context.SECURITY_AUTHENTICATION);
 
             usePool = "true".equalsIgnoreCase((String)envprops.get(ENABLE_POOL));
+
+            // verify SASL properties
+            LdapSasl.checkSaslParameters(envprops);
         }
 
         if (socketFactory == null) {

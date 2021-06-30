@@ -92,6 +92,8 @@ class ZipFile implements ZipConstants, Closeable {
 
     private static final boolean ensuretrailingslash;
 
+    private static final boolean disableInflaterCache;
+
     static {
         // A system prpperty to disable mmap use to avoid vm crash when
         // in-use zip file is accidently overwritten by others.
@@ -102,6 +104,9 @@ class ZipFile implements ZipConstants, Closeable {
         // see getEntry() for details
         prop = sun.misc.VM.getSavedProperty("jdk.util.zip.ensureTrailingSlash");
         ensuretrailingslash = prop == null || !prop.equalsIgnoreCase("false");
+
+        prop = sun.misc.VM.getSavedProperty("sun.zip.disableInflaterCache");
+        disableInflaterCache = prop != null && prop.equalsIgnoreCase("true");
     }
 
     /**
@@ -458,11 +463,13 @@ class ZipFile implements ZipConstants, Closeable {
      * a new one.
      */
     private Inflater getInflater() {
-        Inflater inf;
-        synchronized (inflaterCache) {
-            while (null != (inf = inflaterCache.poll())) {
-                if (false == inf.ended()) {
-                    return inf;
+        if (!disableInflaterCache) {
+            Inflater inf;
+            synchronized (inflaterCache) {
+                while (null != (inf = inflaterCache.poll())) {
+                    if (false == inf.ended()) {
+                        return inf;
+                    }
                 }
             }
         }
@@ -474,9 +481,13 @@ class ZipFile implements ZipConstants, Closeable {
      */
     private void releaseInflater(Inflater inf) {
         if (false == inf.ended()) {
-            inf.reset();
-            synchronized (inflaterCache) {
-                inflaterCache.add(inf);
+            if (!disableInflaterCache) {
+                inf.reset();
+                synchronized (inflaterCache) {
+                    inflaterCache.add(inf);
+                }
+            } else {
+                inf.end();
             }
         }
     }

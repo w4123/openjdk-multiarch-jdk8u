@@ -34,7 +34,6 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/oopMap.hpp"
-#include "gc_implementation/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_interface/collectedHeap.hpp"
@@ -582,31 +581,6 @@ const TypeFunc *OptoRuntime::g1_wb_post_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::shenandoah_clone_barrier_Type() {
-  const Type **fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeOopPtr::NOTNULL; // src oop
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
-
-  return TypeFunc::make(domain, range);
-}
-
-const TypeFunc *OptoRuntime::shenandoah_write_barrier_Type() {
-  const Type **fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-  return TypeFunc::make(domain, range);
-}
-
 const TypeFunc *OptoRuntime::uncommon_trap_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
@@ -948,6 +922,35 @@ const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   return TypeFunc::make(domain, range);
 }
 
+//for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
+const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
+  // create input type (domain)
+  int num_args = 7;
+  if (Matcher::pass_original_key_for_aes()) {
+    num_args = 8;
+  }
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL; // src
+  fields[argp++] = TypePtr::NOTNULL; // dest
+  fields[argp++] = TypePtr::NOTNULL; // k array
+  fields[argp++] = TypePtr::NOTNULL; // counter array
+  fields[argp++] = TypeInt::INT; // src len
+  fields[argp++] = TypePtr::NOTNULL; // saved_encCounter
+  fields[argp++] = TypePtr::NOTNULL; // saved used addr
+  if (Matcher::pass_original_key_for_aes()) {
+    fields[argp++] = TypePtr::NOTNULL; // original k array
+  }
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+  // returning cipher len (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 /*
  * void implCompress(byte[] buf, int ofs)
  */
@@ -1130,7 +1133,6 @@ const TypeFunc* OptoRuntime::montgomerySquare_Type() {
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
-
 
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
@@ -1411,6 +1413,8 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
     ShouldNotReachHere();
   }
 #endif
+
+  Thread::WXWriteFromExecSetter wx_write;
 
   thread->set_vm_result(exception);
   // Frame not compiled (handles deoptimization blob)

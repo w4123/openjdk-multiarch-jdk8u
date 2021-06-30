@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 7093640
+ * @bug 7093640 8234725
  * @summary Enable TLS 1.1 and TLS 1.2 by default in client side of SunJSSE
  * @library /lib/security
  * @run main/othervm -Djdk.tls.client.protocols="XSLv3,TLSv1"
@@ -44,7 +44,8 @@ public class IllegalProtocolProperty {
         TLS_CV_04("TLSv1", "TLSv1", "TLSv1.2", false),
         TLS_CV_05("TLSv1.1", "TLSv1.1", "TLSv1.2", false),
         TLS_CV_06("TLSv1.2", "TLSv1.2", "TLSv1.2", false),
-        TLS_CV_07("Default", "TLSv1", "TLSv1.2", true);
+        TLS_CV_07("Default", "TLSv1", "TLSv1.2", true),
+        TLS_CV_08("TLSv1.3", "TLSv1.3", "TLSv1.3", false);
 
         final String contextVersion;
         final String defaultProtocolVersion;

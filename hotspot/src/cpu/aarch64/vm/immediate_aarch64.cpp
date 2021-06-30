@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2013, Red Hat Inc.
- * All rights reserved.
+ * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +19,7 @@
  */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include "immediate_aarch64.hpp"
 
 // there are at most 2^13 possible logical immediate encodings
@@ -60,9 +60,9 @@ int compare_immediate_pair(const void *i1, const void *i2)
 // helper functions used by expandLogicalImmediate
 
 // for i = 1, ... N result<i-1> = 1 other bits are zero
-static inline u_int64_t ones(int N)
+static inline uint64_t ones(int N)
 {
-  return (N == 64 ? (u_int64_t)-1UL : ((1UL << N) - 1));
+  return (N == 64 ? -1ULL : (1ULL << N) - 1);
 }
 
 /*

@@ -80,8 +80,6 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy_ext.hpp"
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
-#include "gc_implementation/shenandoah/shenandoahHeap.hpp"
-#include "gc_implementation/shenandoah/shenandoahCollectorPolicy.hpp"
 #endif // INCLUDE_ALL_GCS
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
@@ -123,6 +121,7 @@ oop Universe::_out_of_memory_error_class_metaspace    = NULL;
 oop Universe::_out_of_memory_error_array_size         = NULL;
 oop Universe::_out_of_memory_error_gc_overhead_limit  = NULL;
 oop Universe::_out_of_memory_error_realloc_objects    = NULL;
+oop Universe::_delayed_stack_overflow_error_message   = NULL;
 objArrayOop Universe::_preallocated_out_of_memory_error_array = NULL;
 volatile jint Universe::_preallocated_out_of_memory_error_avail_count = 0;
 bool Universe::_verify_in_progress                    = false;
@@ -195,7 +194,8 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_out_of_memory_error_array_size);
   f->do_oop((oop*)&_out_of_memory_error_gc_overhead_limit);
   f->do_oop((oop*)&_out_of_memory_error_realloc_objects);
-    f->do_oop((oop*)&_preallocated_out_of_memory_error_array);
+  f->do_oop((oop*)&_delayed_stack_overflow_error_message);
+  f->do_oop((oop*)&_preallocated_out_of_memory_error_array);
   f->do_oop((oop*)&_null_ptr_exception_instance);
   f->do_oop((oop*)&_arithmetic_exception_instance);
   f->do_oop((oop*)&_virtual_machine_error_instance);
@@ -817,15 +817,6 @@ jint Universe::initialize_heap() {
     fatal("UseG1GC not supported in java kernel vm.");
 #endif // INCLUDE_ALL_GCS
 
-  } else if (UseShenandoahGC) {
-#if INCLUDE_ALL_GCS
-    ShenandoahCollectorPolicy* shcp = new ShenandoahCollectorPolicy();
-    ShenandoahHeap* sh = new ShenandoahHeap(shcp);
-    Universe::_collectedHeap = sh;
-#else  // INCLUDE_ALL_GCS
-    fatal("UseShenandoahGC not supported in java kernel vm.");
-#endif // INCLUDE_ALL_GCS
-
   } else {
     GenCollectorPolicy *gc_policy;
 
@@ -1064,6 +1055,12 @@ bool universe_post_init() {
     Universe::_out_of_memory_error_gc_overhead_limit =
       k_h->allocate_instance(CHECK_false);
     Universe::_out_of_memory_error_realloc_objects = k_h->allocate_instance(CHECK_false);
+
+    // Setup preallocated cause message for delayed StackOverflowError
+    if (StackReservedPages > 0) {
+      Universe::_delayed_stack_overflow_error_message =
+        java_lang_String::create_oop_from_str("Delayed StackOverflowError due to ReservedStackAccess annotated method", CHECK_false);
+    }
 
     // Setup preallocated NullPointerException
     // (this is currently used for a cheap & dirty solution in compiler exception handling)

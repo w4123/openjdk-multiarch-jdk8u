@@ -43,9 +43,6 @@
 #include "vmreg_aarch64.inline.hpp"
 
 
-#if INCLUDE_ALL_GCS
-#include "shenandoahBarrierSetAssembler_aarch64.hpp"
-#endif
 
 #ifndef PRODUCT
 #define COMMENT(x)   do { __ block_comment(x); } while (0)
@@ -527,7 +524,7 @@ void LIR_Assembler::poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo*
   __ br(rscratch1);
   address polling_page(os::get_polling_page());
   assert(os::is_poll_address(polling_page), "should be");
-  unsigned long off;
+  uint64_t off;
   __ adrp(rscratch1, Address(polling_page, rtype), off);
   __ bind(poll);
   if (info)
@@ -557,7 +554,7 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
   if (UseCompilerSafepoints) {
     guarantee(info != NULL, "Shouldn't be NULL");
     assert(os::is_poll_address(polling_page), "should be");
-    unsigned long off;
+    uint64_t off;
     __ adrp(rscratch1, Address(polling_page, relocInfo::poll_type), off);
     assert(off == 0, "must be");
     add_debug_info_for_branch(info);  // This isn't just debug info:
@@ -1437,7 +1434,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ load_klass(klass_RInfo, obj);
     if (k->is_loaded()) {
       // See if we get an immediate positive hit
-      __ ldr(rscratch1, Address(klass_RInfo, long(k->super_check_offset())));
+      __ ldr(rscratch1, Address(klass_RInfo, int64_t(k->super_check_offset())));
       __ cmp(k_RInfo, rscratch1);
       if ((juint)in_bytes(Klass::secondary_super_cache_offset()) != k->super_check_offset()) {
         __ br(Assembler::NE, *failure_target);
@@ -1615,55 +1612,29 @@ void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
 }
 
 
-// Return 1 in rscratch1 if the CAS fails.
 void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
   assert(VM_Version::supports_cx8(), "wrong machine");
   Register addr = as_reg(op->addr());
   Register newval = as_reg(op->new_value());
   Register cmpval = as_reg(op->cmp_value());
   Label succeed, fail, around;
-  Register res = op->result_opr()->as_register();
 
   if (op->code() == lir_cas_obj) {
-    assert(op->tmp1()->is_valid(), "must be");
-    Register t1 = op->tmp1()->as_register();
     if (UseCompressedOops) {
-#if INCLUDE_ALL_GCS
-      if (UseShenandoahGC && ShenandoahCASBarrier) {
-        __ encode_heap_oop(t1, cmpval);
-        cmpval = t1;
-        assert(op->tmp2()->is_valid(), "must be");
-        Register t2 = op->tmp2()->as_register();
-        __ encode_heap_oop(t2, newval);
-        newval = t2;
-        ShenandoahBarrierSetAssembler::bsasm()->cmpxchg_oop(_masm, addr, cmpval, newval, /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false, res);
-      } else
-#endif
-      {
-        __ encode_heap_oop(t1, cmpval);
-        cmpval = t1;
-        __ encode_heap_oop(rscratch2, newval);
-        newval = rscratch2;
-        casw(addr, newval, cmpval);
-        __ eorw (res, r8, 1);
-      }
+      Register t1 = op->tmp1()->as_register();
+      assert(op->tmp1()->is_valid(), "must be");
+      __ encode_heap_oop(t1, cmpval);
+      cmpval = t1;
+      __ encode_heap_oop(rscratch2, newval);
+      newval = rscratch2;
+      casw(addr, newval, cmpval);
     } else {
-#if INCLUDE_ALL_GCS
-      if (UseShenandoahGC && ShenandoahCASBarrier) {
-        ShenandoahBarrierSetAssembler::bsasm()->cmpxchg_oop(_masm, addr, cmpval, newval, /*acquire*/ false, /*release*/ true, /*weak*/ false, /*is_cae*/ false, res);
-      } else
-#endif
-      {
-        casl(addr, newval, cmpval);
-        __ eorw (res, r8, 1);
-      }
+      casl(addr, newval, cmpval);
     }
   } else if (op->code() == lir_cas_int) {
     casw(addr, newval, cmpval);
-    __ eorw (res, r8, 1);
   } else {
     casl(addr, newval, cmpval);
-    __ eorw (res, r8, 1);
   }
 }
 
@@ -2335,14 +2306,14 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::dst_objarray)) {
       __ load_klass(tmp, dst);
       __ ldrw(rscratch1, Address(tmp, in_bytes(Klass::layout_helper_offset())));
-      __ cmpw(rscratch1, Klass::_lh_neutral_value);
+      __ cmpw(rscratch1, (uint64_t)Klass::_lh_neutral_value);
       __ br(Assembler::GE, *stub->entry());
     }
 
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::src_objarray)) {
       __ load_klass(tmp, src);
       __ ldrw(rscratch1, Address(tmp, in_bytes(Klass::layout_helper_offset())));
-      __ cmpw(rscratch1, Klass::_lh_neutral_value);
+      __ cmpw(rscratch1, (uint64_t)Klass::_lh_neutral_value);
       __ br(Assembler::GE, *stub->entry());
     }
   }
@@ -2716,7 +2687,7 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   Register res = op->result_opr()->as_register();
 
   assert_different_registers(val, crc, res);
-  unsigned long offset;
+  uint64_t offset;
   __ adrp(res, ExternalAddress(StubRoutines::crc_table_addr()), offset);
   if (offset) __ add(res, res, offset);
 
@@ -2908,14 +2879,7 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
 }
 
 
-void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, CodeEmitInfo* info) {
-#if INCLUDE_ALL_GCS
-  if (UseShenandoahGC && patch_code != lir_patch_none) {
-    deoptimize_trap(info);
-    return;
-  }
-#endif
-
+void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest) {
   __ lea(dest->as_register_lo(), as_Address(addr->as_address_ptr()));
 }
 

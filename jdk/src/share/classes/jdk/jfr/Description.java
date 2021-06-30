@@ -42,6 +42,7 @@ import java.lang.annotation.Target;
 @MetadataDefinition
 @Target({ ElementType.TYPE, ElementType.FIELD, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
+@jdk.Exported
 public @interface Description {
     /**
      * Returns a sentence or two that describes the annotated element.

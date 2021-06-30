@@ -369,7 +369,7 @@ public class RFC2253Parser {
         int k;
 
         for (int j = 0; (k = string.indexOf("\\20", j)) >= 0; j = k + 3) {
-            sb.append(trim(string.substring(i, k)) + "\\ ");
+            sb.append(trim(string.substring(i, k))).append("\\ ");
 
             i = k + 3;
         }
@@ -418,7 +418,7 @@ public class RFC2253Parser {
             l += countQuotes(str, j, k);
 
             if (k > 0 && str.charAt(k - 1) != '\\' && (l % 2) == 0) {
-                sb.append(trim(str.substring(i, k)) + replace);
+                sb.append(trim(str.substring(i, k))).append(replace);
 
                 i = k + 1;
                 l = 0;

@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "os_solaris.inline.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef TARGET_ARCH_aarch32
@@ -795,12 +796,54 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
   }
 
   NetworkInterface* ret = NULL;
-  for (kstat_t* k = ctl->kc_chain; k != NULL; k = k->ks_next) {
+  bool isSolaris11 = false;
+  GrowableArray<char *> NetworkModules;
+  //on solaris 11, network interfaces have class "net" and module "link"
+  for (kstat_t* k = ctl->kc_chain; k != NULL && !isSolaris11; k = k->ks_next) {
     if (strcmp(k->ks_class, "net") != 0) {
       continue;
     }
     if (strcmp(k->ks_module, "link") != 0) {
       continue;
+    }
+    isSolaris11 = true;
+  }
+  //however on solaris 10 it's harder to enumerate interfaces, first need to
+  //find all modules with name mac and class net, they represent the actual network driver/modules
+  if (!isSolaris11)
+  {
+    for (kstat_t* k = ctl->kc_chain; k != NULL; k = k->ks_next) {
+      if (strcmp(k->ks_class, "net") != 0) {
+        continue;
+      }
+      if (strcmp(k->ks_name, "mac") != 0) {
+        continue;
+      }
+      //save only ptrs, as they should stay persistent in memory durring this function
+      NetworkModules.append_if_missing(k->ks_module);
+    }
+  }
+  for (kstat_t* k = ctl->kc_chain; k != NULL; k = k->ks_next) {
+    if (strcmp(k->ks_class, "net") != 0) {
+      continue;
+    }
+    if (isSolaris11) {
+      if (strcmp(k->ks_module, "link") != 0) {
+        continue;
+      }
+    } else {
+      //On solaris 10 check the module to be one from our list
+      bool MatchFound = false;
+      for (int index = 0; index < NetworkModules.length() && !MatchFound; ++index) {
+        char * NetworkModuleName = NetworkModules.at(index);
+        if (NetworkModuleName == k->ks_module || (strcmp(k->ks_module, NetworkModuleName) == 0)) {
+          MatchFound = true;
+        }
+      }
+      //for actual network interface, module is substring of name, starting at position 0;
+      if (!MatchFound || (strstr(k->ks_name, k->ks_module) != k->ks_name)) {
+        continue;
+      }
     }
 
     if (kstat_read(ctl, k, NULL) == -1) {

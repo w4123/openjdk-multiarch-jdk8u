@@ -36,6 +36,7 @@ import com.sun.org.apache.xml.internal.security.exceptions.AlgorithmAlreadyRegis
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
+import com.sun.org.apache.xml.internal.security.utils.ClassLoaderUtils;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.w3c.dom.Attr;
@@ -151,8 +152,7 @@ public class SignatureAlgorithm extends Algorithm {
                 Object exArgs[] = { algorithmURI };
                 throw new XMLSignatureException("algorithms.NoSuchAlgorithmNoEx", exArgs);
             }
-            SignatureAlgorithmSpi tmp = implementingClass.newInstance();
-            return tmp;
+            return implementingClass.newInstance();
         }  catch (IllegalAccessException | InstantiationException | NullPointerException ex) {
             Object exArgs[] = { algorithmURI, ex.getMessage() };
             throw new XMLSignatureException(ex, "algorithms.NoSuchAlgorithm", exArgs);
@@ -291,7 +291,7 @@ public class SignatureAlgorithm extends Algorithm {
      * which is executed on the internal {@link java.security.Signature} object.
      *
      * @param signature
-     * @return true if if the signature is valid.
+     * @return true if the signature is valid.
      *
      * @throws XMLSignatureException
      */
@@ -423,6 +423,18 @@ public class SignatureAlgorithm extends Algorithm {
         );
         algorithmHash.put(
             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512_MGF1, SignatureBaseRSA.SignatureRSASHA512MGF1.class
+        );
+        algorithmHash.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_224_MGF1, SignatureBaseRSA.SignatureRSASHA3_224MGF1.class
+        );
+        algorithmHash.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_256_MGF1, SignatureBaseRSA.SignatureRSASHA3_256MGF1.class
+        );
+        algorithmHash.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_384_MGF1, SignatureBaseRSA.SignatureRSASHA3_384MGF1.class
+        );
+        algorithmHash.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_512_MGF1, SignatureBaseRSA.SignatureRSASHA3_512MGF1.class
         );
         algorithmHash.put(
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA1, SignatureECDSA.SignatureECDSASHA1.class

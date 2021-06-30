@@ -77,6 +77,7 @@ import jdk.jfr.internal.Utils;
  *
  * @since 8
  */
+@jdk.Exported
 public final class EventFactory {
 
     private static final long REGISTERED_ID = Type.getTypeId(Registered.class);

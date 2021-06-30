@@ -23,6 +23,10 @@
  * questions.
  */
 
+#ifdef __APPLE__
+#include "TargetConditionals.h"
+#endif
+
 #include <jawt.h>
 
 #include "awt_DrawingSurface.h"
@@ -33,7 +37,8 @@
  */
 JNIEXPORT jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
 {
-#if defined(JAVASE_EMBEDDED) && defined(HEADLESS)
+// todo remove check if ios port get x11 support
+#if defined(HEADLESS) || ((defined(__ANDROID__) || defined(TARGET_OS_IOS) || defined(JAVASE_EMBEDDED)) && defined(HEADLESS))
     /* there are no AWT libs available at all */
     return JNI_FALSE;
 #else
@@ -47,6 +52,7 @@ JNIEXPORT jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt)
         return JNI_FALSE;
     }
 
+    // TODO still want port below to Android :v
     awt->GetDrawingSurface = awt_GetDrawingSurface;
     awt->FreeDrawingSurface = awt_FreeDrawingSurface;
     if (awt->version >= JAWT_VERSION_1_4) {

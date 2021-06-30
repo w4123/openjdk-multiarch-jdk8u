@@ -118,7 +118,8 @@ class Method : public Metadata {
                     _running_emcp         : 1,
                     _dont_inline          : 1,
                     _has_injected_profile : 1,
-                                          : 2;
+                    _reserved_stack_access: 1,
+                                          : 1;
 
   JFR_ONLY(DEFINE_TRACE_FLAG;)
 
@@ -142,7 +143,9 @@ class Method : public Metadata {
 
   // Constructor
   Method(ConstMethod* xconst, AccessFlags access_flags, int size);
- public:
+
+  CRS_ONLY(u1 _use_flag;)
+public:
 
   static Method* allocate(ClassLoaderData* loader_data,
                           int byte_code_size,
@@ -669,6 +672,9 @@ class Method : public Metadata {
   static ByteSize interpreter_entry_offset()     { return byte_offset_of(Method, _i2i_entry ); }
   static ByteSize signature_handler_offset()     { return in_ByteSize(sizeof(Method) + wordSize);      }
   static ByteSize itable_index_offset()          { return byte_offset_of(Method, _vtable_index ); }
+#if INCLUDE_CRS
+  static ByteSize use_flag_offset()              { return byte_offset_of(Method, _use_flag); }
+#endif
 
   // for code generation
   static int method_data_offset_in_bytes()       { return offset_of(Method, _method_data); }
@@ -810,6 +816,8 @@ class Method : public Metadata {
   void set_hidden(bool x)               {        _hidden = x;               }
   bool     has_injected_profile()       { return _has_injected_profile;     }
   void set_has_injected_profile(bool x) {        _has_injected_profile = x; }
+  bool has_reserved_stack_access()      { return _reserved_stack_access;    }
+  void set_has_reserved_stack_access(bool x) {  _reserved_stack_access = x; }
 
   JFR_ONLY(DEFINE_TRACE_FLAG_ACCESSOR;)
 
@@ -919,7 +927,11 @@ class Method : public Metadata {
   void verify() { verify_on(tty); }
   void verify_on(outputStream* st);
 
- private:
+#if INCLUDE_CRS
+  bool was_used() const                          { return _use_flag != 0; }
+#endif
+
+private:
 
   // Inlined elements
   address* native_function_addr() const          { assert(is_native(), "must be native"); return (address*) (this+1); }

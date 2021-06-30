@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 1999-2019 The Apache Software Foundation.
@@ -43,6 +42,7 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
  * The XPath class wraps an expression object and provides general services
  * for execution of that expression.
  * @xsl.usage advanced
+ * @LastModified: May 2019
  */
 public class XPath implements Serializable, ExpressionOwner
 {

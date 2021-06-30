@@ -146,6 +146,7 @@ import jdk.jfr.internal.Control;
  * @since 8
  */
 @MetadataDefinition
+@jdk.Exported
 public abstract class SettingControl extends Control {
 
     /**

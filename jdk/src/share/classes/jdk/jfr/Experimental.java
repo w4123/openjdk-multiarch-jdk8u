@@ -55,5 +55,6 @@ import java.lang.annotation.Target;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.TYPE })
+@jdk.Exported
 public @interface Experimental {
 }

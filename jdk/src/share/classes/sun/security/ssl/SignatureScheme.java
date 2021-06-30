@@ -276,10 +276,10 @@ enum SignatureScheme {
                 Arrays.asList(handshakeSupportedProtocols);
 
         boolean mediator = true;
-        // HACK CODE
-        //
         // An EC provider, for example the SunEC provider, may support
         // AlgorithmParameters but not KeyPairGenerator or Signature.
+        //
+        // Note: Please be careful if removing this block!
         if ("EC".equals(keyAlgorithm)) {
             mediator = JsseJce.isEcAvailable();
         }
@@ -357,6 +357,17 @@ enum SignatureScheme {
         return 2;
     }
 
+    private boolean isPermitted(AlgorithmConstraints constraints) {
+        return constraints.permits(SIGNATURE_PRIMITIVE_SET,
+                        this.name, null) &&
+               constraints.permits(SIGNATURE_PRIMITIVE_SET,
+                        this.keyAlgorithm, null) &&
+               constraints.permits(SIGNATURE_PRIMITIVE_SET,
+                        this.algorithm, null) &&
+               (namedGroup != null ?
+                        namedGroup.isPermitted(constraints) : true);
+    }
+
     // Get local supported algorithm collection complying to algorithm
     // constraints.
     static List<SignatureScheme> getSupportedAlgorithms(
@@ -385,8 +396,7 @@ enum SignatureScheme {
             }
 
             if (isMatch) {
-                if (constraints.permits(
-                        SIGNATURE_PRIMITIVE_SET, ss.algorithm, null)) {
+                if (ss.isPermitted(constraints)) {
                     supported.add(ss);
                 } else if (SSLLogger.isOn &&
                         SSLLogger.isOn("ssl,handshake,verbose")) {
@@ -420,8 +430,7 @@ enum SignatureScheme {
                     ss.supportedProtocols.contains(protocolVersion) &&
                     (config.signatureSchemes.isEmpty() ||
                         config.signatureSchemes.contains(ss)) &&
-                    constraints.permits(SIGNATURE_PRIMITIVE_SET,
-                           ss.algorithm, null)) {
+                    ss.isPermitted(constraints)) {
                 supported.add(ss);
             } else {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -435,6 +444,7 @@ enum SignatureScheme {
     }
 
     static SignatureScheme getPreferableAlgorithm(
+            AlgorithmConstraints constraints,
             List<SignatureScheme> schemes,
             SignatureScheme certScheme,
             ProtocolVersion version) {
@@ -442,7 +452,8 @@ enum SignatureScheme {
         for (SignatureScheme ss : schemes) {
             if (ss.isAvailable &&
                     ss.handshakeSupportedProtocols.contains(version) &&
-                    certScheme.keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm)) {
+                    certScheme.keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
+                    ss.isPermitted(constraints)) {
 
                 return ss;
             }
@@ -452,6 +463,7 @@ enum SignatureScheme {
     }
 
     static Map.Entry<SignatureScheme, Signature> getSignerOfPreferableAlgorithm(
+            AlgorithmConstraints constraints,
             List<SignatureScheme> schemes,
             X509Possession x509Possession,
             ProtocolVersion version) {
@@ -469,7 +481,8 @@ enum SignatureScheme {
         for (SignatureScheme ss : schemes) {
             if (ss.isAvailable && (keySize >= ss.minimalKeySize) &&
                 ss.handshakeSupportedProtocols.contains(version) &&
-                keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm)) {
+                    keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
+                    ss.isPermitted(constraints)) {
                 if (ss.namedGroup != null &&
                     ss.namedGroup.type == NamedGroupType.NAMED_GROUP_ECDHE) {
                     ECParameterSpec params =

@@ -2630,7 +2630,7 @@ JNI_ENTRY(jobject, jni_GetObjectField(JNIEnv *env, jobject obj, jfieldID fieldID
   // If G1 is enabled and we are accessing the value of the referent
   // field in a reference object then we need to register a non-null
   // referent with the SATB barrier.
-  if (UseG1GC || (UseShenandoahGC && ShenandoahSATBBarrier)) {
+  if (UseG1GC) {
     bool needs_barrier = false;
 
     if (ret != NULL &&
@@ -4251,24 +4251,6 @@ JNI_ENTRY(void, jni_GetStringUTFRegion(JNIEnv *env, jstring string, jsize start,
   }
 JNI_END
 
-static oop lock_gc_or_pin_object(JavaThread* thread, jobject obj) {
-  if (Universe::heap()->supports_object_pinning()) {
-    const oop o = JNIHandles::resolve_non_null(obj);
-    return Universe::heap()->pin_object(thread, o);
-  } else {
-    GC_locker::lock_critical(thread);
-    return JNIHandles::resolve_non_null(obj);
-  }
-}
-
-static void unlock_gc_or_unpin_object(JavaThread* thread, jobject obj) {
-  if (Universe::heap()->supports_object_pinning()) {
-    const oop o = JNIHandles::resolve_non_null(obj);
-    return Universe::heap()->unpin_object(thread, o);
-  } else {
-    GC_locker::unlock_critical(thread);
-  }
-}
 
 JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboolean *isCopy))
   JNIWrapper("GetPrimitiveArrayCritical");
@@ -4278,10 +4260,11 @@ JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboole
  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_ENTRY(
                                              env, array, (uintptr_t *) isCopy);
 #endif /* USDT2 */
+  GC_locker::lock_critical(thread);
   if (isCopy != NULL) {
     *isCopy = JNI_FALSE;
   }
-  oop a = lock_gc_or_pin_object(thread, array);
+  oop a = JNIHandles::resolve_non_null(array);
   assert(a->is_array(), "just checking");
   BasicType type;
   if (a->is_objArray()) {
@@ -4309,7 +4292,7 @@ JNI_ENTRY(void, jni_ReleasePrimitiveArrayCritical(JNIEnv *env, jarray array, voi
                                                   env, array, carray, mode);
 #endif /* USDT2 */
   // The array, carray and mode arguments are ignored
-  unlock_gc_or_unpin_object(thread, array);
+  GC_locker::unlock_critical(thread);
 #ifndef USDT2
   DTRACE_PROBE(hotspot_jni, ReleasePrimitiveArrayCritical__return);
 #else /* USDT2 */
@@ -4327,10 +4310,11 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
   HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(
                                       env, string, (uintptr_t *) isCopy);
 #endif /* USDT2 */
+  GC_locker::lock_critical(thread);
   if (isCopy != NULL) {
     *isCopy = JNI_FALSE;
   }
-  oop s = lock_gc_or_pin_object(thread, string);
+  oop s = JNIHandles::resolve_non_null(string);
   int s_len = java_lang_String::length(s);
   typeArrayOop s_value = java_lang_String::value(s);
   int s_offset = java_lang_String::offset(s);
@@ -4359,7 +4343,7 @@ JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar 
                                           env, str, (uint16_t *) chars);
 #endif /* USDT2 */
   // The str and chars arguments are ignored
-  unlock_gc_or_unpin_object(thread, str);
+  GC_locker::unlock_critical(thread);
 #ifndef USDT2
   DTRACE_PROBE(hotspot_jni, ReleaseStringCritical__return);
 #else /* USDT2 */
@@ -4516,6 +4500,7 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
       // put inside the loop to avoid potential deadlock when multiple threads
       // try to call this method. See 6791815 for more details.
       ThreadInVMfromNative tivn(thread);
+      Thread::WXWriteFromExecSetter wx_write;
       os::yield_all();
     }
   }
@@ -5287,6 +5272,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
 
     // Since this is not a JVM_ENTRY we have to set the thread state manually before leaving.
     ThreadStateTransition::transition_and_fence(thread, _thread_in_vm, _thread_in_native);
+    Thread::enable_wx_from_write(WXExec);
   } else {
     if (can_try_again) {
       // reset safe_to_recreate_vm to 1 so that retrial would be possible
@@ -5373,6 +5359,7 @@ jint JNICALL jni_DestroyJavaVM(JavaVM *vm) {
   // Since this is not a JVM_ENTRY we have to set the thread state manually before entering.
   JavaThread* thread = JavaThread::current();
   ThreadStateTransition::transition_from_native(thread, _thread_in_vm);
+  Thread::enable_wx_from_exec(WXWrite);
   if (Threads::destroy_vm()) {
     // Should not change thread state, VM is gone
     vm_created = false;
@@ -5415,6 +5402,8 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   thread->record_stack_base_and_size();
 
   thread->initialize_thread_local_storage();
+
+  thread->init_wx();
 
   if (!os::create_attached_thread(thread)) {
     delete thread;
@@ -5489,6 +5478,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   // needed.
 
   ThreadStateTransition::transition_and_fence(thread, _thread_in_vm, _thread_in_native);
+  Thread::enable_wx_from_write(WXExec);
 
   // Perform any platform dependent FPU setup
   os::setup_fpu();
@@ -5563,6 +5553,7 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   // Safepoint support. Have to do call-back to safepoint code, if in the
   // middel of a safepoint operation
   ThreadStateTransition::transition_from_native(thread, _thread_in_vm);
+  Thread::enable_wx_from_exec(WXWrite);
 
   // XXX: Note that JavaThread::exit() call below removes the guards on the
   // stack pages set up via enable_stack_{red,yellow}_zone() calls
@@ -5575,6 +5566,10 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
   // maintenance work?)
   thread->exit(false, JavaThread::jni_detach);
   delete thread;
+
+  // Go to the execute mode, the initial state of the thread on creation.
+  // Use os interface as the thread is not a java one anymore.
+  os::current_thread_enable_wx(WXExec);
 
 #ifndef USDT2
   DTRACE_PROBE1(hotspot_jni, DetachCurrentThread__return, JNI_OK);

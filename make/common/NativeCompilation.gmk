@@ -89,6 +89,12 @@ define add_native_source
     ifeq (,$$(filter %.s,$2))
       # And this is the dependency file for this obj file.
       $1_$2_DEP:=$$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_$2_OBJ))
+
+      ifeq ($(OPENJDK_TARGET_OS), macosx)
+        # Workaround for iOS port: dependency file does not exists.
+        $1_$2_DEP:=""
+      endif
+
       # Include previously generated dependency information. (if it exists)
       -include $$($1_$2_DEP)
 
@@ -150,6 +156,7 @@ define SetupNativeCompilation
   #   EXCLUDES do not pick source from these directories
   #   INCLUDE_FILES only compile exactly these files!
   #   EXCLUDE_FILES with these names
+  #   EXTRA_FILES List of extra files not in any of the SRC dirs
   #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
   #   RC_FLAGS flags for RC.
   #   MAPFILE mapfile
@@ -281,6 +288,9 @@ define SetupNativeCompilation
   ifneq (,$$(strip $$($1_INCLUDE_FILES)))
     $1_SRCS := $$(filter $$($1_INCLUDE_FILES),$$($1_SRCS))
   endif
+
+  $1_SRCS += $$($1_EXTRA_FILES)
+
   ifeq (,$$($1_SRCS))
     $$(error No sources found for $1 when looking inside the dirs $$($1_SRC))
   endif
@@ -440,14 +450,12 @@ define SetupNativeCompilation
   ifeq ($$($1_STATIC_LIBRARY),)
     ifneq ($$($1_DEBUG_SYMBOLS),)
       ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
-        ifneq ($(OPENJDK_TARGET_OS), macosx) # no MacOS X support yet
           ifneq ($$($1_OUTPUT_DIR),$$($1_OBJECT_DIR))
             # The dependency on TARGET is needed on windows for debuginfo files
             # to be rebuilt properly.
             $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/% $$($1_TARGET)
-		$(CP) $$< $$@
+		$(CP) -R $$< $$@
           endif
-
           # Generate debuginfo files.
           ifeq ($(OPENJDK_TARGET_OS), windows)
             ifneq ($$($1_STRIP_POLICY), no_strip)
@@ -490,7 +498,15 @@ define SetupNativeCompilation
 			$(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
 			$(TOUCH) $$@
             endif
-          endif # No MacOS X support
+          else ifeq ($(OPENJDK_TARGET_OS), macosx)
+            ifneq ($$($1_STRIP_POLICY), no_strip)
+              $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).dSYM
+              $$($1_DEBUGINFO_FILES): $$($1_TARGET)
+			$(RM) -R $$@
+			$(DSYMUTIL) $$< -o $$@
+			$(TOUCH) $$@
+            endif
+          endif
 
           ifeq ($(ZIP_DEBUGINFO_FILES), true)
             ifneq ($$($1_STRIP_POLICY), no_strip)
@@ -501,7 +517,7 @@ define SetupNativeCompilation
               # to be rebuilt properly.
               $$($1_DEBUGINFO_ZIP): $$($1_DEBUGINFO_FILES) $$($1_TARGET)
 		$(CD) $$($1_OBJECT_DIR) \
-		&& $(ZIP) -q $$@ $$($1_DEBUGINFO_FILES)
+		&& $(ZIP) -qr $$@ $$($1_DEBUGINFO_FILES)
             endif
           else
             ifneq ($$($1_STRIP_POLICY), no_strip)
@@ -509,7 +525,6 @@ define SetupNativeCompilation
             endif
           endif
         endif
-      endif # !MacOS X
     endif # $1_DEBUG_SYMBOLS
   endif # !STATIC_LIBRARY
 
@@ -518,6 +533,10 @@ define SetupNativeCompilation
     $1_EXTRA_LDFLAGS+=$$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
     ifeq ($(OPENJDK_TARGET_OS), windows)
       $1_EXTRA_LDFLAGS+="-implib:$$($1_OBJECT_DIR)/$$($1_LIBRARY).lib"
+    endif
+
+    ifeq ($(OPENJDK_TARGET_OS), macosx)
+      $1_EXTRA_LDFLAGS+="-dynamiclib -install_name=@rpath/$$($1_BASENAME)"
     endif
 
     $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)

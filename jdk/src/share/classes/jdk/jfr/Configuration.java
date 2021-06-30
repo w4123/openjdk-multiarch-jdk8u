@@ -45,6 +45,7 @@ import jdk.jfr.internal.jfc.JFC;
  *
  * @since 8
  */
+@jdk.Exported
 public final class Configuration {
     private final Map<String, String> settings;
     private final String label;

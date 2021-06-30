@@ -206,14 +206,14 @@ public class CertsInFilesystemDirectoryResolver extends StorageResolverSpi {
                 com.sun.org.apache.xml.internal.security.keys.content.x509.XMLX509SKI.getSKIBytesFromCert(cert);
 
             System.out.println();
-            System.out.println("Base64(SKI())=                 \""
-                               + XMLUtils.encodeToString(ski) + "\"");
-            System.out.println("cert.getSerialNumber()=        \""
-                               + cert.getSerialNumber().toString() + "\"");
-            System.out.println("cert.getSubjectX500Principal().getName()= \""
-                               + cert.getSubjectX500Principal().getName() + "\"");
-            System.out.println("cert.getIssuerX500Principal().getName()=  \""
-                               + cert.getIssuerX500Principal().getName() + "\"");
+            System.out.println("Base64(SKI())=                 '"
+                               + XMLUtils.encodeToString(ski) + "'");
+            System.out.println("cert.getSerialNumber()=        '"
+                               + cert.getSerialNumber().toString() + "'");
+            System.out.println("cert.getSubjectX500Principal().getName()= '"
+                               + cert.getSubjectX500Principal().getName() + "'");
+            System.out.println("cert.getIssuerX500Principal().getName()=  '"
+                               + cert.getIssuerX500Principal().getName() + "'");
         }
     }
 }

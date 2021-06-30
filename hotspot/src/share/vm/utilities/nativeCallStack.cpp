@@ -37,6 +37,13 @@ NativeCallStack::NativeCallStack(int toSkip, bool fillStack) :
 #endif
 
   if (fillStack) {
+    // We need to skip the NativeCallStack::NativeCallStack frame if a tail call is NOT used
+    // to call os::get_native_stack. A tail call is used if we are on 64-bit (except MacOS-aarch64).
+    // This is not necessarily a rule, but what has been obvserved to date.
+#if (defined(BSD) && defined (__aarch64__))
+    // Not a tail call.
+    toSkip++;
+#endif // Not a tail call.
     os::get_native_stack(_stack, NMT_TrackingStackDepth, toSkip);
   } else {
     for (int index = 0; index < NMT_TrackingStackDepth; index ++) {

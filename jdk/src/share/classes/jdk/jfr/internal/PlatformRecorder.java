@@ -31,7 +31,6 @@ import static jdk.jfr.internal.LogLevel.WARN;
 import static jdk.jfr.internal.LogTag.JFR;
 import static jdk.jfr.internal.LogTag.JFR_SYSTEM;
 
-import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.time.Duration;
@@ -61,6 +60,7 @@ public final class PlatformRecorder {
 
     private final List<PlatformRecording> recordings = new ArrayList<>();
     private final static List<SecureRecorderListener> changeListeners = new ArrayList<>();
+    private static FlightRecorderAssociate associate;
     private final Repository repository;
     private final Timer timer;
     private final static JVM jvm = JVM.getJVM();
@@ -202,6 +202,11 @@ public final class PlatformRecorder {
             }
             jvm.destroyNativeJFR();
         }
+
+        // give a chance for associate to process data before it is destroyed
+        if (associate != null)
+            associate.finishJoin();
+
         repository.clear();
     }
 
@@ -391,6 +396,8 @@ public final class PlatformRecorder {
 
     private void finishChunk(RepositoryChunk chunk, Instant time, PlatformRecording ignoreMe) {
         chunk.finish(time);
+        if (associate != null)
+            associate.nextChunk(chunk, chunk.getFile(), chunk.getStartTime(), chunk.getEndTime(), chunk.getSize(), ignoreMe == null ? null : ignoreMe.getRecording());
         for (PlatformRecording r : getRecordings()) {
             if (r != ignoreMe && r.getState() == RecordingState.RUNNING) {
                 r.appendChunk(chunk);
@@ -550,5 +557,9 @@ public final class PlatformRecorder {
         target.setStartTime(startTime);
         target.setStopTime(endTime);
         target.setInternalDuration(Duration.between(startTime, endTime));
+    }
+
+    public void setAssociate(FlightRecorderAssociate governor) {
+        this.associate = governor;
     }
 }

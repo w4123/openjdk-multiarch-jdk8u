@@ -43,6 +43,7 @@
 #include FT_SYNTHESIS_H
 #include FT_LCD_FILTER_H
 #include FT_MODULE_H
+#include FT_BITMAP_H
 
 #include "fontscaler.h"
 
@@ -50,7 +51,9 @@
 #define  FloatToFTFixed(f) (FT_Fixed)((f) * (float)(ftFixed1))
 #define  FTFixedToFloat(x) ((x) / (float)(ftFixed1))
 #define  FT26Dot6ToFloat(x)  ((x) / ((float) (1<<6)))
-#define  ROUND(x) ((int) (x+0.5))
+#define  FT26Dot6ToInt(x) (((int)(x)) >> 6)
+
+typedef void (EmboldenGlyphSlotFunc) (FT_GlyphSlot slot);
 
 typedef struct {
     /* Important note:
@@ -64,6 +67,10 @@ typedef struct {
          NB: We may consider switching to JNI_GetEnv. */
     JNIEnv* env;
     FT_Library library;
+    // version of the Freetype library
+    FT_Int majorVersion;
+    FT_Int minorVersion;
+    FT_Int patchVersion;
     FT_Face face;
     FT_Stream faceStream;
     jobject font2D;
@@ -74,6 +81,8 @@ typedef struct {
     unsigned fontDataLength;
     unsigned fileSize;
     TTLayoutTableCache* layoutTables;
+
+    EmboldenGlyphSlotFunc* EmboldenGlyphSlot;
 } FTScalerInfo;
 
 typedef struct FTScalerContext {
@@ -298,6 +307,21 @@ static void setInterpreterVersion(FT_Library library) {
 }
 
 /*
+ * Checks that the version of Freetype in use is the same or newer than the given version.
+ */
+int FreetypeVersionCheck(FTScalerInfo *scalerInfo, FT_Int majorVersion,
+                         FT_Int minorVersion, FT_Int patchVersion)
+{
+    return scalerInfo->majorVersion > majorVersion ||
+               (scalerInfo->majorVersion == majorVersion &&
+                   (scalerInfo->minorVersion > minorVersion ||
+                       (scalerInfo->minorVersion == minorVersion &&
+                           scalerInfo->patchVersion >= patchVersion)));
+}
+
+static void EmboldenGlyphSlot(FT_GlyphSlot slot);
+
+/*
  * Class:     sun_font_FreetypeFontScaler
  * Method:    initNativeScaler
  * Signature: (Lsun/font/Font2D;IIZI)J
@@ -337,6 +361,18 @@ Java_sun_font_FreetypeFontScaler_initNativeScaler(
         return 0;
     }
     setInterpreterVersion(scalerInfo->library);
+
+    FT_Library_Version(scalerInfo->library, &scalerInfo->majorVersion,
+                       &scalerInfo->minorVersion, &scalerInfo->patchVersion);
+
+    // FT_Outline_EmboldenXY available since 2.4.10
+    // Init function pointer to EmboldenGlyphSlot if Freetype version >= 2.4.10
+    // or init it to FT_GlyphSlot_Embolden as fallback
+    if (FreetypeVersionCheck(scalerInfo, 2, 4, 10)) {
+        scalerInfo->EmboldenGlyphSlot = (EmboldenGlyphSlotFunc*) EmboldenGlyphSlot;
+    } else {
+        scalerInfo->EmboldenGlyphSlot = (EmboldenGlyphSlotFunc*) FT_GlyphSlot_Embolden;
+    }
 
 #define TYPE1_FROM_JAVA        2
 
@@ -691,6 +727,48 @@ static GlyphInfo* getNullGlyphImage() {
     return glyphInfo;
 }
 
+static void EmboldenGlyphSlot(FT_GlyphSlot slot) {
+    FT_Pos xstr;
+    FT_Error error;
+
+    if (!slot) {
+        return;
+    }
+
+    if (slot->format != FT_GLYPH_FORMAT_OUTLINE &&
+            slot->format != FT_GLYPH_FORMAT_BITMAP) {
+        return;
+    }
+
+    xstr = FT_MulFix(slot->face->units_per_EM,
+            slot->face->size->metrics.y_scale) / 24;
+
+    if (slot->format == FT_GLYPH_FORMAT_OUTLINE) {
+        FT_Outline_EmboldenXY(&slot->outline, xstr, 0);
+    } else {
+        xstr &= ~63;
+        if (xstr == 0) {
+            xstr = 1 << 6;
+        }
+
+        error = FT_GlyphSlot_Own_Bitmap(slot);
+        if (error) {
+            return;
+        }
+
+        error = FT_Bitmap_Embolden(slot->library, &slot->bitmap, xstr, 0);
+        if (error) {
+            return;
+        }
+    }
+
+    if (slot->advance.x) {
+        slot->advance.x += xstr;
+    }
+    slot->metrics.width += xstr;
+    slot->metrics.horiAdvance += xstr;
+}
+
 static void CopyBW2Grey8(const void* srcImage, int srcRowBytes,
                          void* dstImage, int dstRowBytes,
                          int width, int height) {
@@ -874,7 +952,7 @@ static jlong
 
     /* apply styles */
     if (context->doBold) { /* if bold style */
-        FT_GlyphSlot_Embolden(ftglyph);
+        scalerInfo->EmboldenGlyphSlot(ftglyph);
     }
     if (context->doItalize) { /* if oblique */
         FT_GlyphSlot_Oblique(ftglyph);
@@ -943,15 +1021,15 @@ static jlong
     } else {
         if (!ftglyph->advance.y) {
             glyphInfo->advanceX =
-                (float) ROUND(FT26Dot6ToFloat(ftglyph->advance.x));
+              (float) FT26Dot6ToInt(ftglyph->advance.x);
             glyphInfo->advanceY = 0;
         } else if (!ftglyph->advance.x) {
             glyphInfo->advanceX = 0;
             glyphInfo->advanceY =
-                (float) ROUND(FT26Dot6ToFloat(-ftglyph->advance.y));
+              (float) FT26Dot6ToInt(-ftglyph->advance.y);
         } else {
             glyphInfo->advanceX = FT26Dot6ToFloat(ftglyph->advance.x);
-            glyphInfo->advanceY = FT26Dot6ToFloat(-ftglyph->advance.y);
+            glyphInfo->advanceY = -FT26Dot6ToFloat(ftglyph->advance.y);
         }
     }
 

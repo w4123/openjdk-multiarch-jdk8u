@@ -3088,6 +3088,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
     for (char *a = (char*)align_ptr_up(requested_addr, 4*G);
          a < (char*)(1024*G);
          a += 4*G) {
+#if INCLUDE_CDS
       if (UseSharedSpaces
           && ! can_use_cds_with_metaspace_addr(a, cds_base)) {
         // We failed to find an aligned base that will reach.  Fall
@@ -3098,6 +3099,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
                                              requested_addr, 0);
         break;
       }
+#endif
       metaspace_rs = ReservedSpace(compressed_class_space_size(),
                                    _reserve_alignment,
                                    large_pages,
@@ -3937,11 +3939,13 @@ class TestVirtualSpaceNodeTest {
       assert(cm.sum_free_chunks() == 2*MediumChunk, "sizes should add up");
     }
 
-    { // 4 pages of VSN is committed, some is used by chunks
+    const size_t page_chunks = 4 * (size_t)os::vm_page_size() / BytesPerWord;
+    // This doesn't work for systems with vm_page_size >= 16K.
+    if (page_chunks < MediumChunk) {
+      // 4 pages of VSN is committed, some is used by chunks
       ChunkManager cm(SpecializedChunk, SmallChunk, MediumChunk);
       VirtualSpaceNode vsn(vsn_test_size_bytes);
-      const size_t page_chunks = 4 * (size_t)os::vm_page_size() / BytesPerWord;
-      assert(page_chunks < MediumChunk, "Test expects medium chunks to be at least 4*page_size");
+
       vsn.initialize();
       vsn.expand_by(page_chunks, page_chunks);
       vsn.get_chunk_vs(SmallChunk);

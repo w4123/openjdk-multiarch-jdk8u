@@ -52,10 +52,6 @@
 #include "runtime/vframe.hpp"
 #include "utilities/preserveException.hpp"
 
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/shenandoah/shenandoahBarrierSet.hpp"
-#endif
-
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #define INJECTED_FIELD_COMPUTE_OFFSET(klass, name, signature, may_be_java)    \
@@ -249,6 +245,7 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
     assert(thread->is_Java_thread(), "must be java thread");
     HandleMark hm(thread);
     ThreadToNativeFromVM ttn(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     js = (_to_java_string_fn)(thread->jni_environment(), str);
   }
   return Handle(THREAD, JNIHandles::resolve(js));
@@ -277,6 +274,7 @@ char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
     bool is_copy;
     HandleMark hm(thread);
     ThreadToNativeFromVM ttn(thread);
+    Thread::WXExecFromWriteSetter wx_exec;
     native_platform_string = (_to_platform_string_fn)(env, js, &is_copy);
     assert(is_copy == JNI_TRUE, "is_copy value changed");
     JNIHandles::destroy_local(js);
@@ -1051,6 +1049,8 @@ void java_lang_Thread::set_thread_status(oop java_thread,
 
 // Read thread status value from threadStatus field in java.lang.Thread java class.
 java_lang_Thread::ThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
+  // Make sure the caller is operating on behalf of the VM or is
+  // running VM code (state == _thread_in_vm).
   assert(Threads_lock->owned_by_self() || Thread::current()->is_Watcher_thread() ||
          Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
@@ -1212,18 +1212,11 @@ void java_lang_ThreadGroup::compute_offsets() {
 oop java_lang_Throwable::unassigned_stacktrace() {
   InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::Throwable_klass());
   address addr = ik->static_field_addr(static_unassigned_stacktrace_offset);
-  oop result;
   if (UseCompressedOops) {
-    result = oopDesc::load_decode_heap_oop((narrowOop *)addr);
+    return oopDesc::load_decode_heap_oop((narrowOop *)addr);
   } else {
-    result = oopDesc::load_decode_heap_oop((oop*)addr);
+    return oopDesc::load_decode_heap_oop((oop*)addr);
   }
-#if INCLUDE_ALL_GCS
-  if (UseShenandoahGC) {
-    result = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(result);
-  }
-#endif
-  return result;
 }
 
 oop java_lang_Throwable::backtrace(oop throwable) {
@@ -2659,18 +2652,11 @@ HeapWord *java_lang_ref_Reference::pending_list_lock_addr() {
 oop java_lang_ref_Reference::pending_list_lock() {
   InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::Reference_klass());
   address addr = ik->static_field_addr(static_lock_offset);
-  oop result;
   if (UseCompressedOops) {
-    result = oopDesc::load_decode_heap_oop((narrowOop *)addr);
+    return oopDesc::load_decode_heap_oop((narrowOop *)addr);
   } else {
-    result = oopDesc::load_decode_heap_oop((oop*)addr);
+    return oopDesc::load_decode_heap_oop((oop*)addr);
   }
-#if INCLUDE_ALL_GCS
-  if (UseShenandoahGC) {
-    result = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(result);
-  }
-#endif
-  return result;
 }
 
 HeapWord *java_lang_ref_Reference::pending_list_addr() {
@@ -2682,18 +2668,11 @@ HeapWord *java_lang_ref_Reference::pending_list_addr() {
 
 oop java_lang_ref_Reference::pending_list() {
   char *addr = (char *)pending_list_addr();
-  oop result;
   if (UseCompressedOops) {
-    result = oopDesc::load_decode_heap_oop((narrowOop *)addr);
+    return oopDesc::load_decode_heap_oop((narrowOop *)addr);
   } else {
-    result = oopDesc::load_decode_heap_oop((oop*)addr);
+    return oopDesc::load_decode_heap_oop((oop*)addr);
   }
-#if INCLUDE_ALL_GCS
-  if (UseShenandoahGC) {
-    result = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(result);
-  }
-#endif
-  return result;
 }
 
 

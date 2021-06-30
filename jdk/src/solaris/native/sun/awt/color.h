@@ -28,13 +28,20 @@
 #include "awt.h"
 #include "colordata.h"
 
-#if !defined(HEADLESS) && !defined(MACOSX)
+#if defined(__ANDROID__) || (!defined(HEADLESS_IGNORED) && !defined(MACOSX_NOTIOS))
+
+typedef struct {
+    int depth;
+    int bits_per_pixel;
+    int scanline_pad;
+} XPixmapFormatValues_DUP;
+
 typedef struct {
     unsigned int Depth;
-    XPixmapFormatValues wsImageFormat;
+    XPixmapFormatValues_DUP wsImageFormat;
     ImgColorData clrdata;
     ImgConvertFcn *convert[NUM_IMGCV];
 } awtImageData;
-#endif /* !HEADLESS && !MACOSX */
+#endif /* __ANDROID__ || (!HEADLESS && !MACOSX) */
 
 #endif           /* _COLOR_H_ */

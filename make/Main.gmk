@@ -172,6 +172,15 @@ sign-jars-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(JDK_TOPDIR)/make && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f BuildJdk.gmk sign-jars)
 	@$(call TargetExit)
+test-image: start-make
+	@$(call TargetEnter)
+	($(CD) $(SRC_ROOT)/hotspot/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(JOBS) MAKEFLAGS= SPEC=$(SPEC)  \
+	JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) \
+	-f JtregNativeHotspot.gmk build-test-hotspot-jtreg-native)
+	($(CD) $(SRC_ROOT)/hotspot/test && $(BUILD_LOG_WRAPPER) $(MAKE) -j$(JOBS) MAKEFLAGS= SPEC=$(SPEC)  \
+	JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) \
+	-f JtregNativeHotspot.gmk test-image-hotspot-jtreg-native)
+	@$(call TargetExit)
 
 bootcycle-images: images bootcycle-images-only
 bootcycle-images-only: start-make

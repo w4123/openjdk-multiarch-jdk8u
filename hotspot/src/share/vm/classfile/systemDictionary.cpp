@@ -66,6 +66,9 @@
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#endif
 
 Dictionary*            SystemDictionary::_dictionary          = NULL;
 PlaceholderTable*      SystemDictionary::_placeholders        = NULL;
@@ -1074,6 +1077,8 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
     }
 
     post_class_load_event(class_load_start_event, k, class_loader);
+
+    CRS_ONLY(ConnectedRuntime::mark_anonymous(k()));
   }
   assert(host_klass.not_null() || cp_patches == NULL,
          "cp_patches only found with host_klass");
@@ -1132,6 +1137,7 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   // this call to parseClassFile
   ResourceMark rm(THREAD);
   ClassFileParser parser(st);
+  CRS_ONLY(parser.set_need_file_hash(THREAD));
   instanceKlassHandle k = parser.parseClassFile(class_name,
                                                 loader_data,
                                                 protection_domain,
@@ -1197,6 +1203,8 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
     } else {
       define_instance_class(k, THREAD);
     }
+
+    CRS_ONLY(ConnectedRuntime::notify_class_load(k, parser.get_file_hash(), parser.get_file_hash_length(), st->source(), THREAD));
   }
 
   // Make sure we have an entry in the SystemDictionary on success
@@ -1358,6 +1366,7 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
 #if INCLUDE_CDS
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
       k = load_shared_class(class_name, class_loader, THREAD);
+      // CRS TODO store hash into CDS image
 #endif
     }
 
@@ -2788,6 +2797,21 @@ void SystemDictionary::verify() {
   // Verify constraint table
   guarantee(constraints() != NULL, "Verify of loader constraints failed");
   constraints()->verify(dictionary(), placeholders());
+}
+
+TableStatistics SystemDictionary::placeholders_statistics() {
+  MutexLocker ml(SystemDictionary_lock);
+  return placeholders()->statistics_calculate();
+}
+
+TableStatistics SystemDictionary::loader_constraints_statistics() {
+  MutexLocker ml(SystemDictionary_lock);
+  return constraints()->statistics_calculate();
+}
+
+TableStatistics SystemDictionary::protection_domain_cache_statistics() {
+  MutexLocker ml(SystemDictionary_lock);
+  return dictionary()->pd_cache_table()->statistics_calculate();
 }
 
 #ifndef PRODUCT

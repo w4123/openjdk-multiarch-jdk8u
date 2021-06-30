@@ -53,6 +53,7 @@
 #endif /* MAKECRCH */
 
 #include "zutil.h"      /* for STDC and FAR definitions */
+#include "zinit.h"
 
 /* Definitions for doing the crc four data bytes at a time. */
 #if !defined(NOBYFOUR) && defined(Z_U4)
@@ -263,6 +264,12 @@ uLong ZEXPORT crc32(crc, buf, len)
     const unsigned char FAR *buf;
     uInt len;
 {
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+        return zlibPtrs->crc32(crc, buf, len);
+    }
+#endif
     return crc32_z(crc, buf, len);
 }
 

@@ -32,6 +32,9 @@ import java.util.regex.Pattern;
 import sun.security.util.CurveDB;
 import sun.security.util.NamedCurve;
 
+import sun.security.util.CurveDB;
+import sun.security.util.NamedCurve;
+
 /**
  * Defines the entries of the SunEC provider.
  *

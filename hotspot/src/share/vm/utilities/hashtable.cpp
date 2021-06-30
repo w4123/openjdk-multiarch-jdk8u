@@ -94,8 +94,6 @@ template <class T, MEMFLAGS F> bool RehashableHashtable<T, F>::check_rehash_tabl
   return false;
 }
 
-template <class T, MEMFLAGS F> juint RehashableHashtable<T, F>::_seed = 0;
-
 // Create a new table and using alternate hash code, populate the new table
 // with the existing elements.   This can be used to change the hash code
 // and could in the future change the size of the table.
@@ -219,7 +217,7 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_table(char** top, char* end) 
       if (*top + entry_size() > end) {
         report_out_of_shared_space(SharedMiscData);
       }
-      *p = (BasicHashtableEntry<F>*)memcpy(*top, *p, entry_size());
+      *p = (BasicHashtableEntry<F>*)memcpy(*top, (void*)*p, entry_size());
       *top += entry_size();
     }
   }
@@ -268,16 +266,28 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::reverse(void* boundary) {
   }
 }
 
-template <class T, MEMFLAGS F> int RehashableHashtable<T, F>::literal_size(Symbol *symbol) {
+// For oops and Strings the size of the literal is interesting. For other types, nobody cares.
+int literal_size(ConstantPool*) { return 0; }
+int literal_size(Klass*)        { return 0; }
+#if INCLUDE_ALL_GCS
+int literal_size(nmethod*)      { return 0; }
+#endif
+
+int literal_size(Symbol *symbol) {
   return symbol->size() * HeapWordSize;
 }
 
-template <class T, MEMFLAGS F> int RehashableHashtable<T, F>::literal_size(oop oop) {
+int literal_size(oop obj) {
   // NOTE: this would over-count if (pre-JDK8) java_lang_Class::has_offset_field() is true,
   // and the String.value array is shared by several Strings. However, starting from JDK8,
   // the String.value array is not shared anymore.
-  assert(oop != NULL && oop->klass() == SystemDictionary::String_klass(), "only strings are supported");
-  return (oop->size() + java_lang_String::value(oop)->size()) * HeapWordSize;
+  if (obj == NULL) {
+    return 0;
+  } else if (obj->klass() == SystemDictionary::String_klass()) {
+    return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
+  } else {
+    return obj->size();
+  }
 }
 
 // Dump footprint and bucket length statistics
@@ -333,10 +343,25 @@ template <MEMFLAGS F> void BasicHashtable<F>::copy_buckets(char** top, char* end
   if (*top + len > end) {
     report_out_of_shared_space(SharedMiscData);
   }
-  _buckets = (HashtableBucket<F>*)memcpy(*top, _buckets, len);
+  _buckets = (HashtableBucket<F>*)memcpy(*top, (void*)_buckets, len);
   *top += len;
 }
 
+template <class T, MEMFLAGS F> TableStatistics Hashtable<T, F>::statistics_calculate(T (*literal_load_barrier)(HashtableEntry<T, F>*)) {
+  NumberSeq summary;
+  int literal_bytes = 0;
+  for (int i = 0; i < this->table_size(); ++i) {
+    int count = 0;
+    for (HashtableEntry<T, F>* e = this->bucket(i);
+         e != NULL; e = e->next()) {
+      count++;
+      T l = (literal_load_barrier != NULL) ? literal_load_barrier(e) : e->literal();
+      literal_bytes += literal_size(l);
+    }
+    summary.add((double)count);
+  }
+  return TableStatistics(this->_stats_rate, summary, literal_bytes, sizeof(HashtableBucket<F>), sizeof(HashtableEntry<T, F>));
+}
 
 #ifndef PRODUCT
 

@@ -45,6 +45,7 @@ import java.lang.annotation.Target;
 @MetadataDefinition
 @Target({ ElementType.TYPE, ElementType.FIELD, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
+@jdk.Exported
 public @interface Label {
     /**
      * Returns a human-readable name for the annotated element.

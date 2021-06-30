@@ -44,15 +44,12 @@ import java.security.Security;
 
 public class ClientJSSEServerJSSE extends PKCS11Test {
 
-    private static String[] cmdArgs;
-
     public static void main(String[] args) throws Exception {
         // reset security properties to make sure that the algorithms
         // and keys used in this test are not disabled.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
         Security.setProperty("jdk.certpath.disabledAlgorithms", "");
 
-        cmdArgs = args;
         main(new ClientJSSEServerJSSE());
     }
 
@@ -63,7 +60,7 @@ public class ClientJSSEServerJSSE extends PKCS11Test {
             return;
         }
         Providers.setAt(p, 1);
-        CipherTest.main(new JSSEFactory(), cmdArgs);
+        CipherTest.main(new JSSEFactory(), null);
         Security.removeProvider(p.getName());
     }
 

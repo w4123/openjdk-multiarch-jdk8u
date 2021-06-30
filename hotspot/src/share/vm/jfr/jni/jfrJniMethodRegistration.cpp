@@ -88,6 +88,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       assert(jt != NULL, "invariant");
       assert(jt->thread_state() == _thread_in_native, "invariant");
       ThreadInVMfromNative transition(jt);
+      Thread::WXWriteFromExecSetter wx_write;
       if (true) tty->print_cr("RegisterNatives for JVM class failed!");
     }
     env->DeleteLocalRef(jfr_clz);

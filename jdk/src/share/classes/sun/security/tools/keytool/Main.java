@@ -87,6 +87,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+import sun.security.util.NamedCurve;
+
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.tools.KeyStoreUtil;
 import sun.security.tools.PathList;

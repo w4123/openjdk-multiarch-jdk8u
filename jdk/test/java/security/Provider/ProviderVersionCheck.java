@@ -41,11 +41,17 @@ public class ProviderVersionCheck {
         boolean failure = false;
 
         for (Provider p: Security.getProviders()) {
-            System.out.print(p.getName() + " ");
-            if (p.getVersion() != 1.8d) {
-                System.out.println("failed. " + "Version received was " +
-                        p.getVersion());
-                failure = true;
+            String name = p.getName();
+            double version = p.getVersion();
+            System.out.print(name + " ");
+            if (version != 1.8d) {
+                if (name.equals("XMLDSig") && version == 2.14d) {
+                    System.out.println("passed.");
+                } else {
+                    System.out.println("failed. " + "Version received was " +
+                            version);
+                    failure = true;
+                }
             } else {
                 System.out.println("passed.");
             }

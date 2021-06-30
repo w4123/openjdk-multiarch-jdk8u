@@ -39,5 +39,6 @@ import java.lang.annotation.Target;
 @Label("Transition From")
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
+@jdk.Exported
 public @interface TransitionFrom {
 }

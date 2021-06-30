@@ -2686,7 +2686,7 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+  return os::uncommit_memory(addr, size, !ExecMem);
 }
 
 // Change the page size in a given range.
@@ -2877,7 +2877,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   return end;
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t bytes) {
+bool os::pd_uncommit_memory(char* addr, size_t bytes, bool exec) {
   size_t size = bytes;
   // Map uncommitted pages PROT_NONE so we fail early if we touch an
   // uncommitted page. Otherwise, the read/write might succeed if we
@@ -2916,7 +2916,7 @@ char* os::Solaris::anon_mmap(char* requested_addr, size_t bytes, size_t alignmen
   return mmap_chunk(addr, bytes, flags, PROT_NONE);
 }
 
-char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
+char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint, bool executable) {
   char* addr = Solaris::anon_mmap(requested_addr, bytes, alignment_hint, (requested_addr != NULL));
 
   guarantee(requested_addr == NULL || requested_addr == addr,
@@ -4630,32 +4630,6 @@ void os::Solaris::install_signal_handlers() {
 
 void report_error(const char* file_name, int line_no, const char* title, const char* format, ...);
 
-const char * signames[] = {
-  "SIG0",
-  "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP",
-  "SIGABRT", "SIGEMT", "SIGFPE", "SIGKILL", "SIGBUS",
-  "SIGSEGV", "SIGSYS", "SIGPIPE", "SIGALRM", "SIGTERM",
-  "SIGUSR1", "SIGUSR2", "SIGCLD", "SIGPWR", "SIGWINCH",
-  "SIGURG", "SIGPOLL", "SIGSTOP", "SIGTSTP", "SIGCONT",
-  "SIGTTIN", "SIGTTOU", "SIGVTALRM", "SIGPROF", "SIGXCPU",
-  "SIGXFSZ", "SIGWAITING", "SIGLWP", "SIGFREEZE", "SIGTHAW",
-  "SIGCANCEL", "SIGLOST"
-};
-
-const char* os::exception_name(int exception_code, char* buf, size_t size) {
-  if (0 < exception_code && exception_code <= SIGRTMAX) {
-    // signal
-    if (exception_code < sizeof(signames)/sizeof(const char*)) {
-       jio_snprintf(buf, size, "%s", signames[exception_code]);
-    } else {
-       jio_snprintf(buf, size, "SIG%d", exception_code);
-    }
-    return buf;
-  } else {
-    return NULL;
-  }
-}
-
 // (Static) wrappers for the new libthread API
 int_fnP_thread_t_iP_uP_stack_tP_gregset_t os::Solaris::_thr_getstate;
 int_fnP_thread_t_i_gregset_t os::Solaris::_thr_setstate;
@@ -4988,6 +4962,7 @@ void os::init(void) {
   if (vm_page_size() > 8*K) {
     StackYellowPages = 1;
     StackRedPages = 1;
+    StackReservedPages = 1;
     StackShadowPages = round_to((StackShadowPages*8*K), vm_page_size()) / vm_page_size();
   }
 }
@@ -5040,7 +5015,7 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
-            (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
+                    (size_t)(StackReservedPages+StackYellowPages+StackRedPages+StackShadowPages+
                     2*BytesPerWord COMPILER2_PRESENT(+1)) * page_size);
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;

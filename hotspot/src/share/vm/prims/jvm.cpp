@@ -73,7 +73,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/histogram.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/top.hpp"
 #include "utilities/utf8.hpp"
 #ifdef TARGET_OS_FAMILY_linux
@@ -94,7 +93,6 @@
 
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc_implementation/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #endif // INCLUDE_ALL_GCS
 
 #include <errno.h>
@@ -410,6 +408,12 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
 #endif
   PUTPROP(props, "sun.cds.enableSharedLookupCache", enableSharedLookupCache);
 
+  if(UseOpenJSSE)
+    PUTPROP(props, "org.openjsse.provider", "true");
+
+  if(UseLegacy8uJSSE)
+    PUTPROP(props, "org.legacy8ujsse.provider", "true");
+
   return properties;
 JVM_END
 
@@ -610,7 +614,7 @@ static void fixup_cloned_reference(ReferenceType ref_type, oop src, oop clone) {
   // If G1 is enabled then we need to register a non-null referent
   // with the SATB barrier.
 #if INCLUDE_ALL_GCS
-  if (UseG1GC || (UseShenandoahGC && ShenandoahSATBBarrier)) {
+  if (UseG1GC) {
     oop referent = java_lang_ref_Reference::referent(clone);
     if (referent != NULL) {
       G1SATBCardTableModRefBS::enqueue(referent);
@@ -666,12 +670,6 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
            "invariant");
     new_obj_oop = CollectedHeap::obj_allocate(klass, size, CHECK_NULL);
   }
-
-#if INCLUDE_ALL_GCS
-  if (UseShenandoahGC && ShenandoahCloneBarrier) {
-    ShenandoahBarrierSet::barrier_set()->clone_barrier_runtime(obj());
-  }
-#endif
 
   // 4839641 (4840070): We must do an oop-atomic copy, because if another thread
   // is modifying a reference field in the clonee, a non-oop-atomic copy might
@@ -1178,6 +1176,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
 
   return (jclass) JNIHandles::make_local(env, k->java_mirror());
 }
+
 
 JVM_ENTRY(jclass, JVM_DefineClass(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd))
   JVMWrapper2("JVM_DefineClass %s", name);
@@ -4106,6 +4105,7 @@ JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
   void *load_result;
   {
     ThreadToNativeFromVM ttnfvm(thread);
+    Thread::WXWriteVerifier wx_write;
     load_result = os::dll_load(name, ebuf, sizeof ebuf);
   }
   if (load_result == NULL) {
@@ -4714,3 +4714,8 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   info->is_attachable = AttachListener::is_attach_supported();
 }
 JVM_END
+
+JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
+  return os::get_signal_number(name);
+JVM_END
+

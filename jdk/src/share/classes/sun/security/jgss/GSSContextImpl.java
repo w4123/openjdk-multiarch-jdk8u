@@ -508,9 +508,12 @@ class GSSContextImpl implements ExtendedGSSContext {
     public void setChannelBinding(ChannelBinding channelBindings)
         throws GSSException {
 
-        if (mechCtxt == null)
+        if (mechCtxt == null) {
+            if (this.channelBindings  != null) {
+                throw new GSSException(GSSException.BAD_BINDINGS);
+            }
             this.channelBindings = channelBindings;
-
+        }
     }
 
     public boolean getCredDelegState() {

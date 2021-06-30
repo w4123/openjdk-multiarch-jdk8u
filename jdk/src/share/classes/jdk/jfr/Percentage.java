@@ -46,5 +46,6 @@ import java.lang.annotation.Target;
 @Description("Percentage, represented as a number between 0 and 1")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+@jdk.Exported
 public @interface Percentage {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,6 @@ typedef struct {
     sun_java2d_opengl_OGLContext_OGLContextCaps_LAST_SHARED_CAP
 #define CAPS_EXT_FBOBJECT    \
     sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_EXT_FBOBJECT
-#define CAPS_STORED_ALPHA    \
-    sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_STORED_ALPHA
 #define CAPS_DOUBLEBUFFERED  \
     sun_java2d_opengl_OGLContext_OGLContextCaps_CAPS_DOUBLEBUFFERED
 #define CAPS_EXT_LCD_SHADER  \
@@ -155,8 +153,9 @@ typedef struct {
 #define OGLC_VENDOR_ATI    1
 #define OGLC_VENDOR_NVIDIA 2
 #define OGLC_VENDOR_INTEL  3
+#define OGLC_VENDOR_ETNAVIV 4
 
-#define OGLC_VCAP_MASK     0x3
+#define OGLC_VCAP_MASK     0x7
 #define OGLC_VCAP_OFFSET   24
 
 #define OGLC_GET_VENDOR(oglc) \
@@ -169,6 +168,13 @@ typedef struct {
  * OGLC_BLIT_TILE_SIZE (the tile will always be square).
  */
 #define OGLC_BLIT_TILE_SIZE 128
+
+/*
+ * Some rendering operations don't work properly for images that
+ * don't fit the default tile texture (128x128).
+ * This workaround increases the size of the tile texture for Etnaviv drivers.
+ */
+#define ETNAVIV_BLIT_TILE_SIZE 512
 
 /**
  * Helper macros that update the current texture function state only when

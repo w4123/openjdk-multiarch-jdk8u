@@ -77,5 +77,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
+@jdk.Exported
 public @interface MetadataDefinition {
 }

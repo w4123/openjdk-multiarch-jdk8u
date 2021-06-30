@@ -201,6 +201,7 @@ class SWNodeInfo VALUE_OBJ_CLASS_SPEC {
   static const SWNodeInfo initial;
 };
 
+
 // JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
 //------------------------------OrderedPair---------------------------
 // Ordered pair of Node*.
@@ -229,7 +230,6 @@ class OrderedPair VALUE_OBJ_CLASS_SPEC {
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
- friend class SWPointer;
  private:
   PhaseIdealLoop* _phase;
   Arena*          _arena;

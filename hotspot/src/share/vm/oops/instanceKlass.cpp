@@ -73,7 +73,6 @@
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
-#include "gc_implementation/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
 #endif // INCLUDE_ALL_GCS
 #ifdef COMPILER1
@@ -82,7 +81,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #endif
-
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#endif
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
@@ -392,6 +393,7 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // reference counting symbol names.
   release_C_heap_structures();
 
+  CRS_ONLY(ConnectedRuntime::notify_metaspace_eviction(this, methods()));
   deallocate_methods(loader_data, methods());
   set_methods(NULL);
 
@@ -2546,6 +2548,8 @@ void InstanceKlass::notify_unload_class(InstanceKlass* ik) {
   event.set_definingClassLoader(ik->class_loader_data());
   event.commit();
 #endif
+
+  CRS_ONLY(ConnectedRuntime::notify_metaspace_eviction(ik);)
 }
 
 void InstanceKlass::release_C_heap_structures(InstanceKlass* ik) {

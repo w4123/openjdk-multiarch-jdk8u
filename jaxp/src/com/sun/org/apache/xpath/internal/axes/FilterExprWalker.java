@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 1999-2019 The Apache Software Foundation.
@@ -37,6 +36,7 @@ import com.sun.org.apache.xpath.internal.objects.XNodeSet;
  * Walker for the OP_VARIABLE, or OP_EXTFUNCTION, or OP_FUNCTION, or OP_GROUP,
  * op codes.
  * @see <a href="http://www.w3.org/TR/xpath#NT-FilterExpr">XPath FilterExpr descriptions</a>
+ * @LastModified: May 2019
  */
 public class FilterExprWalker extends AxesWalker
 {

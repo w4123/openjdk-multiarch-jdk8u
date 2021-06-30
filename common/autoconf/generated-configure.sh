@@ -13587,6 +13587,16 @@ test -n "$target_alias" &&
       VAR_OS_API=posix
       VAR_OS_ENV=solaris
       ;;
+    *android*)	
+      VAR_OS=linux	
+      VAR_OS_API=posix	
+      VAR_OS_ENV=linux	
+      ;;
+    *ios*)
+      VAR_OS=macosx
+      VAR_OS_API=posix
+      VAR_OS_ENV=macosx
+      ;;
     *darwin*)
       VAR_OS=macosx
       VAR_OS_API=posix
@@ -13633,8 +13643,14 @@ test -n "$target_alias" &&
       VAR_CPU_ENDIAN=little
       ;;
     arm*)
-      VAR_CPU=arm
-      VAR_CPU_ARCH=arm
+      VAR_CPU=aarch32
+      VAR_CPU_ARCH=aarch32
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
+    aarch32)
+      VAR_CPU=aarch32
+      VAR_CPU_ARCH=aarch32
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
@@ -13725,6 +13741,16 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_OS_API=posix
       VAR_OS_ENV=solaris
       ;;
+    *android*)	
+      VAR_OS=linux	
+      VAR_OS_API=posix	
+      VAR_OS_ENV=linux	
+      ;;
+    *ios*)
+      VAR_OS=macosx
+      VAR_OS_API=posix
+      VAR_OS_ENV=macosx
+      ;;
     *darwin*)
       VAR_OS=macosx
       VAR_OS_API=posix
@@ -13771,8 +13797,14 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_CPU_ENDIAN=little
       ;;
     arm*)
-      VAR_CPU=arm
-      VAR_CPU_ARCH=arm
+      VAR_CPU=aarch32
+      VAR_CPU_ARCH=aarch32
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
+    aarch32)
+      VAR_CPU=aarch32
+      VAR_CPU_ARCH=aarch32
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
@@ -26820,9 +26852,9 @@ fi
     # Fail-fast: verify we're building on Xcode 4, we cannot build with Xcode 5 or later
     XCODE_VERSION=`$XCODEBUILD -version | grep '^Xcode ' | sed 's/Xcode //'`
     XC_VERSION_PARTS=( ${XCODE_VERSION//./ } )
-    if test ! "${XC_VERSION_PARTS[0]}" = "4"; then
-      as_fn_error $? "Xcode 4 is required to build JDK 8, the version found was $XCODE_VERSION. Use --with-xcode-path to specify the location of Xcode 4 or make Xcode 4 active by using xcode-select." "$LINENO" 5
-    fi
+    # if test ! "${XC_VERSION_PARTS[0]}" = "4"; then
+      # as_fn_error $? "Xcode 4 is required to build JDK 8, the version found was $XCODE_VERSION. Use --with-xcode-path to specify the location of Xcode 4 or make Xcode 4 active by using xcode-select." "$LINENO" 5
+    # fi
 
     # Some versions of Xcode 5 command line tools install gcc and g++ as symlinks to
     # clang and clang++, which will break the build. So handle that here if we need to.
@@ -26839,7 +26871,7 @@ $as_echo "$as_me: Found gcc symlinks to clang in /usr/bin, adding path to real g
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking Determining Xcode SDK path" >&5
 $as_echo_n "checking Determining Xcode SDK path... " >&6; }
     # allow SDKNAME to be set to override the default SDK selection
-    SDKPATH=`"$XCODEBUILD" -sdk ${SDKNAME:-macosx} -version | grep '^Path: ' | sed 's/Path: //'`
+    SDKPATH=`"$XCODEBUILD" -sdk ${SDKNAME:-iphoneos} -version | grep '^Path: ' | sed 's/Path: //'`
     if test -n "$SDKPATH"; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SDKPATH" >&5
 $as_echo "$SDKPATH" >&6; }
@@ -42071,6 +42103,14 @@ $as_echo "$supports" >&6; }
   # Setup target CPU
   CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DARCH='\"$OPENJDK_TARGET_CPU_LEGACY\"' -D$OPENJDK_TARGET_CPU_LEGACY"
 
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+      CFLAGS_JDK="-arch arm64 $CFLAGS_JDK"
+      CXXFLAGS_JDK="-arch arm64 $CXXFLAGS_JDK"
+      LDFLAGS_JDK="-arch arm64 $LDFLAGS_JDK"
+    fi
+  fi
+
   # Setup debug/release defines
   if test "x$DEBUG_LEVEL" = xrelease; then
     CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DNDEBUG"
@@ -54179,4 +54219,3 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
     printf "consider using a supported version unless you know what you are doing.\n"
     printf "\n"
   fi
-

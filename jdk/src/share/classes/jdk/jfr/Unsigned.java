@@ -41,5 +41,6 @@ import java.lang.annotation.Target;
 @Description("Value should be interpreted as unsigned data type")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.TYPE })
+@jdk.Exported
 public @interface Unsigned {
 }

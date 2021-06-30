@@ -26,24 +26,7 @@
 #define SHARE_VM_CLASSFILE_CLASSFILESTREAM_HPP
 
 #include "utilities/top.hpp"
-#ifdef TARGET_ARCH_x86
-# include "bytes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "bytes_aarch64.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "bytes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "bytes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "bytes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "bytes_ppc.hpp"
-#endif
+#include "utilities/bytes.hpp"
 
 // Input stream for reading .class file
 //
@@ -129,10 +112,6 @@ class ClassFileStream: public ResourceObj {
   // responsible for calling skip below if buffer contents is used.
   u1* get_u1_buffer() {
     return _current;
-  }
-
-  u2* get_u2_buffer() {
-    return (u2*) _current;
   }
 
   // Skip length u1 or u2 elements from stream

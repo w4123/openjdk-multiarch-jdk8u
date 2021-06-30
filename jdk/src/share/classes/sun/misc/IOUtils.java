@@ -281,7 +281,7 @@ public class IOUtils {
         return n;
     }
 
-    /**
+    /*
      * Compatibility wrapper for third party users of
      * {@code sun.misc.IOUtils.readFully} following its
      * removal in JDK-8231139.

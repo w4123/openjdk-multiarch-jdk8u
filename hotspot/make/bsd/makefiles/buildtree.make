@@ -202,6 +202,7 @@ LP64_SETTING/64 = LP64 = 1
 
 DATA_MODE/i486 = 32
 DATA_MODE/amd64 = 64
+DATA_MODE/aarch64 = 64
 
 DATA_MODE = $(DATA_MODE/$(BUILDARCH))
 
@@ -209,6 +210,12 @@ ifeq ($(ENABLE_JFR), true)
   INCLUDE_JFR = 1
 else
   INCLUDE_JFR = 0
+endif
+
+ifeq ($(ENABLE_CRS), true)
+  INCLUDE_CRS = 1
+else
+  INCLUDE_CRS = 0
 endif
 
 flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
@@ -291,6 +298,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	    echo "HOTSPOT_EXTRA_SYSDEFS\$$(HOTSPOT_EXTRA_SYSDEFS) = $(HOTSPOT_EXTRA_SYSDEFS)" && \
 	    echo "SYSDEFS += \$$(HOTSPOT_EXTRA_SYSDEFS)"; \
 	echo && echo "CFLAGS += -DINCLUDE_JFR=$(INCLUDE_JFR)"; \
+	echo && echo "CFLAGS += -DINCLUDE_CRS=$(INCLUDE_CRS)"; \
 	echo; \
 	[ -n "$(SPEC)" ] && \
 	    echo "include $(SPEC)"; \

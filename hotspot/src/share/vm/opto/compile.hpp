@@ -69,7 +69,6 @@ class PhaseCCP;
 class PhaseCCP_DCE;
 class RootNode;
 class relocInfo;
-class ShenandoahLoadReferenceBarrierNode;
 class Scope;
 class StartNode;
 class SafePointNode;
@@ -307,6 +306,7 @@ class Compile : public Phase {
   bool                  _has_unsafe_access;     // True if the method _may_ produce faults in unsafe loads or stores.
   bool                  _has_stringbuilder;     // True StringBuffers or StringBuilders are allocated
   bool                  _has_boxed_value;       // True if a boxed object is allocated
+  bool                  _has_reserved_stack_access; // True if the method or an inlined method is annotated with ReservedStackAccess
   int                   _max_vector_size;       // Maximum size of generated vectors
   uint                  _trap_hist[trapHistLength];  // Cumulative traps
   bool                  _trap_can_recompile;    // Have we emitted a recompiling trap?
@@ -339,12 +339,10 @@ class Compile : public Phase {
   GrowableArray<Node*>* _predicate_opaqs;       // List of Opaque1 nodes for the loop predicates.
   GrowableArray<Node*>* _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>* _range_check_casts;     // List of CastII nodes with a range check dependency
-  GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _shenandoah_barriers;
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
   IdealGraphPrinter*    _printer;
 #endif
-
 
 
   // Node management
@@ -572,6 +570,8 @@ class Compile : public Phase {
   void          set_has_stringbuilder(bool z)   { _has_stringbuilder = z; }
   bool              has_boxed_value() const     { return _has_boxed_value; }
   void          set_has_boxed_value(bool z)     { _has_boxed_value = z; }
+  bool              has_reserved_stack_access() const { return _has_reserved_stack_access; }
+  void          set_has_reserved_stack_access(bool z) { _has_reserved_stack_access = z; }
   int               max_vector_size() const     { return _max_vector_size; }
   void          set_max_vector_size(int s)      { _max_vector_size = s; }
   void          set_trap_count(uint r, uint c)  { assert(r < trapHistLength, "oob");        _trap_hist[r] = c; }
@@ -669,11 +669,9 @@ class Compile : public Phase {
   int           macro_count()             const { return _macro_nodes->length(); }
   int           predicate_count()         const { return _predicate_opaqs->length();}
   int           expensive_count()         const { return _expensive_nodes->length(); }
-  int           shenandoah_barriers_count()         const { return _shenandoah_barriers->length(); }
   Node*         macro_node(int idx)       const { return _macro_nodes->at(idx); }
   Node*         predicate_opaque1_node(int idx) const { return _predicate_opaqs->at(idx);}
   Node*         expensive_node(int idx)   const { return _expensive_nodes->at(idx); }
-  ShenandoahLoadReferenceBarrierNode* shenandoah_barrier(int idx)   const { return _shenandoah_barriers->at(idx); }
   ConnectionGraph* congraph()                   { return _congraph;}
   void set_congraph(ConnectionGraph* congraph)  { _congraph = congraph;}
   void add_macro_node(Node * n) {
@@ -695,15 +693,6 @@ class Compile : public Phase {
   void remove_expensive_node(Node * n) {
     if (_expensive_nodes->contains(n)) {
       _expensive_nodes->remove(n);
-    }
-  }
-  void add_shenandoah_barrier(ShenandoahLoadReferenceBarrierNode * n) {
-    assert(!_shenandoah_barriers->contains(n), "duplicate entry in barrier list");
-    _shenandoah_barriers->append(n);
-  }
-  void remove_shenandoah_barrier(ShenandoahLoadReferenceBarrierNode * n) {
-    if (_shenandoah_barriers->contains(n)) {
-      _shenandoah_barriers->remove(n);
     }
   }
   void add_predicate_opaq(Node * n) {
@@ -737,8 +726,6 @@ class Compile : public Phase {
   static int cmp_expensive_nodes(Node* n1, Node* n2);
   // Sort expensive nodes to locate similar expensive nodes
   void sort_expensive_nodes();
-
-  GrowableArray<ShenandoahLoadReferenceBarrierNode*>* shenandoah_barriers() { return _shenandoah_barriers; }
 
   // Compilation environment.
   Arena*            comp_arena()                { return &_comp_arena; }
@@ -1243,8 +1230,6 @@ class Compile : public Phase {
 #ifdef ASSERT
   bool _type_verify_symmetry;
 #endif
-
-  void shenandoah_eliminate_g1_wb_pre(Node* call, PhaseIterGVN* igvn);
 };
 
 #endif // SHARE_VM_OPTO_COMPILE_HPP

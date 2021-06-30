@@ -114,6 +114,9 @@ public class TestKeyStoreBasic {
     private static final String[] PROVIDERS = {
             "SUN", "SunJCE", "SunJSSE", "SunPKCS11-Solaris"
     };
+    private static final String[] ALT_PROVIDERS = {
+            null, null, "OpenJSSE", null
+    };
     private static final String ALIAS_HEAD = "test";
 
     public static void main(String args[]) throws Exception {
@@ -124,7 +127,7 @@ public class TestKeyStoreBasic {
     public void run() throws Exception {
         for (String provider : PROVIDERS) {
             try {
-                runTest(provider);
+                provider = runTest(provider);
                 System.out.println("Test with provider " + provider + "passed");
             } catch (java.security.KeyStoreException e) {
                 if (provider.equals("SunPKCS11-Solaris")) {
@@ -146,7 +149,7 @@ public class TestKeyStoreBasic {
         }
     }
 
-    public void runTest(String provider) throws Exception {
+    public String runTest(String provider) throws Exception {
 
         // load private key
         // all keystore types should support private keys
@@ -165,15 +168,31 @@ public class TestKeyStoreBasic {
 
         int numEntries = 5;
         String type = null;
+        String altProvider = null;
         for (int i = 0; i < PROVIDERS.length; i++) {
             if (provider.compareTo(PROVIDERS[i]) == 0) {
                 type = KS_Type[i];
+                altProvider = ALT_PROVIDERS[i];
                 break;
             }
         }
 
         System.out.printf("Test %s provider and %s keystore%n", provider, type);
-        KeyStore ks = KeyStore.getInstance(type, provider);
+        KeyStore ks;
+        try {
+            ks = KeyStore.getInstance(type, provider);
+        } catch(NoSuchProviderException nspe) {
+            if (altProvider == null)
+                throw nspe;
+            provider = altProvider;
+            try {
+                ks = KeyStore.getInstance(type, provider);
+                System.out.printf("Fallback to %s provider%n", provider);
+            } catch(NoSuchProviderException altnspe) {
+                // throw initial NSPE
+                throw nspe;
+            }
+        }
         KeyStore ks2 = KeyStore.getInstance(type, ks.getProvider().getName());
 
         // create an empty key store
@@ -236,6 +255,7 @@ public class TestKeyStoreBasic {
         // compare the creation date of the 2 key stores for all aliases
         compareCreationDate(ks, ks2, numEntries);
 
+        return provider;
     }
 
     // check key store type

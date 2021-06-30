@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184
- * 8038349 8046724 8074784 8079693 8177334 8205507 8210736 8217878
+ * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349 8046949
+ *      8046724 8079693 8177334 8205507 8210736 8217878
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
@@ -104,7 +104,8 @@ public class GenerationTests {
             ecdsaSha1, ecdsaSha224, ecdsaSha256, ecdsaSha384, ecdsaSha512,
             hmacSha1, hmacSha224, hmacSha256, hmacSha384, hmacSha512,
             rsaSha1mgf1, rsaSha224mgf1, rsaSha256mgf1, rsaSha384mgf1, rsaSha512mgf1;
-    private static DigestMethod sha1, sha224, sha256, sha384, sha512;
+    private static DigestMethod sha1, sha224, sha256, sha384, sha512,
+                                sha3_224, sha3_256, sha3_384, sha3_512;
     private static KeyInfo dsa1024, dsa2048, rsa, rsa1024, rsa2048,
                            p256ki, p384ki, p521ki;
     private static KeySelector kvks = new KeySelectors.KeyValueKeySelector();
@@ -233,7 +234,8 @@ public class GenerationTests {
     static {
         List<String> tmpList = Arrays.asList(
             DigestMethod.SHA1,
-            DigestMethod.SHA256);
+            DigestMethod.SHA256,
+            "http://www.w3.org/2007/05/xmldsig-more#sha3-256");
         majorDigestMethods = Collections.unmodifiableList(tmpList);
     }
 
@@ -324,6 +326,10 @@ public class GenerationTests {
         test_create_signature_enveloping_sha256_dsa();
         test_create_signature_enveloping_sha384_rsa_sha256();
         test_create_signature_enveloping_sha224_rsa_sha256();
+        test_create_signature_enveloping_sha3_224_rsa_sha256();
+        test_create_signature_enveloping_sha3_256_rsa_sha256();
+        test_create_signature_enveloping_sha3_384_rsa_sha256();
+        test_create_signature_enveloping_sha3_512_rsa_sha256();
         test_create_signature_enveloping_sha512_rsa_sha384();
         test_create_signature_enveloping_sha512_rsa_sha224();
         test_create_signature_enveloping_sha512_rsa_sha512();
@@ -495,6 +501,10 @@ public class GenerationTests {
         sha256 = fac.newDigestMethod(DigestMethod.SHA256, null);
         sha384 = fac.newDigestMethod("http://www.w3.org/2001/04/xmldsig-more#sha384", null);
         sha512 = fac.newDigestMethod(DigestMethod.SHA512, null);
+        sha3_224 = fac.newDigestMethod("http://www.w3.org/2007/05/xmldsig-more#sha3-224", null);
+        sha3_256 = fac.newDigestMethod("http://www.w3.org/2007/05/xmldsig-more#sha3-256", null);
+        sha3_384 = fac.newDigestMethod("http://www.w3.org/2007/05/xmldsig-more#sha3-384", null);
+        sha3_512 = fac.newDigestMethod("http://www.w3.org/2007/05/xmldsig-more#sha3-512", null);
 
         dsa1024 = kifac.newKeyInfo(Collections.singletonList
             (kifac.newKeyValue(validatingKey)));
@@ -689,6 +699,38 @@ public class GenerationTests {
         System.out.println();
     }
 
+    static void test_create_signature_enveloping_sha3_224_rsa_sha256()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha3_224-rsa_sha256.xml");
+        test_create_signature_enveloping(sha3_224, rsaSha256, rsa,
+                getPrivateKey("RSA", 512), kvks, false);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_sha3_256_rsa_sha256()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha3_256-rsa_sha256.xml");
+        test_create_signature_enveloping(sha3_256, rsaSha256, rsa,
+                getPrivateKey("RSA", 512), kvks, false);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_sha3_384_rsa_sha256()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha3_384-rsa_sha256.xml");
+        test_create_signature_enveloping(sha3_384, rsaSha256, rsa,
+                getPrivateKey("RSA", 512), kvks, false);
+        System.out.println();
+    }
+
+    static void test_create_signature_enveloping_sha3_512_rsa_sha256()
+            throws Exception {
+        System.out.println("* Generating signature-enveloping-sha3_512-rsa_sha256.xml");
+        test_create_signature_enveloping(sha3_512, rsaSha256, rsa,
+                getPrivateKey("RSA", 512), kvks, false);
+        System.out.println();
+    }
+
     static void test_create_signature_enveloping_sha512_rsa_sha384()
         throws Exception {
         System.out.println("* Generating signature-enveloping-sha512-rsa_sha384.xml");
@@ -837,7 +879,7 @@ public class GenerationTests {
 
     static void test_create_signature_x509_crt_crl() throws Exception {
         System.out.println("* Generating signature-x509-crt-crl.xml");
-        List<Object> xds = new ArrayList<Object>();
+        List<Object> xds = new ArrayList<>();
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         xds.add(signingCert);
         FileInputStream fis = new FileInputStream(CRL);
@@ -904,7 +946,7 @@ public class GenerationTests {
         SignedInfo si = fac.newSignedInfo(withoutComments, rsaSha1, refs);
 
         // create objects
-        List<XMLStructure> objs = new ArrayList<XMLStructure>();
+        List<XMLObject> objs = new ArrayList<>();
 
         // Object 1
         List<Reference> manRefs = Collections.singletonList
@@ -1122,7 +1164,7 @@ public class GenerationTests {
         System.out.println("* Generating signature.xml");
 
         // create references
-        List<Reference> refs = new ArrayList<Reference>();
+        List<Reference> refs = new ArrayList<>();
 
         // Reference 1
         refs.add(fac.newReference(STYLESHEET, sha1));
@@ -1173,7 +1215,7 @@ public class GenerationTests {
             SignatureProperties.TYPE, null));
 
         // Reference 8
-        List<Transform> transforms = new ArrayList<Transform>();
+        List<Transform> transforms = new ArrayList<>();
         transforms.add(fac.newTransform
             (Transform.ENVELOPED, (TransformParameterSpec) null));
         refs.add(fac.newReference("", sha1, transforms, null, null));
@@ -1248,7 +1290,7 @@ public class GenerationTests {
         Document doc = db.newDocument();
 
         // create objects
-        List<XMLStructure> objs = new ArrayList<XMLStructure>();
+        List<XMLObject> objs = new ArrayList<>();
 
         // Object 1
         objs.add(fac.newXMLObject(Collections.singletonList
@@ -1268,7 +1310,7 @@ public class GenerationTests {
             (new DOMStructure(nc)), "object-3", null, null));
 
         // Manifest
-        List<Reference> manRefs = new ArrayList<Reference>();
+        List<Reference> manRefs = new ArrayList<>();
 
         // Manifest Reference 1
         manRefs.add(fac.newReference(STYLESHEET,
@@ -1278,7 +1320,7 @@ public class GenerationTests {
         manRefs.add(fac.newReference("#reference-1", sha1));
 
         // Manifest Reference 3
-        List<Transform> manTrans = new ArrayList<Transform>();
+        List<Transform> manTrans = new ArrayList<>();
         Document docxslt = db.parse(new ByteArrayInputStream(xslt.getBytes()));
         Node xslElem = docxslt.getDocumentElement();
 
@@ -1306,7 +1348,7 @@ public class GenerationTests {
             null, null));
 
         // Object 4
-        List<Object> xds = new ArrayList<Object>();
+        List<Object> xds = new ArrayList<>();
         xds.add("CN=User");
         xds.add(kifac.newX509IssuerSerial
             ("CN=User", new BigInteger("45ef2729", 16)));
@@ -1466,7 +1508,7 @@ public class GenerationTests {
 
     static void test_create_exc_signature() throws Exception {
         System.out.println("* Generating exc_signature.xml");
-        List<Reference> refs = new ArrayList<Reference>(4);
+        List<Reference> refs = new ArrayList<>(4);
 
         // create reference 1
         refs.add(fac.newReference
@@ -1477,7 +1519,7 @@ public class GenerationTests {
              null, null));
 
         // create reference 2
-        List<String> prefixList = new ArrayList<String>(2);
+        List<String> prefixList = new ArrayList<>(2);
         prefixList.add("bar");
         prefixList.add("#default");
         ExcC14NParameterSpec params = new ExcC14NParameterSpec(prefixList);
@@ -1496,7 +1538,7 @@ public class GenerationTests {
              null, null));
 
         // create reference 4
-        prefixList = new ArrayList<String>(2);
+        prefixList = new ArrayList<>(2);
         prefixList.add("bar");
         prefixList.add("#default");
         params = new ExcC14NParameterSpec(prefixList);
@@ -1514,7 +1556,7 @@ public class GenerationTests {
                     dsaSha1, refs);
 
         // create KeyInfo
-        List<XMLStructure> kits = new ArrayList<XMLStructure>(2);
+        List<XMLStructure> kits = new ArrayList<>(2);
         kits.add(kifac.newKeyValue(validatingKey));
         KeyInfo ki = kifac.newKeyInfo(kits);
 
@@ -1559,10 +1601,10 @@ public class GenerationTests {
 
     static void test_create_sign_spec() throws Exception {
         System.out.println("* Generating sign-spec.xml");
-        List<Reference> refs = new ArrayList<Reference>(2);
+        List<Reference> refs = new ArrayList<>(2);
 
         // create reference 1
-        List<XPathType> types = new ArrayList<XPathType>(3);
+        List<XPathType> types = new ArrayList<>(3);
         types.add(new XPathType(" //ToBeSigned ", XPathType.Filter.INTERSECT));
         types.add(new XPathType(" //NotToBeSigned ",
             XPathType.Filter.SUBTRACT));
@@ -1574,7 +1616,7 @@ public class GenerationTests {
              null, null));
 
         // create reference 2
-        List<Transform> trans2 = new ArrayList<Transform>(2);
+        List<Transform> trans2 = new ArrayList<>(2);
         trans2.add(fac.newTransform(Transform.ENVELOPED,
             (TransformParameterSpec) null));
         XPathFilter2ParameterSpec xp2 = new XPathFilter2ParameterSpec
@@ -1591,9 +1633,9 @@ public class GenerationTests {
                     dsaSha1, refs);
 
         // create KeyInfo
-        List<XMLStructure> kits = new ArrayList<XMLStructure>(2);
+        List<XMLStructure> kits = new ArrayList<>(2);
         kits.add(kifac.newKeyValue(validatingKey));
-        List<Object> xds = new ArrayList<Object>(2);
+        List<Object> xds = new ArrayList<>(2);
         xds.add("CN=User");
         xds.add(signingCert);
         kits.add(kifac.newX509Data(xds));
@@ -1865,11 +1907,9 @@ public class GenerationTests {
                     return new Key[] { signingKey, signingKey};
                 } else {
                     KeyPairGenerator kpg;
-                    if (sm.contains("#rsa-")
-                            || sm.contains("-rsa-MGF1")) {
+                    if (sm.contains("#rsa-")) {
                         kpg = KeyPairGenerator.getInstance("RSA");
-                        kpg.initialize(
-                                sm.contains("#sha512-rsa-MGF1") ? 2048 : 1024);
+                        kpg.initialize(sm.contains("#sha512-rsa") ? 2048 : 1024);
                     } else if (sm.contains("#dsa-")) {
                         kpg = KeyPairGenerator.getInstance("DSA");
                         kpg.initialize(1024);

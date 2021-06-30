@@ -46,7 +46,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/stubRoutines.hpp"
+#include "runtime/stubRoutines.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/attachListener.hpp"
 #include "services/nmtCommon.hpp"
@@ -597,7 +597,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   // Since os::malloc can be called when the libjvm.{dll,so} is
   // first loaded and we don't have a thread yet we must accept NULL also here.
-  assert(!os::ThreadCrashProtection::is_crash_protected(ThreadLocalStorage::thread()),
+  assert(!os::ThreadCrashProtection::is_crash_protected(ThreadLocalStorage::get_thread_slow()),
          "malloc() not allowed when crash protection is set");
 
   if (size == 0) {
@@ -1330,8 +1330,9 @@ bool os::stack_shadow_pages_available(Thread *thread, methodHandle method) {
   // respectively.
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
-  int reserved_area = ((StackShadowPages + StackRedPages + StackYellowPages)
-                      * vm_page_size()) + framesize_in_bytes;
+  int reserved_area = ((StackShadowPages + StackRedPages + StackYellowPages
+                      + StackReservedPages) * vm_page_size())
+                      + framesize_in_bytes;
   // The very lower end of the stack
   address stack_limit = thread->stack_base() - thread->stack_size();
   return (sp > (stack_limit + reserved_area));
@@ -1451,8 +1452,8 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
-  char* result = pd_reserve_memory(bytes, addr, alignment_hint);
+char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint, bool executable) {
+  char* result = pd_reserve_memory(bytes, addr, alignment_hint, executable);
   if (result != NULL) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   }
@@ -1513,16 +1514,16 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 
-bool os::uncommit_memory(char* addr, size_t bytes) {
+bool os::uncommit_memory(char* addr, size_t bytes, bool exec) {
   bool res;
   if (MemTracker::tracking_level() > NMT_minimal) {
     Tracker tkr = MemTracker::get_virtual_memory_uncommit_tracker();
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, exec);
     if (res) {
       tkr.record((address)addr, bytes);
     }
   } else {
-    res = pd_uncommit_memory(addr, bytes);
+    res = pd_uncommit_memory(addr, bytes, exec);
   }
   return res;
 }

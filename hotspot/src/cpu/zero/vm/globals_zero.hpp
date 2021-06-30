@@ -49,6 +49,7 @@ define_pd_global(intx,  PreInflateSpin,       10);
 define_pd_global(intx,  StackYellowPages,     2);
 define_pd_global(intx,  StackRedPages,        1);
 define_pd_global(intx,  StackShadowPages,     5 LP64_ONLY(+1) DEBUG_ONLY(+3));
+define_pd_global(intx,  StackReservedPages,   0);
 
 define_pd_global(bool,  RewriteBytecodes,     true);
 define_pd_global(bool,  RewriteFrequentPairs, true);

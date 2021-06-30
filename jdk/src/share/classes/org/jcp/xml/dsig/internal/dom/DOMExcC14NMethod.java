@@ -123,8 +123,7 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
         }
 
         ExcC14NParameterSpec params = (ExcC14NParameterSpec)spec;
-        StringBuffer prefixListAttr = new StringBuffer("");
-        @SuppressWarnings("unchecked")
+        StringBuilder prefixListAttr = new StringBuilder("");
         List<String> prefixList = getParameterSpecPrefixList(params);
         for (int i = 0, size = prefixList.size(); i < size; i++) {
             prefixListAttr.append(prefixList.get(i));

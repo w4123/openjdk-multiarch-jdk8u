@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 1999-2019 The Apache Software Foundation.
@@ -42,6 +41,8 @@ import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
  * This class is both a factory for XPath location path expressions,
  * which are built from the opcode map output, and an analysis engine
  * for the location path expressions in order to provide optimization hints.
+ *
+ * @LastModified: May 2019
  */
 public class WalkerFactory
 {

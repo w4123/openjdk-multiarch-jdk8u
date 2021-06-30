@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
+import com.sun.org.apache.xml.internal.security.utils.ClassLoaderUtils;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import com.sun.org.apache.xml.internal.security.utils.resolver.implementations.ResolverDirectHTTP;
 import com.sun.org.apache.xml.internal.security.utils.resolver.implementations.ResolverFragment;

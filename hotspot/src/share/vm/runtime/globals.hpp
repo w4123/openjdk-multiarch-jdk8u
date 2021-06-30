@@ -22,6 +22,12 @@
  *
  */
 
+/*
+ * This file has been modified by Azul Systems, Inc. in 2014. These
+ * modifications are Copyright (c) 2014 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above. 
+ */
+
 #ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
@@ -102,6 +108,9 @@
 #endif
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "globals_bsd_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_aarch64
+# include "globals_bsd_aarch64.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "globals_bsd_zero.hpp"
@@ -729,6 +738,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseAESIntrinsics, false,                                    \
           "Use intrinsics for AES versions of crypto")                      \
+                                                                            \
+  product(bool, UseAESCTRIntrinsics, false,                                 \
+          "Use intrinsics for the paralleled version of AES/CTR crypto")    \
                                                                             \
   product(bool, UseSHA1Intrinsics, false,                                   \
           "Use intrinsics for SHA-1 crypto hash function")                  \
@@ -1417,6 +1429,9 @@ class CommandLineFlags {
   product(bool, TraceBiasedLocking, false,                                  \
           "Trace biased locking in JVM")                                    \
                                                                             \
+  product(bool, TraceBiasedLockingDateStamp, false,                         \
+          "Print date stamp with biased locking trace")                     \
+                                                                            \
   product(bool, TraceMonitorInflation, false,                               \
           "Trace monitor inflation in JVM")                                 \
                                                                             \
@@ -1433,9 +1448,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseParallelOldGC, false,                                    \
           "Use the Parallel Old garbage collector")                         \
-                                                                            \
-  product(bool, UseShenandoahGC, false,                                     \
-          "Use the Shenandoah garbage collector")                           \
                                                                             \
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
           "How often should we maximally compact the heap (not allowing "   \
@@ -3366,6 +3378,12 @@ class CommandLineFlags {
   product_pd(intx, StackRedPages,                                           \
           "Number of red zone (unrecoverable overflows) pages")             \
                                                                             \
+  product_pd(intx, StackReservedPages,                                      \
+          "Number of reserved zone (reserved to annotated methods) pages")  \
+                                                                            \
+  product(bool, RestrictReservedStack, true,                                \
+          "Restrict @ReservedStackAccess to trusted classes")               \
+                                                                            \
   product_pd(intx, StackShadowPages,                                        \
           "Number of shadow zone (for overflow checking) pages "            \
           "this should exceed the depth of the VM and native call stack")   \
@@ -3886,6 +3904,9 @@ class CommandLineFlags {
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
           "Address to allocate shared memory region for class data")        \
                                                                             \
+  product(bool, OverrideVMProperties, false,                                \
+          "Allow modifications to immutable VM properties")                 \
+                                                                            \
   diagnostic(bool, EnableInvokeDynamic, true,                               \
           "support JSR 292 (method handles, invokedynamic, "                \
           "anonymous classes")                                              \
@@ -4036,6 +4057,21 @@ class CommandLineFlags {
                                                                             \
   JFR_ONLY(product(bool, LogJFR, false,                                     \
           "Enable JFR logging (consider +Verbose)"))                        \
+                                                                            \
+  product(bool, UseOpenJSSE, false,                                         \
+      "Enable OpenJSSE provider")                                           \
+                                                                            \
+  product(bool, UseLegacy8uJSSE, false,                                     \
+      "Enable Legacy8uJSSE provider")                                       \
+                                                                            \
+  CRS_ONLY(experimental(bool, UseCRS, false,                                \
+          "Enable Connected Runtime Services"))                             \
+                                                                            \
+  CRS_ONLY(experimental(ccstr, CRSArguments, NULL,                          \
+          "Connected Runtime Services command line arguments"))             \
+                                                                            \
+  CRS_ONLY(experimental(uintx, CRSNativeMemoryAreaSize, 2048*K,             \
+          "Size of thread-local buffer area for CRS event collection"))
 
 /*
  *  Macros for factoring of globals

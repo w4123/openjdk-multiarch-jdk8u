@@ -391,8 +391,6 @@ SplashEventLoop(Splash * splash) {
 
 void *
 SplashScreenThread(void *param) {
-    objc_registerThreadWithCollector();
-
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     Splash *splash = (Splash *) param;
 

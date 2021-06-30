@@ -38,6 +38,10 @@ import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.util.Debug;
 
+import java.lang.ref.WeakReference;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * This class instantiates implementations of JCE engine classes from
  * providers registered with the java.security.Security object.
@@ -56,11 +60,11 @@ final class JceSecurity {
     private static CryptoPermissions defaultPolicy = null;
     private static CryptoPermissions exemptPolicy = null;
 
-    // Map<Provider,?> of the providers we already have verified
-    // value == PROVIDER_VERIFIED is successfully verified
-    // value is failure cause Exception in error case
-    private final static Map<Provider, Object> verificationResults =
-            new IdentityHashMap<>();
+    // Map of the providers we already have verified.
+    // If verified ok, value == PROVIDER_VERIFIED, otherwise
+    // the cause of verification failure is stored as value.
+    private static final Map<IdentityWrapper, Object>
+            verificationResults = new ConcurrentHashMap<>();
 
     // Map<Provider,?> of the providers currently being verified
     private final static Map<Provider, Object> verifyingProviders =
@@ -172,31 +176,44 @@ final class JceSecurity {
      * JCE trusted CA.
      * Return null if ok, failure Exception if verification failed.
      */
-    static synchronized Exception getVerificationResult(Provider p) {
-        Object o = verificationResults.get(p);
-        if (o == PROVIDER_VERIFIED) {
-            return null;
-        } else if (o != null) {
-            return (Exception)o;
+    static Exception getVerificationResult(Provider p) {
+        IdentityWrapper pKey = new IdentityWrapper(p);
+        Object o = verificationResults.get(pKey);
+        // no mapping found
+        if (o == null) {
+            synchronized (JceSecurity.class) {
+                // check cache again in case the result is now available
+                o = verificationResults.get(pKey);
+                if (o == null) {
+                    // clean verificationResults
+                    IdentityWrapper rKey;
+                    while((rKey = IdentityWrapper.queue.poll())!= null) {
+                        verificationResults.remove(rKey);
+                    }
+                    if (verifyingProviders.get(p) != null) {
+                        // recursion; return failure now
+                        return new NoSuchProviderException
+                                ("Recursion during verification");
+                    }
+                    try {
+                        verifyingProviders.put(p, Boolean.FALSE);
+                        URL providerURL = getCodeBase(p.getClass());
+                        verifyProviderJar(providerURL);
+                        o = PROVIDER_VERIFIED;
+                    } catch (Exception e) {
+                        o = e;
+                    } finally {
+                        verifyingProviders.remove(p);
+                    }
+                    verificationResults.put(pKey, o);
+                    if (debug != null) {
+                        debug.println("Provider " + p.getName() +
+                                " verification result: " + o);
+                    }
+                }
+            }
         }
-        if (verifyingProviders.get(p) != null) {
-            // this method is static synchronized, must be recursion
-            // return failure now but do not save the result
-            return new NoSuchProviderException("Recursion during verification");
-        }
-        try {
-            verifyingProviders.put(p, Boolean.FALSE);
-            URL providerURL = getCodeBase(p.getClass());
-            verifyProviderJar(providerURL);
-            // Verified ok, cache result
-            verificationResults.put(p, PROVIDER_VERIFIED);
-            return null;
-        } catch (Exception e) {
-            verificationResults.put(p, e);
-            return e;
-        } finally {
-            verifyingProviders.remove(p);
-        }
+        return (o == PROVIDER_VERIFIED? null : (Exception) o);
     }
 
     // return whether this provider is properly signed and can be used by JCE
@@ -392,5 +409,40 @@ final class JceSecurity {
 
     static boolean isRestricted() {
         return isRestricted;
+    }
+
+    private static final class IdentityWrapper {
+        static ConcurrentLinkedQueue<IdentityWrapper> queue =
+                new ConcurrentLinkedQueue<IdentityWrapper>();
+        final WeakReference<Provider> obj;
+        final int hashCode;
+
+        IdentityWrapper(Provider obj) {
+            this.hashCode = System.identityHashCode(obj);
+            this.obj = new WeakReference<Provider>(obj);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            Provider p = obj.get();
+            if (p == null) {
+                queue.add(this);
+                return false;
+            }
+
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof IdentityWrapper)) {
+                return false;
+            }
+            return p == ((IdentityWrapper)o).obj.get();
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
+
     }
 }

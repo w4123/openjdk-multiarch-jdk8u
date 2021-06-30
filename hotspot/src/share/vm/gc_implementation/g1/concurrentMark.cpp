@@ -671,7 +671,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
 #endif
 
     guarantee(parallel_marking_threads() > 0, "peace of mind");
-    _parallel_workers = new FlexibleWorkGang("G1 Parallel Marking Threads",
+    _parallel_workers = new FlexibleWorkGang("G1 Marker",
          _max_parallel_marking_threads, false, true);
     if (_parallel_workers == NULL) {
       vm_exit_during_initialization("Failed necessary allocation.");

@@ -54,7 +54,6 @@ public class DisabledAlgorithms {
     private static final String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;
-
     private static final String trustFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;

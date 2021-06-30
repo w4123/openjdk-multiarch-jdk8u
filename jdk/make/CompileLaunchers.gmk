@@ -99,7 +99,7 @@ define SetupLauncher
     endif
 
     $1_LDFLAGS += -Wl,-all_load $(JDK_OUTPUTDIR)/objs/libjli_static.a \
-        -framework Cocoa -framework Security -framework ApplicationServices \
+        -framework Foundation -framework Security \
         -sectcreate __TEXT __info_plist $(JDK_TOPDIR)/src/macosx/lib/$$($1_PLIST_FILE)
         $1_LDFLAGS_SUFFIX += -pthread
   endif
@@ -212,6 +212,9 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   XLIBS :=
 endif
 
+# Android: clear x11 libs link flags
+XLIBS :=
+
 ifdef OPENJDK
   JAVA_RC_FLAGS += -i "$(JDK_TOPDIR)/src/windows/resource/icons"
 else
@@ -250,7 +253,9 @@ BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/java$(EXE_SUFFIX)
 ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
   ifneq ($(POST_STRIP_CMD), )
     ifneq ($(STRIP_POLICY), no_strip)
+    ifneq ($(OPENJDK_TARGET_OS), macosx) # Darwin does not support? 
       BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/java$(DEBUGINFO_EXT)
+    endif
     endif
   endif
 endif
@@ -562,7 +567,9 @@ BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(EXE_SUFFIX)
 ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
   ifneq ($(POST_STRIP_CMD), )
     ifneq ($(STRIP_POLICY), no_strip)
+    ifneq ($(OPENJDK_TARGET_OS), macosx) # Darwin does not support? 
       BUILD_LAUNCHERS += $(JDK_OUTPUTDIR)/bin$(OUTPUT_SUBDIR)/unpack200$(DEBUGINFO_EXT)
+    endif
     endif
   endif
 endif

@@ -67,6 +67,7 @@ import jdk.jfr.internal.Utils;
  *
  * @since 8
  */
+@jdk.Exported
 public final class AnnotationElement {
     private final Type type;
     private final List<Object> annotationValues;

@@ -198,6 +198,9 @@ public class ClientAuth extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "");
+
         // Get the customized arguments.
         parseArguments(args);
         main(new ClientAuth());

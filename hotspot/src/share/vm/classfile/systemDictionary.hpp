@@ -711,6 +711,11 @@ protected:
 
   static bool _has_loadClassInternal;
   static bool _has_checkPackageAccess;
+
+public:
+  static TableStatistics placeholders_statistics();
+  static TableStatistics loader_constraints_statistics();
+  static TableStatistics protection_domain_cache_statistics();
 };
 
 #endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP

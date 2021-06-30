@@ -161,6 +161,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JVM_VARIANTS],
   if test "x$VAR_CPU" = xppc64 -o "x$VAR_CPU" = xppc64le ; then
     INCLUDE_SA=false
   fi
+  if test "x$OPENJDK_TARGET_CPU" = xaarch64 -a "x$OPENJDK_TARGET_OS" = "xmacosx" ; then
+    INCLUDE_SA=false
+  fi
   AC_SUBST(INCLUDE_SA)
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
@@ -168,6 +171,50 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JVM_VARIANTS],
   fi
 
   AC_SUBST(MACOSX_UNIVERSAL)
+])
+
+###############################################################################
+# Check if the serviceability agent attach functionality should be included.
+#
+AC_DEFUN_ONCE([HOTSPOT_SETUP_SA],
+[
+  # Test for serviceability agent attach dependencies
+  AC_ARG_ENABLE([sa-attach], [AS_HELP_STRING([--enable-sa-attach@<:@=yes/no/auto@:>@],
+      [enable serviceability agent attach. Default is auto, where it is enabled if all dependencies
+      are present.])])
+
+  SA_ATTACH_DEP_MISSING=false
+
+  AC_CHECK_HEADERS([thread_db.h], [SA_ATTACH_HEADERS_OK=yes],[SA_ATTACH_HEADERS_OK=no])
+  if test "x$SA_ATTACH_HEADERS_OK" != "xyes"; then
+    SA_ATTACH_DEP_MISSING=true
+  fi
+
+  AC_MSG_CHECKING([if serviceability agent attach should be included])
+  if test "x$enable_sa_attach" = "xyes"; then
+    if test "x$SA_ATTACH_DEP_MISSING" = "xtrue"; then
+      AC_MSG_RESULT([no, missing dependencies])
+      HELP_MSG_MISSING_DEPENDENCY([sa-attach])
+      AC_MSG_ERROR([Cannot enable sa-attach with missing dependencies. See above. $HELP_MSG])
+    else
+      INCLUDE_SA_ATTACH=true
+      AC_MSG_RESULT([yes, forced])
+    fi
+  elif test "x$enable_sa_attach" = "xno"; then
+    INCLUDE_SA_ATTACH=false
+    AC_MSG_RESULT([no, forced])
+  elif test "x$enable_sa_attach" = "xauto" || test "x$enable_sa_attach" = "x"; then
+    if test "x$SA_ATTACH_DEP_MISSING" = "xtrue"; then
+      INCLUDE_SA_ATTACH=false
+      AC_MSG_RESULT([no, missing dependencies])
+    else
+      INCLUDE_SA_ATTACH=true
+      AC_MSG_RESULT([yes, dependencies present])
+    fi
+  else
+    AC_MSG_ERROR([Invalid value for --enable-sa-attach: $enable_sa_attach])
+  fi
+  AC_SUBST(INCLUDE_SA_ATTACH)
 ])
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
@@ -283,6 +330,17 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
     HOTSPOT_TARGET=universal_${HOTSPOT_EXPORT}
   fi
 
+  if test "x$OPENJDK_TARGET_LIBC" = "xmusl"; then
+    HOTSPOT_TARGET_LIBC=$OPENJDK_TARGET_LIBC
+  else
+    HOTSPOT_TARGET_LIBC=""
+  fi
+  if test "x$OPENJDK_BUILD_LIBC" = "xmusl"; then
+    HOTSPOT_BUILD_LIBC=$OPENJDK_BUILD_LIBC
+  else
+    HOTSPOT_BUILD_LIBC=""
+  fi
+
   #####
 
   AC_SUBST(DEBUG_LEVEL)
@@ -290,6 +348,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
   AC_SUBST(FASTDEBUG)
   AC_SUBST(DEBUG_CLASSFILES)
   AC_SUBST(BUILD_VARIANT_RELEASE)
+  AC_SUBST(HOTSPOT_TARGET_LIBC)
+  AC_SUBST(HOTSPOT_BUILD_LIBC)
 ])
 
 
@@ -461,6 +521,26 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_MSG_RESULT([$ENABLE_JFR])
   AC_SUBST(ENABLE_JFR)
+
+  ###############################################################################
+  #
+  # Enable or disable Connected Runtime Services
+  #
+  AC_MSG_CHECKING([whether to build Connected Runtime Services])
+  AC_ARG_ENABLE(crs, [AS_HELP_STRING([--enable-crs],
+      [Enable Connected Runtime Services support @<:@depends on platform@:>@])],,
+      [enable_crs=auto])
+  if test "x$enable_crs" = "xno"; then
+    ENABLE_CRS=false
+  elif test "x$enable_crs" = "xyes"; then
+    ENABLE_CRS=true
+  elif test "x$enable_crs" = "xauto"; then
+    ENABLE_CRS=false
+  else
+    AC_MSG_ERROR([--enable-crs must either be set to yes or no])
+  fi
+  AC_MSG_RESULT([$ENABLE_CRS])
+  AC_SUBST(ENABLE_CRS)
 ])
 
 ###############################################################################
@@ -537,6 +617,34 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(PRODUCT_SUFFIX)
   AC_SUBST(JDK_RC_PLATFORM_NAME)
   AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
+  AC_SUBST(MACOSX_BUNDLE_ID_BASE)
+
+  # Set the MACOSX Bundle Name base
+  AC_ARG_WITH(macosx-bundle-name-base, [AS_HELP_STRING([--with-macosx-bundle-name-base],
+      [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.
+      @<:@not specified@:>@])])
+  if test "x$with_macosx_bundle_name_base" = xyes; then
+    AC_MSG_ERROR([--with-macosx-bundle-name-base must have a value])
+  elif [ ! [[ $with_macosx_bundle_name_base =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-macosx-bundle-name-base contains non-printing characters: $with_macosx_bundle_name_base])
+  elif test "x$with_macosx_bundle_name_base" != x; then
+    # Set MACOSX_BUNDLE_NAME_BASE to the configured value.
+    MACOSX_BUNDLE_NAME_BASE="$with_macosx_bundle_name_base"
+  fi
+  AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
+
+  # Set the MACOSX Bundle ID base
+  AC_ARG_WITH(macosx-bundle-id-base, [AS_HELP_STRING([--with-macosx-bundle-id-base],
+      [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.
+      @<:@not specified@:>@])])
+  if test "x$with_macosx_bundle_id_base" = xyes; then
+    AC_MSG_ERROR([--with-macosx-bundle-id-base must have a value])
+  elif [ ! [[ $with_macosx_bundle_id_base =~ ^[[:print:]]*$ ]] ]; then
+    AC_MSG_ERROR([--with-macosx-bundle-id-base contains non-printing characters: $with_macosx_bundle_id_base])
+  elif test "x$with_macosx_bundle_id_base" != x; then
+    # Set MACOSX_BUNDLE_ID_BASE to the configured value.
+    MACOSX_BUNDLE_ID_BASE="$with_macosx_bundle_id_base"
+  fi
   AC_SUBST(MACOSX_BUNDLE_ID_BASE)
 
   # The vendor name, if any

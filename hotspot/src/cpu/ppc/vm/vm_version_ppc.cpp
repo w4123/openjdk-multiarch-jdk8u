@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2018 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,6 +194,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
 
+  if (UseAESCTRIntrinsics) {
+    warning("AES/CTR intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+  }
+
   if (UseGHASHIntrinsics) {
     warning("GHASH intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
@@ -241,6 +246,71 @@ void VM_Version::initialize() {
   }
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
     UseMontgomerySquareIntrinsic = true;
+  }
+
+  check_virtualizations();
+}
+
+void VM_Version::check_virtualizations() {
+#if defined(_AIX)
+  int rc = 0;
+  perfstat_partition_total_t pinfo;
+  rc = perfstat_partition_total(NULL, &pinfo, sizeof(perfstat_partition_total_t), 1);
+  if (rc == 1) {
+    Abstract_VM_Version::_detected_virtualization = PowerVM;
+  }
+#else
+  const char* info_file = "/proc/ppc64/lparcfg";
+  // system_type=...qemu indicates PowerKVM
+  // e.g. system_type=IBM pSeries (emulated by qemu)
+  char line[500];
+  FILE* fp = fopen(info_file, "r");
+  if (fp == NULL) {
+    return;
+  }
+  const char* system_type="system_type=";  // in case this line contains qemu, it is KVM
+  const char* num_lpars="NumLpars="; // in case of non-KVM : if this line is found it is PowerVM
+  bool num_lpars_found = false;
+
+  while (fgets(line, sizeof(line), fp) != NULL) {
+    if (strncmp(line, system_type, strlen(system_type)) == 0) {
+      if (strstr(line, "qemu") != 0) {
+        Abstract_VM_Version::_detected_virtualization = PowerKVM;
+        fclose(fp);
+        return;
+      }
+    }
+    if (strncmp(line, num_lpars, strlen(num_lpars)) == 0) {
+      num_lpars_found = true;
+    }
+  }
+  if (num_lpars_found) {
+    Abstract_VM_Version::_detected_virtualization = PowerVM;
+  } else {
+    Abstract_VM_Version::_detected_virtualization = PowerFullPartitionMode;
+  }
+  fclose(fp);
+#endif
+}
+
+void VM_Version::print_platform_virtualization_info(outputStream* st) {
+  const char* info_file = "/proc/ppc64/lparcfg";
+  const char* kw[] = { "system_type=", // qemu indicates PowerKVM
+                       "partition_entitled_capacity=", // entitled processor capacity percentage
+                       "partition_max_entitled_capacity=",
+                       "capacity_weight=", // partition CPU weight
+                       "partition_active_processors=",
+                       "partition_potential_processors=",
+                       "entitled_proc_capacity_available=",
+                       "capped=", // 0 - uncapped, 1 - vcpus capped at entitled processor capacity percentage
+                       "shared_processor_mode=", // (non)dedicated partition
+                       "system_potential_processors=",
+                       "pool=", // CPU-pool number
+                       "pool_capacity=",
+                       "NumLpars=", // on non-KVM machines, NumLpars is not found for full partition mode machines
+                       NULL };
+  if (!print_matching_lines_from_file(info_file, st, kw)) {
+    st->print_cr("  <%s Not Available>", info_file);
   }
 }
 

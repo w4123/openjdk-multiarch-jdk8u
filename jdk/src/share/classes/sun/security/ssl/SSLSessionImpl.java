@@ -27,7 +27,6 @@ package sun.security.ssl;
 
 import static sun.security.ssl.CipherSuite.KeyExchange.K_KRB5;
 import static sun.security.ssl.CipherSuite.KeyExchange.K_KRB5_EXPORT;
-
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.Principal;
@@ -556,8 +555,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Return the cert chain presented by the peer in the
      * java.security.cert format.
      * Note: This method can be used only when using certificate-based
-     * cipher suites; using it with non-certificate-based cipher suites,
-     * such as Kerberos, will throw an SSLPeerUnverifiedException.
+     * cipher suites; using it with non-certificate-based cipher suites
+     * will throw an SSLPeerUnverifiedException.
      *
      * @return array of peer X.509 certs, with the peer's own cert
      *  first in the chain, and with the "root" CA last.
@@ -570,11 +569,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // change record of peer identity even by accident, much
         // less do it intentionally.
         //
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
-            throw new SSLPeerUnverifiedException("no certificates expected"
-                        + " for Kerberos cipher suites");
-        }
         if (peerCerts == null) {
             throw new SSLPeerUnverifiedException("peer not authenticated");
         }
@@ -607,8 +601,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Return the cert chain presented by the peer in the
      * javax.security.cert format.
      * Note: This method can be used only when using certificate-based
-     * cipher suites; using it with non-certificate-based cipher suites,
-     * such as Kerberos, will throw an SSLPeerUnverifiedException.
+     * cipher suites; using it with non-certificate-based cipher suites
+     * will throw an SSLPeerUnverifiedException.
      *
      * @return array of peer X.509 certs, with the peer's own cert
      *  first in the chain, and with the "root" CA last.
@@ -626,11 +620,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         // change record of peer identity even by accident, much
         // less do it intentionally.
         //
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
-            throw new SSLPeerUnverifiedException("no certificates expected"
-                        + " for Kerberos cipher suites");
-        }
         if (peerCerts == null) {
             throw new SSLPeerUnverifiedException("peer not authenticated");
         }
@@ -654,8 +643,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     /**
      * Return the cert chain presented by the peer.
      * Note: This method can be used only when using certificate-based
-     * cipher suites; using it with non-certificate-based cipher suites,
-     * such as Kerberos, will throw an SSLPeerUnverifiedException.
+     * cipher suites; using it with non-certificate-based cipher suites
+     * will throw an SSLPeerUnverifiedException.
      *
      * @return array of peer X.509 certs, with the peer's own cert
      *  first in the chain, and with the "root" CA last.
@@ -667,11 +656,6 @@ final class SSLSessionImpl extends ExtendedSSLSession {
          * change record of peer identity even by accident, much
          * less do it intentionally.
          */
-        if ((cipherSuite.keyExchange == K_KRB5) ||
-            (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
-            throw new SSLPeerUnverifiedException("no certificates expected"
-                        + " for Kerberos cipher suites");
-        }
         if (peerCerts != null) {
             return peerCerts.clone();
         } else {
@@ -707,8 +691,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * defining the session.
      *
      * @return the peer's principal. Returns an X500Principal of the
-     * end-entity certificate for X509-based cipher suites, and
-     * Principal for Kerberos cipher suites.
+     * end-entity certificate for X509-based cipher suites.
      *
      * @throws SSLPeerUnverifiedException if the peer's identity has not
      *          been verified
@@ -729,9 +712,8 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      * Returns the principal that was sent to the peer during handshaking.
      *
      * @return the principal sent to the peer. Returns an X500Principal
-     * of the end-entity certificate for X509-based cipher suites, and
-     * Principal for Kerberos cipher suites. If no principal was
-     * sent, then null is returned.
+     * of the end-entity certificate for X509-based cipher suites.
+     * If no principal was sent, then null is returned.
      */
     @Override
     public Principal getLocalPrincipal() {

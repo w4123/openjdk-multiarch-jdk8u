@@ -26,6 +26,8 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1MONITORINGSUPPORT_HPP
 
 #include "gc_implementation/shared/hSpaceCounters.hpp"
+#include "runtime/mutex.hpp"
+#include "services/memoryUsage.hpp"
 
 class G1CollectedHeap;
 
@@ -181,6 +183,7 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
 
  public:
   G1MonitoringSupport(G1CollectedHeap* g1h);
+  MemoryUsage memory_usage();
 
   // Unfortunately, the jstat tool assumes that no space has 0
   // capacity. In our case, given that each space is logical, it's
@@ -241,6 +244,13 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   size_t old_gen_max()                { return overall_reserved();    }
   size_t old_space_committed()        { return _old_committed;        }
   size_t old_space_used()             { return _old_used;             }
+
+  // Monitoring support for MemoryPools. Values in the returned MemoryUsage are
+  // guaranteed to be consistent with each other.
+  MemoryUsage eden_space_memory_usage(size_t initial_size, size_t max_size);
+  MemoryUsage survivor_space_memory_usage(size_t initial_size, size_t max_size);
+
+  MemoryUsage old_gen_memory_usage(size_t initial_size, size_t max_size);
 };
 
 class G1GenerationCounters: public GenerationCounters {

@@ -25,6 +25,7 @@
  * @test
  * @bug 8151788
  * @summary NullPointerException from ntlm.Client.type3
+ * @compile -XDignore.symbol.file NULLTargetInfoTest.java
  * @run main NULLTargetInfoTest
  */
 import com.sun.security.ntlm.Client;

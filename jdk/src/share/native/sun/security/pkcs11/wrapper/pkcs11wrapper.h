@@ -156,7 +156,6 @@
 /* include the platform dependent part of the header */
 #include "p11_md.h"
 
-#include "pkcs11.h"
 #include <jni.h>
 #include <jni_util.h>
 
@@ -288,6 +287,10 @@
 #define CLASS_TLS_PRF_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_PRF_PARAMS"
 #define CLASS_TLS_MAC_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_MAC_PARAMS"
 
+/* function to update the CK_NSS_GCM_PARAMS in mechanism pointer with
+ * CK_GCM_PARAMS
+ */
+CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr);
 
 /* function to convert a PKCS#11 return value other than CK_OK into a Java Exception
  * or to throw a PKCS11RuntimeException

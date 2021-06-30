@@ -83,6 +83,14 @@ SA_LFLAGS = $(MAPFLAG:FILENAME=$(SAMAPFILE)) $(LDFLAGS_HASH_STYLE) \
 
 SAARCH ?= $(BUILDARCH)
 
+ifeq ($(INCLUDE_SA_ATTACH), true)
+  SA_LIBS = -lthread_db
+endif
+
+ifeq ($(INCLUDE_SA_ATTACH), true)
+  EXTRA_CFLAGS += -DINCLUDE_SA_ATTACH
+endif
+
 $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	$(QUIETLY) if [ "$(BOOT_JAVA_HOME)" = "" ]; then \
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
@@ -103,7 +111,7 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           $(SA_OPT_FLAGS)                                      \
 	           $(EXTRA_CFLAGS)                                      \
 	           -o $@                                                \
-	           -lthread_db -ldl
+	           $(SA_LIBS)
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifneq ($(STRIP_POLICY),no_strip)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBSAPROC_DEBUGINFO)

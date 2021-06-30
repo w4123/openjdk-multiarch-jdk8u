@@ -1065,7 +1065,7 @@ public class JavaScriptScanner {
     private void initURIAttrs() {
         uriAttrs = new HashSet<>(Arrays.asList(
             // See https://www.w3.org/TR/html4/sgml/dtd.html
-            //     https://www.w3.org/TR/html5/
+            //     https://www.w3.org/TR/html52/fullindex.html#attributes-table
             // These are all the attributes that take a %URI or a valid URL potentially surrounded
             // by spaces
             "action",  "cite",  "classid",  "codebase",  "data",

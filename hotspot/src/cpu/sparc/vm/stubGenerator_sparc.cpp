@@ -4912,7 +4912,7 @@ class StubGenerator: public StubCodeGenerator {
       return start;
   }
 
-  void generate_initial() {
+void generate_initial() {
     // Generates all stubs and initializes the entry points
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -4942,7 +4942,12 @@ class StubGenerator: public StubCodeGenerator {
 #endif  // COMPILER2 !=> _LP64
 
     // Build this early so it's available for the interpreter.
-    StubRoutines::_throw_StackOverflowError_entry          = generate_throw_exception("StackOverflowError throw_exception",           CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
+    StubRoutines::_throw_StackOverflowError_entry =
+            generate_throw_exception("StackOverflowError throw_exception",
+            CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
+    StubRoutines::_throw_delayed_StackOverflowError_entry =
+            generate_throw_exception("delayed StackOverflowError throw_exception",
+            CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError));
   }
 
 
@@ -4984,6 +4989,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
     }
+
     // generate GHASH intrinsics code
     if (UseGHASHIntrinsics) {
       StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();

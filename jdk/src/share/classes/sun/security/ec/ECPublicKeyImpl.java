@@ -60,7 +60,8 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
         this.params = params;
         // generate the encoding
         algid = new AlgorithmId
-            (AlgorithmId.EC_oid, ECParameters.getAlgorithmParameters(params));
+            (AlgorithmId.EC_oid,
+             sun.security.util.ECParameters.getAlgorithmParameters(params));
         key = ECUtil.encodePoint(w, params.getCurve());
     }
 

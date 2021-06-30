@@ -38,6 +38,7 @@ import jdk.jfr.internal.Type;
  *
  * @since 8
  */
+@jdk.Exported
 public final class SettingDescriptor {
 
     private final AnnotationConstruct annotationConstruct;

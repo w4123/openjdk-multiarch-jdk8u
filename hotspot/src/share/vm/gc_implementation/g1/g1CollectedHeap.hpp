@@ -44,6 +44,7 @@
 #include "memory/barrierSet.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/sharedHeap.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -1049,6 +1050,10 @@ public:
   // Adaptive size policy.  No such thing for g1.
   virtual AdaptiveSizePolicy* size_policy() { return NULL; }
 
+  virtual MemoryUsage memory_usage(){
+      return _g1mm->memory_usage();
+  }
+
   // The rem set and barrier set.
   G1RemSet* g1_rem_set() const { return _g1_rem_set; }
 
@@ -1150,21 +1155,11 @@ public:
   // Do sanity check on the contents of the in-cset fast test table.
   bool check_cset_fast_test() PRODUCT_RETURN_( return true; );
 
-  // verify_region_sets() performs verification over the region
-  // lists. It will be compiled in the product code to be used when
-  // necessary (i.e., during heap verification).
   void verify_region_sets();
 
   // verify_region_sets_optional() is planted in the code for
-  // list verification in non-product builds (and it can be enabled in
-  // product builds by defining HEAP_REGION_SET_FORCE_VERIFY to be 1).
-#if HEAP_REGION_SET_FORCE_VERIFY
-  void verify_region_sets_optional() {
-    verify_region_sets();
-  }
-#else // HEAP_REGION_SET_FORCE_VERIFY
-  void verify_region_sets_optional() { }
-#endif // HEAP_REGION_SET_FORCE_VERIFY
+  // list verification in debug builds.
+  void verify_region_sets_optional() { DEBUG_ONLY(verify_region_sets();) }
 
 #ifdef ASSERT
   bool is_on_master_free_list(HeapRegion* hr) {
@@ -1533,8 +1528,6 @@ public:
   inline bool is_obj_dead(const oop obj) const;
 
   inline bool is_obj_ill(const oop obj) const;
-
-  inline bool requires_marking(const void* entry) const;
 
   bool allocated_since_marking(oop obj, HeapRegion* hr, VerifyOption vo);
   HeapWord* top_at_mark_start(HeapRegion* hr, VerifyOption vo);

@@ -35,8 +35,8 @@ import org.w3c.dom.Element;
 
 public class ECKeyValueResolver extends KeyResolverSpi {
 
-    private static final com.sun.org.slf4j.internal.Logger LOG =
-        com.sun.org.slf4j.internal.LoggerFactory.getLogger(ECKeyValueResolver.class);
+    private static final java.util.logging.Logger LOG =
+        java.util.logging.Logger.getLogger(ECKeyValueResolver.class.getName());
 
 
     /**
@@ -73,7 +73,7 @@ public class ECKeyValueResolver extends KeyResolverSpi {
             ECKeyValue ecKeyValue = new ECKeyValue(ecKeyElement, baseURI);
             return ecKeyValue.getPublicKey();
         } catch (XMLSecurityException ex) {
-            LOG.debug(ex.getMessage(), ex);
+            LOG.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
             //do nothing
         }
 

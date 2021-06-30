@@ -525,7 +525,7 @@ final class ProcessImpl extends Process {
     public boolean waitFor(long timeout, TimeUnit unit)
         throws InterruptedException
     {
-        long remainingNanos = unit.toNanos(timeout);    // throw NPE before other conditions
+        long remainingNanos  = unit.toNanos(timeout);    // throw NPE before other conditions
         if (getExitCodeProcess(handle) != STILL_ACTIVE) return true;
         if (timeout <= 0) return false;
 

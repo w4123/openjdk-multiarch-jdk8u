@@ -43,6 +43,7 @@ import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509SKIResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509SubjectNameResolver;
 import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolver;
+import com.sun.org.apache.xml.internal.security.utils.ClassLoaderUtils;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -203,8 +204,7 @@ public class KeyResolver {
         KeyResolverSpi keyResolverSpi = null;
         Exception ex = null;
         try {
-            KeyResolverSpi tmp = (KeyResolverSpi) ClassLoaderUtils.loadClass(className, KeyResolver.class).newInstance();
-            keyResolverSpi = tmp;
+            keyResolverSpi = (KeyResolverSpi) ClassLoaderUtils.loadClass(className, KeyResolver.class).newInstance();
             keyResolverSpi.setGlobalResolver(globalResolver);
             register(keyResolverSpi, true);
         } catch (ClassNotFoundException e) {

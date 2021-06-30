@@ -104,6 +104,7 @@ NO_TRANSITION(void, jfr_set_enabled(JNIEnv* env, jobject jvm, jlong event_type_i
   JfrEventSetting::set_enabled(event_type_id, JNI_TRUE == enabled);
   if (EventOldObjectSample::eventId == event_type_id) {
     ThreadInVMfromNative transition(JavaThread::thread_from_jni_environment(env));
+    Thread::WXWriteFromExecSetter wx_write;
     if (JNI_TRUE == enabled) {
       LeakProfiler::start(JfrOptionSet::old_object_queue_size());
     } else {

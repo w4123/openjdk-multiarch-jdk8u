@@ -91,6 +91,7 @@ import jdk.jfr.internal.Utils;
  *
  */
 @SuppressWarnings("serial")
+@jdk.Exported
 public final class FlightRecorderPermission extends java.security.BasicPermission {
 
     // Purpose of InternalAccess is to give classes in jdk.jfr.internal

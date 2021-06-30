@@ -107,6 +107,8 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {
   }
 
   NOT_PRODUCT(set_compiled_invocation_count(0);)
+
+  CRS_ONLY(_use_flag = 0);
 }
 
 // Release Method*.  The nmethod will be gone when we get here because

@@ -163,6 +163,8 @@ class Solaris {
   static ExtendedPC fetch_frame_from_ucontext(Thread* thread, ucontext_t* uc,
     intptr_t** ret_sp, intptr_t** ret_fp);
 
+  static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
+
   static void hotspot_sigmask(Thread* thread);
 
   // SR_handler

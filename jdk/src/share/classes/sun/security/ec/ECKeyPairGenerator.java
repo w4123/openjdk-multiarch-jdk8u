@@ -36,8 +36,10 @@ import java.security.spec.InvalidParameterSpecException;
 import java.util.Optional;
 
 import sun.security.jca.JCAUtil;
+import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
 import sun.security.util.math.*;
+import sun.security.util.NamedCurve;
 import sun.security.ec.point.*;
 import static sun.security.util.SecurityProviderConstants.DEF_EC_KEY_SIZE;
 import static sun.security.ec.ECOperations.IntermediateValueException;

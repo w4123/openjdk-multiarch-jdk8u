@@ -259,10 +259,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN) \
         $(LIBINSTRUMENT_LDFLAGS), \
-    LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/jli), \
+    LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/jli) -ltinyiconv, \
     LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/jli), \
     LDFLAGS_macosx := -Xlinker -all_load $(JDK_OUTPUTDIR)/objs/libjli_static.a \
-        -framework Cocoa -framework Security -framework ApplicationServices, \
+        -framework Foundation -framework Security, \
     LDFLAGS_SUFFIX := $(LIBINSTRUMENT_LDFLAGS_SUFFIX), \
     LDFLAGS_SUFFIX_macosx := -liconv $(LIBZ), \
     LDFLAGS_SUFFIX_solaris := $(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL) -lc, \

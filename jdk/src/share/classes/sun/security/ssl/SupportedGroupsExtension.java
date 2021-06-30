@@ -44,6 +44,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.crypto.spec.DHParameterSpec;
 import javax.net.ssl.SSLProtocolException;
 import sun.security.action.GetPropertyAction;
@@ -61,6 +62,8 @@ final class SupportedGroupsExtension {
             new CHSupportedGroupsProducer();
     static final ExtensionConsumer chOnLoadConsumer =
             new CHSupportedGroupsConsumer();
+    static final HandshakeAbsence chOnTradAbsence =
+            new CHSupportedGroupsOnTradeAbsence();
     static final SSLStringizer sgsStringizer =
             new SupportedGroupsStringizer();
 
@@ -466,6 +469,17 @@ final class SupportedGroupsExtension {
 
             return null;
         }
+
+        // performance optimization
+        private static final Set<CryptoPrimitive> KEY_AGREEMENT_PRIMITIVE_SET =
+                Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
+
+        boolean isPermitted(AlgorithmConstraints constraints) {
+            return constraints.permits(KEY_AGREEMENT_PRIMITIVE_SET,
+                    this.name, null) &&
+                    constraints.permits(KEY_AGREEMENT_PRIMITIVE_SET,
+                            this.algorithm, getParameters());
+        }
     }
 
     static class SupportedGroups {
@@ -705,11 +719,7 @@ final class SupportedGroupsExtension {
             boolean hasFFDHEGroups = false;
             for (NamedGroup namedGroup : supportedNamedGroups) {
                 if (namedGroup.type == type) {
-                    if (constraints.permits(
-                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                            namedGroup.algorithm,
-                            namedGroupParams.get(namedGroup))) {
-
+                    if (namedGroup.isPermitted(constraints)) {
                         return true;
                     }
 
@@ -736,10 +746,7 @@ final class SupportedGroupsExtension {
                 return false;
             }
 
-            return constraints.permits(
-                            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                            namedGroup.algorithm,
-                            namedGroupParams.get(namedGroup));
+            return namedGroup.isPermitted(constraints);
         }
 
         // Is the named group supported?
@@ -761,10 +768,7 @@ final class SupportedGroupsExtension {
                 if ((namedGroup.type == type) &&
                         namedGroup.isAvailable(negotiatedProtocol) &&
                         isSupported(namedGroup) &&
-                        constraints.permits(
-                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                                namedGroup.algorithm,
-                                namedGroupParams.get(namedGroup))) {
+                        namedGroup.isPermitted(constraints)) {
                     return namedGroup;
                 }
             }
@@ -778,10 +782,7 @@ final class SupportedGroupsExtension {
             for (NamedGroup namedGroup : supportedNamedGroups) {
                 if ((namedGroup.type == type) &&
                         namedGroup.isAvailable(negotiatedProtocol) &&
-                        constraints.permits(
-                                EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
-                                namedGroup.algorithm,
-                                namedGroupParams.get(namedGroup))) {
+                        namedGroup.isPermitted(constraints)) {
                     return namedGroup;
                 }
             }
@@ -910,6 +911,35 @@ final class SupportedGroupsExtension {
             shc.handshakeExtensions.put(CH_SUPPORTED_GROUPS, spec);
 
             // No impact on session resumption.
+        }
+    }
+
+    /**
+     * The absence processing if the extension is not present in
+     * a ClientHello handshake message.
+     */
+    private static final class CHSupportedGroupsOnTradeAbsence
+            implements HandshakeAbsence {
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // A client is considered to be attempting to negotiate using this
+            // specification if the ClientHello contains a "supported_versions"
+            // extension with 0x0304 contained in its body.  Such a ClientHello
+            // message MUST meet the following requirements:
+            //    -  If containing a "supported_groups" extension, it MUST also
+            //       contain a "key_share" extension, and vice versa.  An empty
+            //       KeyShare.client_shares vector is permitted.
+            if (shc.negotiatedProtocol.useTLS13PlusSpec() &&
+                    shc.handshakeExtensions.containsKey(
+                            SSLExtension.CH_KEY_SHARE)) {
+                throw shc.conContext.fatal(Alert.MISSING_EXTENSION,
+                        "No supported_groups extension to work with " +
+                        "the key_share extension");
+            }
         }
     }
 

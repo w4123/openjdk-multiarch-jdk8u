@@ -58,10 +58,7 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
-#include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/shenandoah/shenandoahBarrierSet.inline.hpp"
-#endif
+
 
 // Implementation of StubAssembler
 
@@ -202,7 +199,6 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
     case dtrace_object_alloc_id:
     case g1_pre_barrier_slow_id:
     case g1_post_barrier_slow_id:
-    case shenandoah_lrb_slow_id:
     case slow_subtype_check_id:
     case fpu2long_stub_id:
     case unwind_exception_id:
@@ -491,7 +487,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   // Check the stack guard pages and reenable them if necessary and there is
   // enough space on the stack to do so.  Use fast exceptions only if the guard
   // pages are enabled.
-  bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
+  bool guard_pages_enabled = thread->stack_guards_enabled();
   if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
 
   if (JvmtiExport::can_post_on_exceptions()) {
@@ -1309,13 +1305,6 @@ template <class T> int obj_arraycopy_work(oopDesc* src, T* src_addr,
   BarrierSet* bs = Universe::heap()->barrier_set();
   assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
   assert(bs->has_write_ref_array_pre_opt(), "For pre-barrier as well.");
-
-#if INCLUDE_ALL_GCS
-  if (UseShenandoahGC) {
-    ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src_addr, dst_addr, length);
-  }
-#endif
-
   if (src == dst) {
     // same object, no check
     bs->write_ref_array_pre(dst_addr, length);

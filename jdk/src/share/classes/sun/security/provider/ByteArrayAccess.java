@@ -71,7 +71,7 @@ final class ByteArrayAccess {
     // implemented using a software trap and therefore very slow)
     private static final boolean bigEndian;
 
-    private final static int byteArrayOfs = unsafe.arrayBaseOffset(byte[].class);
+    private static final int byteArrayOfs = unsafe.arrayBaseOffset(byte[].class);
 
     static {
         boolean scaleOK = ((unsafe.arrayIndexScale(byte[].class) == 1)
@@ -447,17 +447,89 @@ final class ByteArrayAccess {
             (outOfs < 0) || ((out.length - outOfs) < len)) {
             throw new ArrayIndexOutOfBoundsException();
         }
-        len += outOfs;
-        while (outOfs < len) {
-            long i = in[inOfs++];
-            out[outOfs++] = (byte)(i >> 56);
-            out[outOfs++] = (byte)(i >> 48);
-            out[outOfs++] = (byte)(i >> 40);
-            out[outOfs++] = (byte)(i >> 32);
-            out[outOfs++] = (byte)(i >> 24);
-            out[outOfs++] = (byte)(i >> 16);
-            out[outOfs++] = (byte)(i >>  8);
-            out[outOfs++] = (byte)(i      );
+        if (littleEndianUnaligned) {
+            outOfs += byteArrayOfs;
+            len += outOfs;
+            while (outOfs < len) {
+                unsafe.putLong(out, (long)outOfs, reverseBytes(in[inOfs++]));
+                outOfs += 8;
+            }
+        } else {
+            len += outOfs;
+            while (outOfs < len) {
+                long i = in[inOfs++];
+                out[outOfs++] = (byte)(i >> 56);
+                out[outOfs++] = (byte)(i >> 48);
+                out[outOfs++] = (byte)(i >> 40);
+                out[outOfs++] = (byte)(i >> 32);
+                out[outOfs++] = (byte)(i >> 24);
+                out[outOfs++] = (byte)(i >> 16);
+                out[outOfs++] = (byte)(i >>  8);
+                out[outOfs++] = (byte)(i      );
+            }
+        }
+    }
+
+    /**
+     * byte[] to long[] conversion, little endian byte order
+     */
+    static void b2lLittle(byte[] in, int inOfs, long[] out, int outOfs, int len) {
+        if ((inOfs < 0) || ((in.length - inOfs) < len) ||
+            ((outOfs < 0) || (out.length - outOfs) < len/8)) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        if (littleEndianUnaligned) {
+            inOfs += byteArrayOfs;
+            len += inOfs;
+            while (inOfs < len) {
+                out[outOfs++] = unsafe.getLong(in, (long)inOfs);
+                inOfs += 8;
+            }
+       } else {
+            len += inOfs;
+            while (inOfs < len) {
+                out[outOfs++] = ((in[inOfs    ] & 0xffL)
+                   | ((in[inOfs + 1] & 0xffL) <<  8)
+                   | ((in[inOfs + 2] & 0xffL) << 16)
+                   | ((in[inOfs + 3] & 0xffL) << 24)
+                   | ((in[inOfs + 4] & 0xffL) << 32)
+                   | ((in[inOfs + 5] & 0xffL) << 40)
+                   | ((in[inOfs + 6] & 0xffL) << 48)
+                   | ((in[inOfs + 7] & 0xffL) << 56));
+                inOfs += 8;
+            }
+        }
+    }
+
+
+    /**
+     * long[] to byte[] conversion, little endian byte order
+     */
+    static void l2bLittle(long[] in, int inOfs, byte[] out, int outOfs, int len) {
+        if ((inOfs < 0) || ((in.length - inOfs) < len/8) ||
+            (outOfs < 0) || ((out.length - outOfs) < len)) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        if (littleEndianUnaligned) {
+            outOfs += byteArrayOfs;
+            len += outOfs;
+            while (outOfs < len) {
+                unsafe.putLong(out, (long)outOfs, in[inOfs++]);
+                outOfs += 8;
+            }
+        } else {
+            len += outOfs;
+            while (outOfs < len) {
+                long i = in[inOfs++];
+                out[outOfs++] = (byte)(i      );
+                out[outOfs++] = (byte)(i >>  8);
+                out[outOfs++] = (byte)(i >> 16);
+                out[outOfs++] = (byte)(i >> 24);
+                out[outOfs++] = (byte)(i >> 32);
+                out[outOfs++] = (byte)(i >> 40);
+                out[outOfs++] = (byte)(i >> 48);
+                out[outOfs++] = (byte)(i >> 56);
+            }
         }
     }
 }

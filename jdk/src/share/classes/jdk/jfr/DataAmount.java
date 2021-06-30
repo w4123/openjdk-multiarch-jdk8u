@@ -41,6 +41,7 @@ import java.lang.annotation.Target;
 @Description("Amount of data")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+@jdk.Exported
 public @interface DataAmount {
     /**
      * Unit for bits

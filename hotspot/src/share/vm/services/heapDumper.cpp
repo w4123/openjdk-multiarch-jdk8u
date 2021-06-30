@@ -756,12 +756,6 @@ void DumperSupport::dump_field_value(DumpWriter* writer, char type, address addr
         o = oopDesc::load_decode_heap_oop((oop*)addr);
       }
 
-#if INCLUDE_ALL_GCS
-      if (UseShenandoahGC) {
-        o = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(o);
-      }
-#endif
-
       // reflection and sun.misc.Unsafe classes may have a reference to a
       // Klass* so filter it out.
       assert(o->is_oop_or_null(), "should always be an oop");
@@ -1182,7 +1176,7 @@ void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
 
   switch (type) {
     case T_INT : {
-      if (Bytes::is_Java_byte_ordering_different()) {
+      if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, int, u4, length);
       } else {
         writer->write_raw((void*)(array->int_at_addr(0)), length_in_bytes);
@@ -1194,7 +1188,7 @@ void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
       break;
     }
     case T_CHAR : {
-      if (Bytes::is_Java_byte_ordering_different()) {
+      if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, char, u2, length);
       } else {
         writer->write_raw((void*)(array->char_at_addr(0)), length_in_bytes);
@@ -1202,7 +1196,7 @@ void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
       break;
     }
     case T_SHORT : {
-      if (Bytes::is_Java_byte_ordering_different()) {
+      if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, short, u2, length);
       } else {
         writer->write_raw((void*)(array->short_at_addr(0)), length_in_bytes);
@@ -1210,7 +1204,7 @@ void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
       break;
     }
     case T_BOOLEAN : {
-      if (Bytes::is_Java_byte_ordering_different()) {
+      if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, bool, u1, length);
       } else {
         writer->write_raw((void*)(array->bool_at_addr(0)), length_in_bytes);
@@ -1218,7 +1212,7 @@ void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
       break;
     }
     case T_LONG : {
-      if (Bytes::is_Java_byte_ordering_different()) {
+      if (Endian::is_Java_byte_ordering_different()) {
         WRITE_ARRAY(array, long, u8, length);
       } else {
         writer->write_raw((void*)(array->long_at_addr(0)), length_in_bytes);

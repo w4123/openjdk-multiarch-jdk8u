@@ -176,10 +176,8 @@
   #define TIERED
 #endif
 #define COMPILER1_PRESENT(code) code
-#define NOT_COMPILER1(code)
 #else // COMPILER1
 #define COMPILER1_PRESENT(code)
-#define NOT_COMPILER1(code) code
 #endif // COMPILER1
 
 // COMPILER2 variant
@@ -430,6 +428,14 @@
 #else
 #define EMBEDDED_ONLY(code)
 #define NOT_EMBEDDED(code) code
+#endif
+
+#if INCLUDE_CRS
+#define CRS_ONLY(code) code
+#define NOT_CRS(code)
+#else
+#define CRS_ONLY(code)
+#define NOT_CRS(code) code
 #endif
 
 #ifdef VM_LITTLE_ENDIAN

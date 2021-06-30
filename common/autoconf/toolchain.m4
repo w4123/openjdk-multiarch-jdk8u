@@ -249,7 +249,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     AC_MSG_CHECKING([Determining if we need to set DEVELOPER_DIR])
     if test -n "$DEVELOPER_DIR"; then
       if test ! -d "$DEVELOPER_DIR"; then
-        AC_MSG_ERROR([Xcode Developer path does not exist: $DEVELOPER_DIR, please provide a path to the Xcode 4 application bundle using --with-xcode-path])
+        AC_MSG_ERROR([Xcode Developer path does not exist: $DEVELOPER_DIR, please provide a path to the Xcode application bundle using --with-xcode-path])
       fi
       if test ! -f "$DEVELOPER_DIR"/usr/bin/xcodebuild; then
         AC_MSG_ERROR([Xcode Developer path is not valid: $DEVELOPER_DIR, it must point to Contents/Developer inside an Xcode application bundle])
@@ -271,8 +271,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     # Fail-fast: verify we're building on Xcode 4, we cannot build with Xcode 5 or later
     XCODE_VERSION=`$XCODEBUILD -version | grep '^Xcode ' | sed 's/Xcode //'`
     XC_VERSION_PARTS=( ${XCODE_VERSION//./ } )
-    if test ! "${XC_VERSION_PARTS[[0]]}" = "4"; then
-      AC_MSG_ERROR([Xcode 4 is required to build JDK 8, the version found was $XCODE_VERSION. Use --with-xcode-path to specify the location of Xcode 4 or make Xcode 4 active by using xcode-select.])
+    if test "${XC_VERSION_PARTS[[0]]}" != "4" -a "${XC_VERSION_PARTS[[0]]}" != "8" -a "${XC_VERSION_PARTS[[0]]}" != "9" -a "${XC_VERSION_PARTS[[0]]}" != "10" -a "${XC_VERSION_PARTS[[0]]}" != "11" -a "${XC_VERSION_PARTS[[0]]}" != "12" ; then
+      AC_MSG_ERROR([Xcode 4, 8, 9, 10, 11 or 12 is required to build JDK 8, the version found was $XCODE_VERSION. Use --with-xcode-path to specify the location of Xcode or make Xcode active by using xcode-select.])
     fi
 
     # Some versions of Xcode 5 command line tools install gcc and g++ as symlinks to
@@ -309,11 +309,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
       LDFLAGS_JDK="${LDFLAGS_JDK} -isysroot \"$SDKPATH\" -iframework\"$SDKPATH/System/Library/Frameworks\""
     fi
     
-    # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
+    # These always need to be set on macOS 10.X, or we can't find the frameworks embedded in JavaVM.framework
     # setting this here means it doesn't have to be peppered throughout the forest
-    CFLAGS_JDK="$CFLAGS_JDK -F\"$SDKPATH/System/Library/Frameworks/JavaVM.framework/Frameworks\""
-    CXXFLAGS_JDK="$CXXFLAGS_JDK -F\"$SDKPATH/System/Library/Frameworks/JavaVM.framework/Frameworks\""
-    LDFLAGS_JDK="$LDFLAGS_JDK -F\"$SDKPATH/System/Library/Frameworks/JavaVM.framework/Frameworks\""
+    if test -d "$SDKPATH/System/Library/Frameworks/JavaVM.framework/Frameworks" ; then
+      CFLAGS_JDK="$CFLAGS_JDK -F\"$SDKPATH/System/Library/Frameworks/JavaVM.framework/Frameworks\""
+      CXXFLAGS_JDK="$CXXFLAGS_JDK -F\"$SDKPATH/System/Library/Frameworks/JavaVM.framework/Frameworks\""
+      LDFLAGS_JDK="$LDFLAGS_JDK -F\"$SDKPATH/System/Library/Frameworks/JavaVM.framework/Frameworks\""
+    fi
   fi
 
   # For solaris we really need solaris tools, and not the GNU equivalent.
@@ -471,7 +473,7 @@ AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
 #
 # $1 = compiler to test (CC or CXX)
 # $2 = human readable name of compiler (C or C++)
-# $3 = list of compiler names to search for
+# $3 = compiler name to search for
 AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 [
   COMPILER_NAME=$2
@@ -513,15 +515,15 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
       PATH="$TOOLCHAIN_PATH"
-      AC_PATH_PROGS(TOOLCHAIN_PATH_$1, $SEARCH_LIST)
+      AC_PATH_TOOL(TOOLCHAIN_PATH_$1, $SEARCH_LIST)
       $1=$TOOLCHAIN_PATH_$1
       PATH="$PATH_save"
     fi
 
-    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # AC_PATH_TOOLS can't be run multiple times with the same variable,
     # so create a new name for this run.
     if test "x[$]$1" = x; then
-      AC_PATH_PROGS(POTENTIAL_$1, $3)
+      AC_PATH_TOOL(POTENTIAL_$1, $SEARCH_LIST)
       $1=$POTENTIAL_$1
     fi
 

@@ -40,6 +40,9 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#endif
 
 // -----------------------------------------------------
 // Implementation of JavaCallWrapper
@@ -70,7 +73,6 @@ JavaCallWrapper::JavaCallWrapper(methodHandle callee_method, Handle receiver, Ja
       clear_pending_exception = false;
     }
   }
-
 
   // Make sure to set the oop's after the thread transition - since we can block there. No one is GC'ing
   // the JavaCallWrapper before the entry frame is on the stack.
@@ -105,11 +107,15 @@ JavaCallWrapper::JavaCallWrapper(methodHandle callee_method, Handle receiver, Ja
   if (_anchor.last_Java_sp() == NULL) {
     _thread->record_base_of_stack_pointer();
   }
+
+  Thread::enable_wx_from_write(WXExec);
 }
 
 
 JavaCallWrapper::~JavaCallWrapper() {
   assert(_thread == JavaThread::current(), "must still be the same thread");
+
+  Thread::enable_wx_from_exec(WXWrite);
 
   // restore previous handle block & Java frame linkage
   JNIHandleBlock *_old_handles = _thread->active_handles();
@@ -345,6 +351,7 @@ void JavaCalls::call_helper(JavaValue* result, methodHandle* m, JavaCallArgument
   }
 #endif
 
+  CRS_ONLY(ConnectedRuntime::notify_tojava_call(m));
 
   assert(!thread->is_Compiler_thread(), "cannot compile from the compiler");
   if (CompilationPolicy::must_be_compiled(method)) {
@@ -373,9 +380,9 @@ void JavaCalls::call_helper(JavaValue* result, methodHandle* m, JavaCallArgument
   // Find receiver
   Handle receiver = (!method->is_static()) ? args->receiver() : Handle();
 
-  // When we reenter Java, we need to reenable the yellow zone which
+  // When we reenter Java, we need to reenable the reserved/yellow zone which
   // might already be disabled when we are in VM.
-  if (thread->stack_yellow_zone_disabled()) {
+  if (!thread->stack_guards_enabled()) {
     thread->reguard_stack();
   }
 

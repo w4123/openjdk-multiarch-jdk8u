@@ -46,6 +46,9 @@
 #endif
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+
 extern address JVM_FunctionAtStart();
 extern address JVM_FunctionAtEnd();
 

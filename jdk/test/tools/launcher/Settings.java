@@ -92,6 +92,9 @@ public class Settings extends TestHelper {
              */
             stackSize = "448";
         }
+        if (getArch().equals("aarch64") && System.getProperty("os.name").contains("Mac")) {
+            stackSize = "400";
+        }
         TestResult tr = null;
         tr = doExec(javaCmd, "-Xms64m", "-Xmx512m",
                 "-Xss" + stackSize + "k", "-XshowSettings", "-jar", testJar.getAbsolutePath());

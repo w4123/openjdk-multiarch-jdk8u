@@ -39,5 +39,6 @@ import java.lang.annotation.Target;
 @Label("Relation")
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
+@jdk.Exported
 public @interface Relational {
 }

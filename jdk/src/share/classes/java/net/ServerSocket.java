@@ -25,6 +25,8 @@
 
 package java.net;
 
+import sun.security.util.SecurityConstants;
+
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;

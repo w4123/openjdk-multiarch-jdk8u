@@ -128,7 +128,7 @@ public class HeapSummaryEventAllGcs {
     private static void checkHeapEventContent(RecordedEvent event) {
         checkVirtualSpace(event, "heapSpace");
         long heapUsed = Events.assertField(event, "heapUsed").atLeast(0L).getValue();
-        long start = Events.assertField(event, "heapSpace.start").atLeast(0L).getValue();
+        long start = Events.assertField(event, "heapSpace.start").getValue();
         long committedEnd = Events.assertField(event, "heapSpace.committedEnd").above(start).getValue();
         Asserts.assertLessThanOrEqual(heapUsed, committedEnd- start, "used can not exceed size");
     }
@@ -191,7 +191,7 @@ public class HeapSummaryEventAllGcs {
     }
 
     private static void checkVirtualSpace(RecordedEvent event, String structName) {
-        long start = Events.assertField(event, structName + ".start").atLeast(0L).getValue();
+        long start = Events.assertField(event, structName + ".start").getValue();
         long committedEnd = Events.assertField(event, structName + ".committedEnd").above(start).getValue();
         Events.assertField(event, structName + ".reservedEnd").atLeast(committedEnd);
         long committedSize = Events.assertField(event, structName + ".committedSize").atLeast(0L).getValue();
@@ -199,7 +199,7 @@ public class HeapSummaryEventAllGcs {
     }
 
     private static void checkSpace(RecordedEvent event, String structName) {
-        long start = Events.assertField(event, structName + ".start").atLeast(0L).getValue();
+        long start = Events.assertField(event, structName + ".start").getValue();
         long end = Events.assertField(event, structName + ".end").above(start).getValue();
         long used =  Events.assertField(event, structName + ".used").atLeast(0L).getValue();
         long size = Events.assertField(event, structName + ".size").atLeast(used).getValue();

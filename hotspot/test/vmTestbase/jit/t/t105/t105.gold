@@ -1,0 +1,4 @@
+java.lang.ArrayIndexOutOfBoundsException: -1
+ok at 0
+ok at 1
+java.lang.ArrayIndexOutOfBoundsException: 2

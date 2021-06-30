@@ -41,5 +41,6 @@ import java.lang.annotation.Target;
 @Description("Represents a physical memory address")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.TYPE, ElementType.METHOD })
+@jdk.Exported
 public @interface MemoryAddress {
 }

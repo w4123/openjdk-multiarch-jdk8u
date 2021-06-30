@@ -29,7 +29,10 @@ import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.cert.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
+import jdk.jfr.events.X509ValidationEvent;
+import jdk.internal.event.EventHelper;
 import sun.security.provider.certpath.PKIX.ValidatorParams;
 import sun.security.x509.X509CertImpl;
 import sun.security.util.Debug;
@@ -46,6 +49,7 @@ import sun.security.util.Debug;
 public final class PKIXCertPathValidator extends CertPathValidatorSpi {
 
     private static final Debug debug = Debug.getInstance("certpath");
+    private static final AtomicLong validationCounter = new AtomicLong();
 
     /**
      * Default constructor.
@@ -221,7 +225,33 @@ public final class PKIXCertPathValidator extends CertPathValidatorSpi {
                                              params.certificates(),
                                              certPathCheckers);
 
+        X509ValidationEvent xve = new X509ValidationEvent();
+        if (xve.shouldCommit() || EventHelper.isLoggingSecurity()) {
+            int[] certIds = params.certificates().stream()
+                    .mapToInt(x -> x.hashCode())
+                    .toArray();
+            int anchorCertId =
+                    anchor.getTrustedCert().hashCode();
+            if (xve.shouldCommit()) {
+                xve.certificateId = anchorCertId;
+                int certificatePos = 1; //anchor cert
+                xve.certificatePosition = certificatePos;
+                xve.validationCounter = validationCounter.incrementAndGet();
+                xve.commit();
+                // now, iterate through remaining
+                for (int id : certIds) {
+                    xve.certificateId = id;
+                    xve.certificatePosition = ++certificatePos;
+                    xve.commit();
+
+                }
+            }
+            if (EventHelper.isLoggingSecurity()) {
+                EventHelper.logX509ValidationEvent(anchorCertId, certIds);
+            }
+        }
         return new PKIXCertPathValidatorResult(anchor, pc.getPolicyTree(),
                                                bc.getPublicKey());
     }
+
 }

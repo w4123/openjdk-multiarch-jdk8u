@@ -107,8 +107,8 @@ class KeySelectors {
                             crl = (X509CRL) entries[i];
                         }
                     }
-                    Iterator xi = xd.getContent().iterator();
                     boolean hasCRL = false;
+                    Iterator xi = xd.getContent().iterator();
                     while (xi.hasNext()) {
                         Object o = xi.next();
                         // skip non-X509Certificate entries
@@ -145,6 +145,7 @@ class KeySelectors {
                 throw new KeySelectorException("Null KeyInfo object!");
             }
             SignatureMethod sm = (SignatureMethod) method;
+
             List list = keyInfo.getContent();
 
             for (int i = 0; i < list.size(); i++) {
@@ -311,14 +312,12 @@ class KeySelectors {
                         }
                     } else if (xmlStructure instanceof X509Data) {
                         List content = ((X509Data)xmlStructure).getContent();
-                        int size = content.size();
                         Vector<X509Certificate> result = null;
                         // Lookup the public key using the information
                         // specified in X509Data element, i.e. searching
                         // over the collection of certificate files under
                         // "certs" subdirectory and return those match.
-                        for (int k = 0; k<size; k++) {
-                            Object obj = content.get(k);
+                        for (Object obj : content) {
                             if (obj instanceof String) {
                                 result = match(MATCH_SUBJECT, obj, certs);
                             } else if (obj instanceof byte[]) {
@@ -394,3 +393,4 @@ class SimpleKSResult implements KeySelectorResult {
 
     public Key getKey() { return key; }
 }
+

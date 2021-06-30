@@ -117,6 +117,7 @@ public abstract class KeyResolverSpi {
     private KeyResolverSpi cloneIfNeeded() throws KeyResolverException {
         if (globalResolver) {
             try {
+                @SuppressWarnings("deprecation")
                 KeyResolverSpi tmp = getClass().newInstance();
                 return tmp;
             } catch (InstantiationException e) {

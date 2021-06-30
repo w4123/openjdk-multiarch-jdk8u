@@ -287,8 +287,15 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
                 }
 
                 handshakeFrag.mark();
-                // skip the first byte: handshake type
+
+                // Fail fast for unknown handshake message.
                 byte handshakeType = handshakeFrag.get();
+                if (!SSLHandshake.isKnown(handshakeType)) {
+                    throw new SSLProtocolException(
+                        "Unknown handshake type size, Handshake.msg_type = " +
+                        (handshakeType & 0xFF));
+                }
+
                 int handshakeBodyLen = Record.getInt24(handshakeFrag);
                 if (handshakeBodyLen > SSLConfiguration.maxHandshakeMessageSize) {
                     throw new SSLProtocolException(
@@ -383,7 +390,7 @@ final class SSLEngineInputRecord extends InputRecord implements SSLRecord {
                             "Requested to negotiate unsupported SSLv2!");
                 }
 
-                // hack code, the exception is caught in SSLEngineImpl
+                // Note that the exception is caught in SSLEngineImpl
                 // so that SSLv2 error message can be delivered properly.
                 throw new UnsupportedOperationException(        // SSLv2Hello
                         "Unsupported SSL v2.0 ClientHello");

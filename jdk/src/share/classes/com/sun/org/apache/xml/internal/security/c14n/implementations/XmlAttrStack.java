@@ -38,8 +38,8 @@ import org.w3c.dom.Attr;
  */
 class XmlAttrStack {
 
-    private static final com.sun.org.slf4j.internal.Logger LOG =
-        com.sun.org.slf4j.internal.LoggerFactory.getLogger(XmlAttrStack.class);
+    private static final java.util.logging.Logger LOG =
+        java.util.logging.Logger.getLogger(XmlAttrStack.class.getName());
 
     static class XmlsStackElement {
         int level;
@@ -149,7 +149,7 @@ class XmlAttrStack {
                         try {
                             base = joinURI(n.getValue(), base);
                         } catch (URISyntaxException ue) {
-                            LOG.debug(ue.getMessage(), ue);
+                            LOG.log(java.util.logging.Level.FINE, ue.getMessage(), ue);
                         }
                     }
                 }
@@ -247,7 +247,7 @@ class XmlAttrStack {
     }
 
     private static String removeDotSegments(String path) {
-        LOG.debug("STEP OUTPUT BUFFER\t\tINPUT BUFFER");
+        LOG.log(java.util.logging.Level.FINE, "STEP OUTPUT BUFFER\t\tINPUT BUFFER");
 
         // 1. The input buffer is initialized with the now-appended path
         // components then replace occurrences of "//" in the input buffer
@@ -400,12 +400,12 @@ class XmlAttrStack {
     }
 
     private static void printStep(String step, String output, String input) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug(" " + step + ":   " + output);
+        if (LOG.isLoggable(java.util.logging.Level.FINE)) {
+            LOG.log(java.util.logging.Level.FINE, " " + step + ":   " + output);
             if (output.length() == 0) {
-                LOG.debug("\t\t\t\t" + input);
+                LOG.log(java.util.logging.Level.FINE, "\t\t\t\t" + input);
             } else {
-                LOG.debug("\t\t\t" + input);
+                LOG.log(java.util.logging.Level.FINE, "\t\t\t" + input);
             }
         }
     }

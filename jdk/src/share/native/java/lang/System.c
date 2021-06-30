@@ -23,6 +23,12 @@
  * questions.
  */
 
+/*
+ * This file has been modified by Azul Systems, Inc. in 2014. These
+ * modifications are Copyright (c) 2014 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above. 
+ */
+
 #include <string.h>
 
 #include "jni.h"
@@ -110,13 +116,13 @@ Java_java_lang_System_identityHashCode(JNIEnv *env, jobject this, jobject x)
 
 /* Third party may overwrite these values. */
 #ifndef VENDOR
-#define VENDOR "Oracle Corporation"
+#define VENDOR "Azul Systems, Inc."
 #endif
 #ifndef VENDOR_URL
-#define VENDOR_URL "http://java.oracle.com/"
+#define VENDOR_URL "http://www.azulsystems.com/"
 #endif
 #ifndef VENDOR_URL_BUG
-#define VENDOR_URL_BUG "http://bugreport.sun.com/bugreport/"
+#define VENDOR_URL_BUG "http://www.azulsystems.com/support/"
 #endif
 
 #define JAVA_MAX_SUPPORTED_VERSION 52

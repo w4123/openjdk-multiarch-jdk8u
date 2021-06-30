@@ -109,7 +109,7 @@ all: $(EXEC)
 
 $(EXEC) : $(OBJECTS)
 	@echo Making adlc
-	$(QUIETLY) $(HOST.LINK_NOPROF.CXX) -o $(EXEC) $(OBJECTS)
+	$(QUIETLY) $(HOST.LINK_NOPROF.CXX) -lc++ -o $(EXEC) $(OBJECTS)
 
 # Random dependencies:
 $(OBJECTS): opcodes.hpp classes.hpp adlc.hpp adlcVMDeps.hpp adlparse.hpp archDesc.hpp arena.hpp dict2.hpp filebuff.hpp forms.hpp formsopt.hpp formssel.hpp

@@ -283,6 +283,9 @@ static inline jint MarsagliaXORV (jint x) {
   return x & 0x7FFFFFFF ;
 }
 
+#ifdef __clang__
+__attribute__((unused))
+#endif
 static inline jint MarsagliaXOR (jint * const a) {
   jint x = *a ;
   if (x == 0) x = UNS(a)|1 ;

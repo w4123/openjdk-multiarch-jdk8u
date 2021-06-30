@@ -61,6 +61,7 @@ class VM_EnableBiasedLocking: public VM_Operation {
     _biased_locking_enabled = true;
 
     if (TraceBiasedLocking) {
+      tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
       tty->print_cr("Biased locking enabled");
     }
   }
@@ -151,6 +152,7 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
   if (!mark->has_bias_pattern()) {
     if (TraceBiasedLocking) {
       ResourceMark rm;
+      tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
       tty->print_cr("  (Skipping revocation of object of type %s because it's no longer biased)",
                     obj->klass()->external_name());
     }
@@ -163,6 +165,7 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
 
   if (TraceBiasedLocking && (Verbose || !is_bulk)) {
     ResourceMark rm;
+    tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
     tty->print_cr("Revoking bias of object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s , prototype header " INTPTR_FORMAT " , allow rebias %d , requesting thread " INTPTR_FORMAT,
                   p2i((void *)obj), (intptr_t) mark, obj->klass()->external_name(), (intptr_t) obj->klass()->prototype_header(), (allow_rebias ? 1 : 0), (intptr_t) requesting_thread);
   }
@@ -176,6 +179,7 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
       obj->set_mark(unbiased_prototype);
     }
     if (TraceBiasedLocking && (Verbose || !is_bulk)) {
+      tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
       tty->print_cr("  Revoked bias of anonymously-biased object");
     }
     return BiasedLocking::BIAS_REVOKED;
@@ -200,6 +204,7 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
       obj->set_mark(unbiased_prototype);
     }
     if (TraceBiasedLocking && (Verbose || !is_bulk)) {
+      tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
       tty->print_cr("  Revoked bias of object biased toward dead thread");
     }
     return BiasedLocking::BIAS_REVOKED;
@@ -216,6 +221,7 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
     MonitorInfo* mon_info = cached_monitor_info->at(i);
     if (mon_info->owner() == obj) {
       if (TraceBiasedLocking && Verbose) {
+        tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
         tty->print_cr("   mon_info->owner (" PTR_FORMAT ") == obj (" PTR_FORMAT ")",
                       p2i((void *) mon_info->owner()),
                       p2i((void *) obj));
@@ -226,6 +232,7 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
       highest_lock->set_displaced_header(mark);
     } else {
       if (TraceBiasedLocking && Verbose) {
+        tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
         tty->print_cr("   mon_info->owner (" PTR_FORMAT ") != obj (" PTR_FORMAT ")",
                       p2i((void *) mon_info->owner()),
                       p2i((void *) obj));
@@ -242,10 +249,12 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
     obj->release_set_mark(markOopDesc::encode(highest_lock));
     assert(!obj->mark()->has_bias_pattern(), "illegal mark state: stack lock used bias bit");
     if (TraceBiasedLocking && (Verbose || !is_bulk)) {
+      tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
       tty->print_cr("  Revoked bias of currently-locked object");
     }
   } else {
     if (TraceBiasedLocking && (Verbose || !is_bulk)) {
+      tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
       tty->print_cr("  Revoked bias of currently-unlocked object");
     }
     if (allow_rebias) {
@@ -256,12 +265,10 @@ static BiasedLocking::Condition revoke_bias(oop obj, bool allow_rebias, bool is_
     }
   }
 
-#if INCLUDE_JFR
   // If requested, return information on which thread held the bias
   if (biased_locker != NULL) {
     *biased_locker = biased_thread;
   }
-#endif // INCLUDE_JFR
 
   return BiasedLocking::BIAS_REVOKED;
 }
@@ -335,6 +342,7 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
   assert(SafepointSynchronize::is_at_safepoint(), "must be done at safepoint");
 
   if (TraceBiasedLocking) {
+    tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
     tty->print_cr("* Beginning bulk revocation (kind == %s) because of object "
                   INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
                   (bulk_rebias ? "rebias" : "revoke"),
@@ -387,6 +395,7 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
   } else {
     if (TraceBiasedLocking) {
       ResourceMark rm;
+      tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
       tty->print_cr("* Disabling biased locking for type %s", klass->external_name());
     }
 
@@ -416,6 +425,7 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
   }
 
   if (TraceBiasedLocking) {
+    tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
     tty->print_cr("* Ending bulk revocation");
   }
 
@@ -429,6 +439,7 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
     o->set_mark(new_mark);
     status_code = BiasedLocking::BIAS_REVOKED_AND_REBIASED;
     if (TraceBiasedLocking) {
+      tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
       tty->print_cr("  Rebiased object toward thread " INTPTR_FORMAT, (intptr_t) requesting_thread);
     }
   }
@@ -497,6 +508,7 @@ public:
   virtual void doit() {
     if (_obj != NULL) {
       if (TraceBiasedLocking) {
+        tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
         tty->print_cr("Revoking bias with potentially per-thread safepoint:");
       }
 
@@ -512,6 +524,7 @@ public:
       return;
     } else {
       if (TraceBiasedLocking) {
+        tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
         tty->print_cr("Revoking bias with global safepoint:");
       }
       BiasedLocking::revoke_at_safepoint(_objs);
@@ -632,6 +645,7 @@ BiasedLocking::Condition BiasedLocking::revoke_and_rebias(Handle obj, bool attem
       // stale epoch.
       ResourceMark rm;
       if (TraceBiasedLocking) {
+        tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
         tty->print_cr("Revoking bias by walking my own stack:");
       }
       EventBiasedLockSelfRevocation event;
@@ -811,6 +825,8 @@ int BiasedLockingCounters::slow_path_entry_count() {
 }
 
 void BiasedLockingCounters::print_on(outputStream* st) {
+  tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
+  tty->print_cr("counters");
   tty->print_cr("# total entries: %d", _total_entry_count);
   tty->print_cr("# biased lock entries: %d", _biased_lock_entry_count);
   tty->print_cr("# anonymously biased lock entries: %d", _anonymously_biased_lock_entry_count);

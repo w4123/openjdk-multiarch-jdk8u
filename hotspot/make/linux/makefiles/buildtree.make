@@ -211,6 +211,11 @@ else
   INCLUDE_JFR = 0
 endif
 
+ifeq ($(ENABLE_CRS), true)
+  INCLUDE_CRS = 1
+else
+  INCLUDE_CRS = 0
+endif
 
 flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	@echo Creating $@ ...
@@ -292,6 +297,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	    echo "HOTSPOT_EXTRA_SYSDEFS\$$(HOTSPOT_EXTRA_SYSDEFS) = $(HOTSPOT_EXTRA_SYSDEFS)" && \
 	    echo "SYSDEFS += \$$(HOTSPOT_EXTRA_SYSDEFS)"; \
 	echo && echo "CFLAGS += -DINCLUDE_JFR=$(INCLUDE_JFR)"; \
+	echo && echo "CFLAGS += -DINCLUDE_CRS=$(INCLUDE_CRS)"; \
 	echo; \
 	[ -n "$(SPEC)" ] && \
 	    echo "include $(SPEC)"; \

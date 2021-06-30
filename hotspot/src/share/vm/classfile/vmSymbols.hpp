@@ -126,6 +126,7 @@
   template(sun_misc_Version,                          "sun/misc/Version")                         \
   template(java_runtime_name_name,                    "java_runtime_name")                        \
   template(java_runtime_version_name,                 "java_runtime_version")                     \
+  template(java_vendor_version_name,                  "java_vendor_version")                      \
                                                                                                   \
   /* class file format tags */                                                                    \
   template(tag_source_file,                           "SourceFile")                               \
@@ -211,6 +212,7 @@
   template(java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater, "java/util/concurrent/atomic/AtomicLongFieldUpdater$LockedUpdater") \
   template(java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl,     "java/util/concurrent/atomic/AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl") \
   template(sun_misc_Contended_signature,              "Lsun/misc/Contended;")                     \
+  template(jdk_internal_vm_annotation_ReservedStackAccess_signature,         "Ljdk/internal/vm/annotation/ReservedStackAccess;") \
                                                                                                   \
   /* class symbols needed by intrinsics */                                                        \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, template, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -581,6 +583,12 @@
   template(get_finalizer_histogram_name,               "getFinalizerHistogram")                                   \
   template(finalizer_histogram_entry_name_field,       "className")                                               \
   template(finalizer_histogram_entry_count_field,      "instanceCount")                                           \
+  CRS_ONLY(template(com_azul_crs_agent_AgentLoader,    "com/azul/crs/agent/AgentLoader"))                         \
+  CRS_ONLY(template(notifyClassLoad_name,              "notifyClassLoad"))                                        \
+  CRS_ONLY(template(notifyClassLoad_signature,         "(Ljava/lang/String;[BIILjava/lang/String;)V"))            \
+  CRS_ONLY(template(notifyToJavaCall_name,             "notifyToJavaCall"))                                       \
+  CRS_ONLY(template(notifyFirstCall_name,              "notifyFirstCall"))                                        \
+  CRS_ONLY(template(notifyFirstCall_signature,         "(ILjava/lang/String;)V"))                                 \
                                                                                                                   \
   template(java_lang_management_MemoryPoolMXBean,      "java/lang/management/MemoryPoolMXBean")                   \
   template(java_lang_management_MemoryManagerMXBean,   "java/lang/management/MemoryManagerMXBean")                \
@@ -843,6 +851,10 @@
    do_name(     encrypt_name,                                      "implEncrypt")                                       \
    do_name(     decrypt_name,                                      "implDecrypt")                                       \
    do_signature(byteArray_int_int_byteArray_int_signature,         "([BII[BI)I")                                        \
+                                                                                                                        \
+  do_class(com_sun_crypto_provider_counterMode,      "com/sun/crypto/provider/CounterMode")                             \
+   do_intrinsic(_counterMode_AESCrypt, com_sun_crypto_provider_counterMode, crypt_name, byteArray_int_int_byteArray_int_signature, F_R)   \
+   do_name(     crypt_name,                                 "implCrypt")                                                    \
                                                                                                                         \
   /* support for sun.security.provider.SHA */                                                                           \
   do_class(sun_security_provider_sha,                              "sun/security/provider/SHA")                         \

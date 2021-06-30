@@ -433,7 +433,6 @@ static bool is_file_secure(int fd, const char *filename) {
   return true;
 }
 
-
 // return the user name for the given user id
 //
 // the caller is expected to free the allocated memory.

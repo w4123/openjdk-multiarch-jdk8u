@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 6976117
+ * @bug 6976117 8234725
  * @summary SSLContext.getInstance("TLSv1.1") returns SSLEngines/SSLSockets
  *          without TLSv1.1 enabled
  * @library /lib/security
@@ -43,7 +43,10 @@ public class SSLContextVersion {
         TLS_CV_04("TLSv1", "TLSv1", "TLSv1.2"),
         TLS_CV_05("TLSv1.1", "TLSv1.1", "TLSv1.2"),
         TLS_CV_06("TLSv1.2", "TLSv1.2", "TLSv1.2"),
-        TLS_CV_07("Default", "TLSv1.2", "TLSv1.2");
+        TLS_CV_07("Default", "TLSv1.2", "TLSv1.2"),
+//        TLS_CV_08("Default", "TLSv1.3", "TLSv1.3"),
+//        TLS_CV_09("TLS", "TLSv1.3", "TLSv1.3"),
+        TLS_CV_10("TLSv1.3", "TLSv1.3", "TLSv1.3");
 
         final String contextVersion;
         final String defaultProtocolVersion;

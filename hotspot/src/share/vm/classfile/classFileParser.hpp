@@ -52,6 +52,10 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   ClassLoaderData* _loader_data;
   KlassHandle _host_klass;
   GrowableArray<Handle>* _cp_patches; // overrides for CP entries
+#if INCLUDE_CRS
+  bool _need_file_hash;
+  u1   *_file_hash;
+#endif
 
   // precomputed flags
   bool _has_finalizer;
@@ -132,6 +136,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
       _method_LambdaForm_Hidden,
       _sun_misc_Contended,
       _field_Stable,
+    _jdk_internal_vm_annotation_ReservedStackAccess,
       _annotation_LIMIT
     };
     const Location _location;
@@ -257,15 +262,15 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                 TRAPS);
   intArray* sort_methods(Array<Method*>* methods);
 
-  u2* parse_exception_table(u4 code_length, u4 exception_table_length,
+  void* parse_exception_table(u4 code_length, u4 exception_table_length,
                             TRAPS);
   void parse_linenumber_table(
       u4 code_attribute_length, u4 code_length,
       CompressedLineNumberWriteStream** write_stream, TRAPS);
-  u2* parse_localvariable_table(u4 code_length, u2 max_locals, u4 code_attribute_length,
+  void* parse_localvariable_table(u4 code_length, u2 max_locals, u4 code_attribute_length,
                                 u2* localvariable_table_length,
                                 bool isLVTT, TRAPS);
-  u2* parse_checked_exceptions(u2* checked_exceptions_length, u4 method_attribute_length,
+  void* parse_checked_exceptions(u2* checked_exceptions_length, u4 method_attribute_length,
                                TRAPS);
   void parse_type_array(u2 array_length, u4 code_length, u4* u1_index, u4* u2_index,
                         u1* u1_array, u2* u2_array, TRAPS);
@@ -434,10 +439,10 @@ PRAGMA_DIAG_POP
 
   void copy_localvariable_table(ConstMethod* cm, int lvt_cnt,
                                 u2* localvariable_table_length,
-                                u2** localvariable_table_start,
+                                void** localvariable_table_start,
                                 int lvtt_cnt,
                                 u2* localvariable_type_table_length,
-                                u2** localvariable_type_table_start,
+                                void** localvariable_type_table_start,
                                 TRAPS);
 
   void copy_method_annotations(ConstMethod* cm,
@@ -464,7 +469,13 @@ PRAGMA_DIAG_POP
 
  public:
   // Constructor
-  ClassFileParser(ClassFileStream* st) { set_stream(st); }
+  ClassFileParser(ClassFileStream* st)
+#if INCLUDE_CRS
+  : _need_file_hash(false), _file_hash(NULL)
+#endif
+  {
+    set_stream(st);
+  }
   ~ClassFileParser();
 
   // Parse .class file and return new Klass*. The Klass* is not hooked up
@@ -504,6 +515,12 @@ PRAGMA_DIAG_POP
   ClassFileStream* clone_stream() const;
   void set_klass_to_deallocate(InstanceKlass* klass);
 #endif // INCLUDE_JFR
+
+#if INCLUDE_CRS
+  void set_need_file_hash(TRAPS);
+  u1 const *get_file_hash() const;
+  uintx get_file_hash_length() const;
+#endif // INCLUDE_CRS
 };
 
 #endif // SHARE_VM_CLASSFILE_CLASSFILEPARSER_HPP

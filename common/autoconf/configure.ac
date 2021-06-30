@@ -196,6 +196,8 @@ FLAGS_SETUP_COMPILER_FLAGS_MISC
 # Setup debug symbols (need objcopy from the toolchain for that)
 JDKOPT_SETUP_DEBUG_SYMBOLS
 
+HOTSPOT_SETUP_SA
+
 ###############################################################################
 #
 # Check dependencies for external and internal libraries.

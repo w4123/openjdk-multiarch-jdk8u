@@ -22,6 +22,12 @@
 #
 #
 
+#
+# This file has been modified by Azul Systems, Inc. in 2016. These
+# modifications are Copyright (c) 2016 Azul Systems, Inc., and are made
+# available on the same license terms set forth above.
+#
+
 # Rules to build JVM and related libraries, included from vm.make in the build
 # directory.
 
@@ -100,7 +106,17 @@ CXXFLAGS =           \
 # This is VERY important! The version define must only be supplied to vm_version.o
 # If not, ccache will not re-use the cache at all, since the version string might contain
 # a time and date.
-CXXFLAGS/vm_version.o += ${JRE_VERSION} ${VERSION_CFLAGS}
+ifdef AZUL_VM_INFO_SUFFIX
+  VM_INFO_SUFFIX = -DAZUL_VM_INFO_SUFFIX="\", $(AZUL_VM_INFO_SUFFIX)\""
+else
+  VM_INFO_SUFFIX = -DAZUL_VM_INFO_SUFFIX="\"\"" 
+endif 
+CXXFLAGS/vm_version.o += ${JRE_VERSION} ${VM_INFO_SUFFIX}
+
+ifdef PRODUCT_VENDOR_VERSION
+  CXXFLAGS/vm_version.o += -DPRODUCT_VENDOR_VERSION="\"$(PRODUCT_VENDOR_VERSION)\""
+endif
+CXXFLAGS/vm_version.o += ${VERSION_CFLAGS}
 CXXFLAGS/arguments.o += ${VERSION_CFLAGS}
 
 CXXFLAGS/BYFILE = $(CXXFLAGS/$@)

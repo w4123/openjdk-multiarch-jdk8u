@@ -40,6 +40,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Target(ElementType.TYPE)
+@jdk.Exported
 public @interface Period {
     /**
      * Settings name {@code "period"} for configuring periodic events

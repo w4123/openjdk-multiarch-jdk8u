@@ -70,4 +70,8 @@ public class DockerRunOptions {
         return this;
     }
 
+    public DockerRunOptions addClassOptions(String... opts) {
+        Collections.addAll(classParams,opts);
+        return this;
+    }
 }

@@ -1,0 +1,1 @@
+../../android-openjdk-build-multiarch/setdevkitpath.sh

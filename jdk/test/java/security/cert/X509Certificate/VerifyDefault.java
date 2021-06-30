@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8175029
- * @library ../../testlibrary
+ * @library /lib
  * @summary check that default implementation of
  *          X509Certificate.verify(PublicKey, Provider) works on custom
  *          X509Certificate impl.
@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import jdk.test.lib.security.CertUtils;
 
 public class VerifyDefault {
     private static final String TEST_CERT =

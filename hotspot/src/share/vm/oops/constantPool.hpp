@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,25 +31,8 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
-#ifdef TARGET_ARCH_x86
-# include "bytes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "bytes_aarch64.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "bytes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "bytes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "bytes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "bytes_ppc.hpp"
-#endif
 
 // A constantPool is an array containing class constants as described in the
 // class file.

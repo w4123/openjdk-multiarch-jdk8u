@@ -11,7 +11,6 @@
 
 // See
 // http://www.w3.org/TR/html4/sgml/entities.html
-// http://stackoverflow.com/questions/631406/what-is-the-difference-between-em-dash-151-and-8212
 
 /**
  * &#01;

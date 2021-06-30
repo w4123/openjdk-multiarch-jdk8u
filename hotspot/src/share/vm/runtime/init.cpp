@@ -113,6 +113,7 @@ jint init_globals() {
   templateTable_init();
   InterfaceSupport_init();
   SharedRuntime::generate_stubs();
+  CRS_ONLY(ConnectedRuntime::init();) // depends on threads and metaspace. should go before first class loading
   universe2_init();  // dependent on codeCache_init and stubRoutines_init1
   referenceProcessor_init();
   jni_handles_init();

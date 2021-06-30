@@ -147,7 +147,7 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
     strm->next_out = (Bytef *) (out_buf + off);
     strm->avail_in  = this_len;
     strm->avail_out = len;
-    ret = inflate(strm, Z_PARTIAL_FLUSH);
+    ret = inflate(strm, Z_FINISH);
     (*env)->ReleasePrimitiveArrayCritical(env, b, out_buf, 0);
     (*env)->ReleasePrimitiveArrayCritical(env, this_buf, in_buf, 0);
 
@@ -155,7 +155,7 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
     case Z_STREAM_END:
         (*env)->SetBooleanField(env, this, finishedID, JNI_TRUE);
         /* fall through */
-    case Z_OK:
+    case Z_BUF_ERROR:
         this_off += this_len - strm->avail_in;
         (*env)->SetIntField(env, this, offID, this_off);
         (*env)->SetIntField(env, this, lenID, strm->avail_in);
@@ -166,8 +166,6 @@ Java_java_util_zip_Inflater_inflateBytes(JNIEnv *env, jobject this, jlong addr,
         this_off += this_len - strm->avail_in;
         (*env)->SetIntField(env, this, offID, this_off);
         (*env)->SetIntField(env, this, lenID, strm->avail_in);
-        return 0;
-    case Z_BUF_ERROR:
         return 0;
     case Z_DATA_ERROR:
         ThrowDataFormatException(env, strm->msg);

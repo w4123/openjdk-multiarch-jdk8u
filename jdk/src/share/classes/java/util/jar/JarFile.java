@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,8 @@ import sun.security.util.SignatureFileVerifier;
  */
 public
 class JarFile extends ZipFile {
+    private static final ThreadLocal<Boolean> isInitializing = new ThreadLocal<>();
+
     private SoftReference<Manifest> manRef;
     private JarEntry manEntry;
     private JarVerifier jv;
@@ -416,6 +418,11 @@ class JarFile extends ZipFile {
         }
     }
 
+    static boolean isInitializing() {
+        Boolean value = isInitializing.get();
+        return (value == null) ? false : value;
+    }
+
     /*
      * Reads all the bytes for a given entry. Used to process the
      * META-INF files.
@@ -614,8 +621,13 @@ class JarFile extends ZipFile {
             throw new RuntimeException(e);
         }
         if (jv != null && !jvInitialized) {
-            initializeVerifier();
-            jvInitialized = true;
+            isInitializing.set(Boolean.TRUE);
+            try {
+                initializeVerifier();
+                jvInitialized = true;
+            } finally {
+                isInitializing.set(Boolean.FALSE);
+            }
         }
     }
 

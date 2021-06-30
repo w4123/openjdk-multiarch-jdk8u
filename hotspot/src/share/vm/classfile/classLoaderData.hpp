@@ -29,12 +29,14 @@
 #include "memory/memRegion.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceCounters.hpp"
-#include "runtime/handles.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrTraceIdExtension.hpp"
+#endif
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
 #endif
 
 //
@@ -209,6 +211,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static Metaspace* _rw_metaspace;
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
+  CRS_ONLY(DEFINE_CRS_TRACE_ID_FIELD;)
 
   void set_next(ClassLoaderData* next) { _next = next; }
   ClassLoaderData* next() const        { return _next; }
@@ -324,6 +327,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void initialize_shared_metaspaces();
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
+  CRS_ONLY(DEFINE_CRS_TRACE_ID_METHODS;)
 };
 
 // An iterator that distributes Klasses to parallel worker threads.

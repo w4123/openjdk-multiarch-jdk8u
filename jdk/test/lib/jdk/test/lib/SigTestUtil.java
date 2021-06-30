@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class SigTestUtil {
                 MessageDigest md = MessageDigest.getInstance(mdAlg);
                 return new PSSParameterSpec(mdAlg, "MGF1",
                     new MGF1ParameterSpec(mdAlg), md.getDigestLength(),
-                    PSSParameterSpec.TRAILER_FIELD_BC);
+                    PSSParameterSpec.DEFAULT.getTrailerField());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

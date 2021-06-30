@@ -1,4 +1,8 @@
 /*
+ * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ */
+
+/*
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
@@ -56,6 +60,9 @@
 
 /* defines for UNIX platforms *************************************************/
 
+#ifndef H_P11MD
+#define H_P11MD
+
 #define CK_PTR *
 #define CK_DEFINE_FUNCTION(returnType, name) returnType name
 #define CK_DECLARE_FUNCTION(returnType, name) returnType name
@@ -66,6 +73,7 @@
 #endif
 
 #include "pkcs11.h"
+#include "pkcs11gcm2.h"
 
 #include "jni.h"
 
@@ -83,3 +91,5 @@ struct ModuleData {
 
 };
 typedef struct ModuleData ModuleData;
+
+#endif //H_P11MD

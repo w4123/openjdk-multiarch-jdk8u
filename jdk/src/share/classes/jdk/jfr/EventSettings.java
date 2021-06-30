@@ -53,6 +53,7 @@ import java.util.Map;
  * </pre>
  * @since 8
  */
+@jdk.Exported
 public abstract class EventSettings {
 
     // package private

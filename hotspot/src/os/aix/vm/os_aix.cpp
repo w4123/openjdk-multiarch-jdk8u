@@ -2191,7 +2191,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   os::Aix::commit_memory_impl(addr, size, alignment_hint, exec);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t size) {
+bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 
   // Delegate to ShmBkBlock class which knows how to uncommit its memory.
 
@@ -2555,7 +2555,7 @@ cleanup_mmap:
 
 // Reserves and attaches a shared memory segment.
 // Will assert if a wish address is given and could not be obtained.
-char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
+char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint, bool executable) {
   return os::attempt_reserve_memory_at(bytes, requested_addr);
 }
 
@@ -3752,20 +3752,6 @@ void os::Aix::check_signal_handler(int sig) {
   // Dump all the signal
   if (sigismember(&check_signal_done, sig)) {
     print_signal_handlers(tty, buf, O_BUFLEN);
-  }
-}
-
-extern bool signal_name(int signo, char* buf, size_t len);
-
-const char* os::exception_name(int exception_code, char* buf, size_t size) {
-  if (0 < exception_code && exception_code <= SIGRTMAX) {
-    // signal
-    if (!signal_name(exception_code, buf, size)) {
-      jio_snprintf(buf, size, "SIG%d", exception_code);
-    }
-    return buf;
-  } else {
-    return NULL;
   }
 }
 

@@ -29,7 +29,11 @@
 SLASH_JAVA ?= /java
 
 # Need PLATFORM (os-arch combo names) for jdk and hotspot, plus libarch name
-ARCH:=$(shell uname -m)
+# ARCH can be set explicitly in spec.gmk
+ifndef ARCH
+  ARCH:=$(shell uname -m)
+endif
+
 PATH_SEP = :
 ifeq ($(LP64), 1)
   ARCH_DATA_MODEL ?= 64
@@ -115,6 +119,16 @@ ifeq ($(ARCH), arm)
   VM_PLATFORM      = bsd_arm
   HS_ARCH          = arm
 endif
+
+# ARM64
+ifeq ($(ARCH), aarch64)
+  ARCH_DATA_MODEL  = 64
+  MAKE_ARGS        += LP64=1
+  PLATFORM         = bsd-aarch64
+  VM_PLATFORM      = bsd_aarch64
+  HS_ARCH          = aarch64
+endif
+
 
 # PPC
 ifeq ($(ARCH), ppc)
@@ -340,6 +354,8 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   endif
 endif
 
+ADD_SA_BINARIES/aarch64 = \
+                          $(EXPORT_LIB_DIR)/sa-jdi.jar
 ADD_SA_BINARIES/sparc = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
                         $(EXPORT_LIB_DIR)/sa-jdi.jar
 ADD_SA_BINARIES/universal = $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \

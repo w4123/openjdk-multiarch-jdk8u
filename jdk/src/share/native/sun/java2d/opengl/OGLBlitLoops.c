@@ -271,6 +271,7 @@ OGLBlitToSurfaceViaTexture(OGLContext *oglc, SurfaceDataRasInfo *srcInfo,
     GLdouble dx, dy, dw, dh, cdw, cdh;
     jint tw, th;
     jint sx, sy, sw, sh;
+    jint tileSize;
     GLint glhint = (hint == OGLSD_XFORM_BILINEAR) ? GL_LINEAR : GL_NEAREST;
     jboolean adjustAlpha = (pf != NULL && !pf->hasAlpha);
     jboolean slowPath;
@@ -285,10 +286,15 @@ OGLBlitToSurfaceViaTexture(OGLContext *oglc, SurfaceDataRasInfo *srcInfo,
 
     tx1 = 0.0f;
     ty1 = 0.0f;
-    tw = OGLC_BLIT_TILE_SIZE;
-    th = OGLC_BLIT_TILE_SIZE;
-    cdw = (dx2-dx1) / (((GLdouble)(sx2-sx1)) / OGLC_BLIT_TILE_SIZE);
-    cdh = (dy2-dy1) / (((GLdouble)(sy2-sy1)) / OGLC_BLIT_TILE_SIZE);
+    if (OGLC_GET_VENDOR(oglc) == OGLC_VENDOR_ETNAVIV) {
+        tileSize = ETNAVIV_BLIT_TILE_SIZE;
+    } else {
+        tileSize = OGLC_BLIT_TILE_SIZE;
+    }
+    tw = tileSize;
+    th = tileSize;
+    cdw = (dx2-dx1) / (((GLdouble)(sx2-sx1)) / tileSize);
+    cdh = (dy2-dy1) / (((GLdouble)(sy2-sy1)) / tileSize);
 
     j2d_glEnable(GL_TEXTURE_2D);
     j2d_glBindTexture(GL_TEXTURE_2D, oglc->blitTextureID);
@@ -671,6 +677,9 @@ OGLBlitLoops_Blit(JNIEnv *env,
                         break;
 #endif
                     case OGLC_VENDOR_INTEL:
+                        viaTexture = JNI_TRUE;
+                        break;
+                    case OGLC_VENDOR_ETNAVIV:
                         viaTexture = JNI_TRUE;
                         break;
                     default:

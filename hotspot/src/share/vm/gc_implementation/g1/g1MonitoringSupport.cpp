@@ -130,7 +130,7 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // and used.
   _old_space_counters = new HSpaceCounters("space", 0 /* ordinal */,
     pad_capacity(overall_reserved()) /* max_capacity */,
-    pad_capacity(old_space_committed()) /* init_capacity */,
+    pad_capacity(_old_committed) /* init_capacity */,
    _old_collection_counters);
 
   //   Young collection set
@@ -143,7 +143,7 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // See _old_space_counters for additional counters
   _eden_counters = new HSpaceCounters("eden", 0 /* ordinal */,
     pad_capacity(overall_reserved()) /* max_capacity */,
-    pad_capacity(eden_space_committed()) /* init_capacity */,
+    pad_capacity(_eden_committed) /* init_capacity */,
     _young_collection_counters);
 
   //  name "generation.0.space.1"
@@ -158,7 +158,7 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // See _old_space_counters for additional counters
   _to_counters = new HSpaceCounters("s1", 2 /* ordinal */,
     pad_capacity(overall_reserved()) /* max_capacity */,
-    pad_capacity(survivor_space_committed()) /* init_capacity */,
+    pad_capacity(_survivor_committed) /* init_capacity */,
     _young_collection_counters);
 
   if (UsePerfData) {
@@ -169,9 +169,15 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   }
 }
 
+MemoryUsage G1MonitoringSupport::memory_usage() {
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+  return MemoryUsage(InitialHeapSize, _overall_used, _overall_committed, _g1h->max_capacity());
+}
+
 void G1MonitoringSupport::recalculate_sizes() {
   G1CollectedHeap* g1 = g1h();
 
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
   // Recalculate all the sizes from scratch. We assume that this is
   // called at a point where no concurrent updates to the various
   // values we read here are possible (i.e., at a STW phase at the end
@@ -251,13 +257,13 @@ void G1MonitoringSupport::recalculate_eden_size() {
 void G1MonitoringSupport::update_sizes() {
   recalculate_sizes();
   if (UsePerfData) {
-    eden_counters()->update_capacity(pad_capacity(eden_space_committed()));
+    eden_counters()->update_capacity(pad_capacity(_eden_committed));
     eden_counters()->update_used(eden_space_used());
     // only the to survivor space (s1) is active, so we don't need to
     // update the counteres for the from survivor space (s0)
-    to_counters()->update_capacity(pad_capacity(survivor_space_committed()));
+    to_counters()->update_capacity(pad_capacity(_survivor_committed));
     to_counters()->update_used(survivor_space_used());
-    old_space_counters()->update_capacity(pad_capacity(old_space_committed()));
+    old_space_counters()->update_capacity(pad_capacity(_old_committed));
     old_space_counters()->update_used(old_space_used());
     old_collection_counters()->update_all();
     young_collection_counters()->update_all();
@@ -271,4 +277,31 @@ void G1MonitoringSupport::update_eden_size() {
   if (UsePerfData) {
     eden_counters()->update_used(eden_space_used());
   }
+}
+
+MemoryUsage G1MonitoringSupport::eden_space_memory_usage(size_t initial_size, size_t max_size) {
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+
+  return MemoryUsage(initial_size,
+                     _eden_used,
+                     _eden_committed,
+                     max_size);
+}
+
+MemoryUsage G1MonitoringSupport::survivor_space_memory_usage(size_t initial_size, size_t max_size) {
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+
+  return MemoryUsage(initial_size,
+                     _survivor_used,
+                     _survivor_committed,
+                     max_size);
+}
+
+MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_t max_size) {
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+
+  return MemoryUsage(initial_size,
+                     _old_used,
+                     _old_committed,
+                     max_size);
 }

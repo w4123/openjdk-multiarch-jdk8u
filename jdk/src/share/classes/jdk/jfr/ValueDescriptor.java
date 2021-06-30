@@ -40,6 +40,7 @@ import jdk.jfr.internal.Utils;
  *
  * @since 8
  */
+@jdk.Exported
 public final class ValueDescriptor {
 
     private final AnnotationConstruct annotationConstruct;

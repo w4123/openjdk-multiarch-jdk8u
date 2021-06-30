@@ -35,4 +35,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORTS_NATIVE_CX8
 
+#if defined(LINUX) || defined(SOLARIS) || defined(__APPLE__)
+#define SUPPORT_RESERVED_STACK_AREA
+#endif
+
 #endif // CPU_X86_VM_GLOBALDEFINITIONS_X86_HPP

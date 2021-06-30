@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import jdk.internal.vm.annotation.ReservedStackAccess;
 import sun.misc.Unsafe;
 
 /**
@@ -854,6 +855,7 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument
      * @return {@code true} if interrupted while waiting
      */
+    @ReservedStackAccess
     final boolean acquireQueued(final Node node, int arg) {
         boolean failed = true;
         try {
@@ -1194,6 +1196,7 @@ public abstract class AbstractQueuedSynchronizer
      *        {@link #tryAcquire} but is otherwise uninterpreted and
      *        can represent anything you like.
      */
+    @ReservedStackAccess
     public final void acquire(int arg) {
         if (!tryAcquire(arg) &&
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
@@ -1257,6 +1260,7 @@ public abstract class AbstractQueuedSynchronizer
      *        can represent anything you like.
      * @return the value returned from {@link #tryRelease}
      */
+    @ReservedStackAccess
     public final boolean release(int arg) {
         if (tryRelease(arg)) {
             Node h = head;
@@ -1337,6 +1341,7 @@ public abstract class AbstractQueuedSynchronizer
      *        and can represent anything you like.
      * @return the value returned from {@link #tryReleaseShared}
      */
+    @ReservedStackAccess
     public final boolean releaseShared(int arg) {
         if (tryReleaseShared(arg)) {
             doReleaseShared();

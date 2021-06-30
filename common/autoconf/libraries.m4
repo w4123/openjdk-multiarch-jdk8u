@@ -945,7 +945,7 @@ AC_DEFUN_ONCE([LIB_SETUP_STATIC_LINK_LIBSTDCPP],
 
     # Test if stdc++ can be linked statically.
     AC_MSG_CHECKING([if static link of stdc++ is possible])
-    STATIC_STDCXX_FLAGS="-Wl,-Bstatic -lstdc++ -lgcc -Wl,-Bdynamic"
+    STATIC_STDCXX_FLAGS="-Wl,-Bstatic -lstdc++ -static-libgcc -Wl,-Bdynamic"
     AC_LANG_PUSH(C++)
     OLD_LIBS="$LIBS"
     OLD_CXX="$CXX"
@@ -990,8 +990,25 @@ AC_DEFUN_ONCE([LIB_SETUP_STATIC_LINK_LIBSTDCPP],
 
   if test "x$JVM_VARIANT_ZERO" = xtrue || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
     # Figure out LIBFFI_CFLAGS and LIBFFI_LIBS
-    PKG_CHECK_MODULES([LIBFFI], [libffi])
-
+    PKG_CHECK_MODULES([LIBFFI], [libffi], [LIBFFI_FOUND=yes], [LIBFFI_FOUND=no])
+    # on macos we need a special case for system's libffi as
+    # headers are located only in sdk in $SYSROOT and in ffi subfolder
+    if test "x$LIBFFI_FOUND" = xno; then
+      if test "x$SDKPATH" != "x"; then
+        AC_CHECK_HEADER([$SDKPATH/usr/include/ffi/ffi.h],
+            [
+              LIBFFI_FOUND=yes
+              LIBFFI_CFLAGS="-I${SDKPATH}/usr/include/ffi"
+              LIBFFI_LIBS=-lffi
+            ],
+            [LIBFFI_FOUND=no]
+        )
+      fi
+    fi
+    if test "x$LIBFFI_FOUND" = xno; then
+      HELP_MSG_MISSING_DEPENDENCY([ffi])
+      AC_MSG_ERROR([Could not find libffi! $HELP_MSG])
+    fi
   fi
 
   if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
@@ -1047,8 +1064,12 @@ AC_DEFUN_ONCE([LIB_SETUP_STATIC_LINK_LIBSTDCPP],
   fi
 
   # TODO better (platform agnostic) test
-  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$LIBCXX" = x && test "x$TOOLCHAIN_TYPE" = xgcc; then
-    LIBCXX="-lstdc++"
+  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$LIBCXX" = x ; then 
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      LIBCXX="-lstdc++"
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      LIBCXX="-std=libc++"
+    fi
   fi
 
   AC_SUBST(LIBCXX)

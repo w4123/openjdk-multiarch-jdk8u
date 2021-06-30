@@ -105,6 +105,7 @@
  */
 
 #include "zutil.h"
+#include "zinit.h"
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast.h"
@@ -170,6 +171,13 @@ z_streamp strm;
 {
     struct inflate_state FAR *state;
 
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+	return zlibPtrs->inflateReset(strm);
+    }
+#endif
+
     if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
     state = (struct inflate_state FAR *)strm->state;
     state->wsize = 0;
@@ -222,6 +230,12 @@ int windowBits;
 const char *version;
 int stream_size;
 {
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+	return zlibPtrs->inflateInit2_(strm, windowBits, version, stream_size);
+    }
+#endif
     int ret;
     struct inflate_state FAR *state;
 
@@ -647,6 +661,14 @@ int ZEXPORT inflate(strm, flush)
 z_streamp strm;
 int flush;
 {
+
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+	return zlibPtrs->inflate(strm, flush);
+    }
+#endif
+
     struct inflate_state FAR *state;
     z_const unsigned char FAR *next;    /* next input */
     unsigned char FAR *put;     /* next output */
@@ -1302,6 +1324,13 @@ int ZEXPORT inflateEnd(strm)
 z_streamp strm;
 {
     struct inflate_state FAR *state;
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+	return zlibPtrs->inflateEnd(strm);
+    }
+#endif
+
     if (inflateStateCheck(strm))
         return Z_STREAM_ERROR;
     state = (struct inflate_state FAR *)strm->state;
@@ -1343,6 +1372,13 @@ uInt dictLength;
     struct inflate_state FAR *state;
     unsigned long dictid;
     int ret;
+
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+	return zlibPtrs->inflateSetDictionary(strm, dictionary, dictLength);
+    }
+#endif
 
     /* check state */
     if (inflateStateCheck(strm)) return Z_STREAM_ERROR;

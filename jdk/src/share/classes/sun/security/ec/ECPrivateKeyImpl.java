@@ -100,7 +100,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
 
     private void makeEncoding(byte[] s) throws InvalidKeyException {
         algid = new AlgorithmId
-        (AlgorithmId.EC_oid, ECParameters.getAlgorithmParameters(params));
+        (AlgorithmId.EC_oid,
+                sun.security.util.ECParameters.getAlgorithmParameters(params));
         try {
             DerOutputStream out = new DerOutputStream();
             out.putInteger(1); // version 1
@@ -118,7 +119,8 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
 
     private void makeEncoding(BigInteger s) throws InvalidKeyException {
         algid = new AlgorithmId
-        (AlgorithmId.EC_oid, ECParameters.getAlgorithmParameters(params));
+        (AlgorithmId.EC_oid,
+                sun.security.util.ECParameters.getAlgorithmParameters(params));
         try {
             byte[] sArr = s.toByteArray();
             // convert to fixed-length array

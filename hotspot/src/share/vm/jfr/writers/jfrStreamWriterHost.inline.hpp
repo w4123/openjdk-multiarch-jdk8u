@@ -73,7 +73,7 @@ template <typename Adapter, typename AP>
 inline void StreamWriterHost<Adapter, AP>::flush(size_t size) {
   assert(size > 0, "invariant");
   assert(this->is_valid(), "invariant");
-  _stream_pos += os::write(_fd, this->start_pos(), (unsigned int)size);
+  _stream_pos += ::write(_fd, this->start_pos(), (unsigned int)size);
   StorageHost<Adapter, AP>::reset();
   assert(0 == this->used_offset(), "invariant");
 }
@@ -111,7 +111,7 @@ void StreamWriterHost<Adapter, AP>::write_unbuffered(const void* buf, size_t len
   assert(0 == this->used_offset(), "can only seek from beginning");
   while (len > 0) {
     const unsigned int n = MIN2((unsigned int)len, (unsigned int)INT_MAX);
-    _stream_pos += os::write(_fd, buf, n);
+    _stream_pos += ::write(_fd, buf, n);
     len -= n;
   }
 }

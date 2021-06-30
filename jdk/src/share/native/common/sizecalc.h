@@ -39,7 +39,6 @@
  */
 
 #include <stdint.h> /* SIZE_MAX for C99+ */
-/* http://stackoverflow.com/questions/3472311/what-is-a-portable-method-to-find-the-maximum-value-of-size-t */
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t)-1)
 #endif

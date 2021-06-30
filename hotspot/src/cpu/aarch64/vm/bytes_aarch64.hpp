@@ -73,4 +73,8 @@ class Bytes: AllStatic {
 # include "bytes_linux_aarch64.inline.hpp"
 #endif
 
+#ifdef TARGET_OS_ARCH_bsd_aarch64
+# include "bytes_bsd_aarch64.inline.hpp"
+#endif
+
 #endif // CPU_AARCH64_VM_BYTES_AARCH64_HPP

@@ -129,6 +129,7 @@ class StubRoutines: AllStatic {
   static address _throw_IncompatibleClassChangeError_entry;
   static address _throw_NullPointerException_at_call_entry;
   static address _throw_StackOverflowError_entry;
+  static address _throw_delayed_StackOverflowError_entry;
   static address _handler_for_unsafe_access_entry;
 
   static address _atomic_xchg_entry;
@@ -202,6 +203,7 @@ class StubRoutines: AllStatic {
   static address _aescrypt_decryptBlock;
   static address _cipherBlockChaining_encryptAESCrypt;
   static address _cipherBlockChaining_decryptAESCrypt;
+  static address _counterMode_AESCrypt;
   static address _ghash_processBlocks;
 
   static address _sha1_implCompress;
@@ -287,6 +289,7 @@ class StubRoutines: AllStatic {
   static address throw_IncompatibleClassChangeError_entry(){ return _throw_IncompatibleClassChangeError_entry; }
   static address throw_NullPointerException_at_call_entry(){ return _throw_NullPointerException_at_call_entry; }
   static address throw_StackOverflowError_entry()          { return _throw_StackOverflowError_entry; }
+  static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
 
   // Exceptions during unsafe access - should throw Java exception rather
   // than crash.
@@ -365,6 +368,7 @@ class StubRoutines: AllStatic {
   static address aescrypt_decryptBlock()                { return _aescrypt_decryptBlock; }
   static address cipherBlockChaining_encryptAESCrypt()  { return _cipherBlockChaining_encryptAESCrypt; }
   static address cipherBlockChaining_decryptAESCrypt()  { return _cipherBlockChaining_decryptAESCrypt; }
+  static address counterMode_AESCrypt() { return _counterMode_AESCrypt; }
   static address ghash_processBlocks() { return _ghash_processBlocks; }
 
   static address sha1_implCompress()     { return _sha1_implCompress; }
@@ -462,16 +466,5 @@ class StubRoutines: AllStatic {
   static void arrayof_oop_copy       (HeapWord* src, HeapWord* dest, size_t count);
   static void arrayof_oop_copy_uninit(HeapWord* src, HeapWord* dest, size_t count);
 };
-
-// Safefetch allows to load a value from a location that's not known
-// to be valid. If the load causes a fault, the error value is returned.
-inline int SafeFetch32(int* adr, int errValue) {
-  assert(StubRoutines::SafeFetch32_stub(), "stub not yet generated");
-  return StubRoutines::SafeFetch32_stub()(adr, errValue);
-}
-inline intptr_t SafeFetchN(intptr_t* adr, intptr_t errValue) {
-  assert(StubRoutines::SafeFetchN_stub(), "stub not yet generated");
-  return StubRoutines::SafeFetchN_stub()(adr, errValue);
-}
 
 #endif // SHARE_VM_RUNTIME_STUBROUTINES_HPP

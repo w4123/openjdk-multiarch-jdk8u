@@ -36,17 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import jdk.jfr.internal.JVM;
-import jdk.jfr.internal.JVMSupport;
-import jdk.jfr.internal.LogLevel;
-import jdk.jfr.internal.Logger;
-import jdk.jfr.internal.MetadataRepository;
-import jdk.jfr.internal.Options;
-import jdk.jfr.internal.PlatformRecorder;
-import jdk.jfr.internal.PlatformRecording;
-import jdk.jfr.internal.Repository;
-import jdk.jfr.internal.RequestEngine;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.*;
 
 /**
  * Class for accessing, controlling, and managing Flight Recorder.
@@ -56,6 +46,7 @@ import jdk.jfr.internal.Utils;
  *
  * @since 8
  */
+@jdk.Exported
 public final class FlightRecorder {
     private static volatile FlightRecorder platformRecorder;
     private static volatile boolean initialized;
@@ -349,5 +340,9 @@ public final class FlightRecorder {
 
     PlatformRecorder getInternal() {
         return internal;
+    }
+
+    private void setAssociate(FlightRecorderAssociate associate) {
+        internal.setAssociate(associate);
     }
 }

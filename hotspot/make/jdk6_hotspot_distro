@@ -22,11 +22,17 @@
 # 
 
 #
+# This file has been modified by Azul Systems, Inc. in 2014. These
+# modifications are Copyright (c) 2014 Azul Systems, Inc., and are made
+# available on the same license terms set forth above. 
+#
+
+#
 # This file format must remain compatible with both
 # GNU Makefile and Microsoft nmake formats.
 #
 
 # Don't put quotes (fail windows build).
 HOTSPOT_VM_DISTRO=Java HotSpot(TM)
-COMPANY_NAME=Sun Microsystems, Inc.
+COMPANY_NAME=Azul Systems, Inc.
 PRODUCT_NAME=Java(TM) Platform SE

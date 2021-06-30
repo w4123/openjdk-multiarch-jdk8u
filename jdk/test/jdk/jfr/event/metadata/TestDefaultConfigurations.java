@@ -60,7 +60,7 @@ import org.xml.sax.SAXException;
  *
  * @library /lib /
  *
-
+ 
  *
  * @run main/othervm jdk.jfr.event.metadata.TestDefaultConfigurations
  */
@@ -173,6 +173,10 @@ public class TestDefaultConfigurations {
         insertSetting(doc, EventNames.ActiveRecording, "threshold", "0 ns");
         insertSetting(doc, EventNames.JavaExceptionThrow, "threshold", "0 ns");
         insertSetting(doc, EventNames.JavaErrorThrow, "threshold", "0 ns");
+        insertSetting(doc, EventNames.SecurityProperty, "threshold", "0 ns");
+        insertSetting(doc, EventNames.TLSHandshake, "threshold", "0 ns");
+        insertSetting(doc, EventNames.X509Certificate, "threshold", "0 ns");
+        insertSetting(doc, EventNames.X509Validation, "threshold", "0 ns");
         return doc;
     }
 

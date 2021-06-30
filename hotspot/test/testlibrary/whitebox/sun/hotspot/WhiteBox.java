@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.security.BasicPermission;
+import java.util.Objects;
 import java.net.URL;
 
 import sun.hotspot.parser.DiagnosticCommand;
@@ -162,14 +163,19 @@ public class WhiteBox {
   public native int     getCompileQueueSize(int compLevel);
   public native boolean testSetForceInlineMethod(Executable method, boolean value);
   public        boolean enqueueMethodForCompilation(Executable method, int compLevel) {
-    return enqueueMethodForCompilation(method, compLevel, -1 /*InvocationEntryBci*/);
+    return enqueueMethodForCompilation0(method, compLevel, -1 /*InvocationEntryBci*/);
   }
-  public boolean enqueueMethodForCompilation(Executable method, int compLevel, int entry_bci) {
+  public native boolean enqueueMethodForCompilation0(Executable method, int compLevel, int entry_bci);
+  public  boolean enqueueMethodForCompilation(Executable method, int compLevel, int entry_bci) {
+    Objects.requireNonNull(method);
     return enqueueMethodForCompilation0(method, compLevel, entry_bci);
   }
+  private native boolean enqueueInitializerForCompilation0(Class<?> aClass, int compLevel);
+  public  boolean enqueueInitializerForCompilation(Class<?> aClass, int compLevel) {
+    Objects.requireNonNull(aClass);
+    return enqueueInitializerForCompilation0(aClass, compLevel);
+  }
 
-  public native boolean enqueueInitializerForCompilation0(Class clazz, int compLevel);
-  public native boolean enqueueMethodForCompilation0(Executable method, int compLevel, int entry_bci);
   public native void    clearMethodState(Executable method);
   public native void    markMethodProfiled(Executable method);
   public native int     getMethodEntryBci(Executable method);
@@ -187,6 +193,12 @@ public class WhiteBox {
   public native void freeMetaspace(ClassLoader classLoader, long addr, long size);
   public native long incMetaspaceCapacityUntilGC(long increment);
   public native long metaspaceCapacityUntilGC();
+
+  // Don't use these methods directly
+  // Use sun.hotspot.gc.GC class instead.
+  public native boolean isGCSupported(int name);
+  public native boolean isGCSelected(int name);
+  public native boolean isGCSelectedErgonomically();
 
   // Force Young GC
   public native void youngGC();
@@ -256,5 +268,12 @@ public class WhiteBox {
   // Container testing
   public native boolean isContainerized();
   public native void printOsInfo();
+
+  public native boolean isCDSIncludedInVmBuild();
+  public native boolean isJFRIncludedInVmBuild();
+  public native boolean isJavaHeapArchiveSupported();
+
+  // Number of loaded AOT libraries
+  public native int aotLibrariesCount();
 
 }

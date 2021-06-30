@@ -41,6 +41,7 @@ import java.lang.annotation.Target;
 @Description("A point in time")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.TYPE, ElementType.METHOD})
+@jdk.Exported
 public @interface Timestamp {
     /**
      * The unit for the difference, measured in milliseconds, between the current

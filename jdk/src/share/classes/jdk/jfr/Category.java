@@ -120,6 +120,7 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE })
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
+@jdk.Exported
 public @interface Category {
     /**
      * Returns the category names for this annotation, starting with the root.

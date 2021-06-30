@@ -41,6 +41,7 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE })
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
+@jdk.Exported
 public @interface Threshold {
     /**
      * Setting name {@code "threshold"} for configuring event thresholds.

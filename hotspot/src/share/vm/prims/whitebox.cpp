@@ -118,6 +118,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_ClassKnownToNotExist(JNIEnv* env, jobject o, jobject loader, jstring name))
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* class_name = env->GetStringUTFChars(name, NULL);
   jboolean result = JVM_KnownToNotExist(env, loader, class_name);
   env->ReleaseStringUTFChars(name, class_name);
@@ -126,11 +127,13 @@ WB_END
 
 WB_ENTRY(jobjectArray, WB_GetLookupCacheURLs(JNIEnv* env, jobject o, jobject loader))
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   return JVM_GetResourceLookupCacheURLs(env, loader);
 WB_END
 
 WB_ENTRY(jintArray, WB_GetLookupCacheMatches(JNIEnv* env, jobject o, jobject loader, jstring name))
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* resource_name = env->GetStringUTFChars(name, NULL);
   jintArray result = JVM_GetResourceLookupCache(env, loader, resource_name);
 
@@ -401,7 +404,7 @@ WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size
 WB_END
 
 WB_ENTRY(void, WB_NMTUncommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
-  os::uncommit_memory((char *)(uintptr_t)addr, size);
+  os::uncommit_memory((char *)(uintptr_t)addr, size, !ExecMem);
 WB_END
 
 WB_ENTRY(void, WB_NMTReleaseMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
@@ -468,6 +471,7 @@ WB_END
 static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobject method) {
   assert(method != NULL, "method should not be null");
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   return env->FromReflectedMethod(method);
 }
 
@@ -714,6 +718,7 @@ static bool GetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, b
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   bool result = (*TAt)(flag_name, value, true, true);
   env->ReleaseStringUTFChars(name, flag_name);
@@ -726,6 +731,7 @@ static bool SetVMFlag(JavaThread* thread, JNIEnv* env, jstring name, T* value, b
     return false;
   }
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* flag_name = env->GetStringUTFChars(name, NULL);
   bool result = (*TAtPut)(flag_name, value, Flag::INTERNAL);
   env->ReleaseStringUTFChars(name, flag_name);
@@ -766,6 +772,7 @@ WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
   bool result;
   if (GetVMFlag <bool> (thread, env, name, &result, &CommandLineFlags::boolAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return booleanBox(thread, env, result);
   }
   return NULL;
@@ -775,6 +782,7 @@ WB_ENTRY(jobject, WB_GetIntxVMFlag(JNIEnv* env, jobject o, jstring name))
   intx result;
   if (GetVMFlag <intx> (thread, env, name, &result, &CommandLineFlags::intxAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -784,6 +792,7 @@ WB_ENTRY(jobject, WB_GetUintxVMFlag(JNIEnv* env, jobject o, jstring name))
   uintx result;
   if (GetVMFlag <uintx> (thread, env, name, &result, &CommandLineFlags::uintxAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -793,6 +802,7 @@ WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
   uint64_t result;
   if (GetVMFlag <uint64_t> (thread, env, name, &result, &CommandLineFlags::uint64_tAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return longBox(thread, env, result);
   }
   return NULL;
@@ -802,6 +812,7 @@ WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))
   double result;
   if (GetVMFlag <double> (thread, env, name, &result, &CommandLineFlags::doubleAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     return doubleBox(thread, env, result);
   }
   return NULL;
@@ -811,6 +822,7 @@ WB_ENTRY(jstring, WB_GetStringVMFlag(JNIEnv* env, jobject o, jstring name))
   ccstr ccstrResult;
   if (GetVMFlag <ccstr> (thread, env, name, &ccstrResult, &CommandLineFlags::ccstrAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    Thread::WXExecFromWriteSetter wx_exec;
     jstring result = env->NewStringUTF(ccstrResult);
     CHECK_JNI_EXCEPTION_(env, NULL);
     return result;
@@ -845,11 +857,13 @@ WB_END
 
 WB_ENTRY(void, WB_SetStringVMFlag(JNIEnv* env, jobject o, jstring name, jstring value))
   ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* ccstrValue = (value == NULL) ? NULL : env->GetStringUTFChars(value, NULL);
   ccstr ccstrResult = ccstrValue;
   bool needFree;
   {
     ThreadInVMfromNative ttvfn(thread); // back to VM
+    Thread::WXExecVerifier wx_exec;
     needFree = SetVMFlag <ccstr> (thread, env, name, &ccstrResult, &CommandLineFlags::ccstrAtPut);
   }
   if (value != NULL) {
@@ -865,6 +879,21 @@ WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString
   int len;
   jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len, CHECK_false);
   return (StringTable::lookup(name, len) != NULL);
+WB_END
+
+WB_ENTRY(jboolean, WB_IsGCSupported(JNIEnv* env, jobject o, jint name))
+  jboolean ret = true;
+  return ret;
+WB_END
+
+WB_ENTRY(jboolean, WB_IsGCSelected(JNIEnv* env, jobject o, jint name))
+  jboolean ret = true;
+  return ret;
+WB_END
+
+WB_ENTRY(jboolean, WB_IsGCSelectedErgonomically(JNIEnv* env, jobject o))
+  jboolean ret = true;
+  return ret;
 WB_END
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
@@ -899,6 +928,7 @@ WB_END
 WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
   const char* cpu_features = VM_Version::cpu_features();
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   jstring features_string = env->NewStringUTF(cpu_features);
 
   CHECK_JNI_EXCEPTION_(env, NULL);
@@ -961,6 +991,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   int insts_size = code->insts_size();
 
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
   result = env->NewObjectArray(3, clazz, NULL);
@@ -1022,6 +1053,7 @@ WB_ENTRY(jobjectArray, WB_GetCodeBlob(JNIEnv* env, jobject o, jlong addr))
       "WB_GetCodeBlob: addr is null");
   }
   ThreadToNativeFromVM ttn(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   CodeBlobStub stub((CodeBlob*) addr);
   return codeBlob2objectArray(thread, env, &stub);
 WB_END
@@ -1154,6 +1186,7 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
 void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread, JNINativeMethod* method_array, int method_count) {
   ResourceMark rm;
   ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
+  Thread::WXExecFromWriteSetter wx_exec;
 
   //  one by one registration natives for exception catching
   jclass no_such_method_error_klass = env->FindClass(vmSymbols::java_lang_NoSuchMethodError()->as_C_string());
@@ -1188,6 +1221,7 @@ WB_ENTRY(jboolean, WB_CheckLibSpecifiesNoexecstack(JNIEnv* env, jobject o, jstri
 #ifdef LINUX
   // Can't be in VM when we call JNI.
   ThreadToNativeFromVM ttnfv(thread);
+  Thread::WXExecFromWriteSetter wx_exec;
   const char* lf = env->GetStringUTFChars(libfile, NULL);
   CHECK_JNI_EXCEPTION_(env, 0);
   ElfFile ef(lf);
@@ -1204,6 +1238,42 @@ WB_END
 
 WB_ENTRY(void, WB_PrintOsInfo(JNIEnv* env, jobject o))
   os::print_os_info(tty);
+WB_END
+
+WB_ENTRY(jboolean, WB_IsCDSIncludedInVmBuild(JNIEnv* env))
+#if INCLUDE_CDS
+# ifdef _LP64
+    if (!UseCompressedOops || !UseCompressedClassPointers) {
+      // On 64-bit VMs, CDS is supported only with compressed oops/pointers
+      return false;
+    }
+# endif // _LP64
+  return true;
+#else
+  return false;
+#endif // INCLUDE_CDS
+WB_END
+
+WB_ENTRY(jboolean, WB_IsJFRIncludedInVmBuild(JNIEnv* env))
+  jboolean ret = false;
+#if defined(INCLUDE_JFR) && INCLUDE_JFR
+  ret = true;
+#endif // INCLUDE_JFR
+  return ret;
+WB_END
+
+WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
+//  return HeapShared::is_heap_object_archiving_allowed();
+  jboolean ret = false;
+  return ret;
+WB_END
+
+WB_ENTRY(jint, WB_AotLibrariesCount(JNIEnv* env, jobject o))
+  jint result = 0;
+#if defined(INCLUDE_AOT) && INCLUDE_AOT
+  result = (jint) AOTLoader::heaps_count();
+#endif // INCLUDE_AOT
+  return result;
 WB_END
 
 #define CC (char*)
@@ -1312,6 +1382,9 @@ static JNINativeMethod methods[] = {
   {CC"getStringVMFlag",    CC"(Ljava/lang/String;)Ljava/lang/String;",
                                                       (void*)&WB_GetStringVMFlag},
   {CC"isInStringTable",    CC"(Ljava/lang/String;)Z", (void*)&WB_IsInStringTable  },
+  {CC"isGCSupported",      CC"(I)Z",                  (void*)&WB_IsGCSupported},
+  {CC"isGCSelected",              CC"(I)Z",           (void*)&WB_IsGCSelected},
+  {CC"isGCSelectedErgonomically", CC"()Z",            (void*)&WB_IsGCSelectedErgonomically},
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
   {CC"youngGC",  CC"()V",                             (void*)&WB_YoungGC },
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
@@ -1333,6 +1406,10 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_CheckLibSpecifiesNoexecstack},
   {CC"isContainerized",           CC"()Z",            (void*)&WB_IsContainerized },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
+  {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
+  {CC"isJFRIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsJFRIncludedInVmBuild },
+  {CC"isJavaHeapArchiveSupported",        CC"()Z",    (void*)&WB_IsJavaHeapArchiveSupported },
+  {CC"aotLibrariesCount",                 CC"()I",    (void*)&WB_AotLibrariesCount },
 };
 
 #undef CC

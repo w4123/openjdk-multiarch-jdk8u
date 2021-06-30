@@ -23,6 +23,12 @@
  * questions.
  */
 
+/*
+ * This file has been modified by Azul Systems, Inc. in 2016. These
+ * modifications are Copyright (c) 2016 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above.
+ */
+
 package sun.awt;
 
 import sun.font.FcFontConfiguration;
@@ -73,6 +79,13 @@ public class FcFontManager extends SunFontManager {
         getFontConfigManager().initFontConfigFonts(false);
         FontConfigManager.FcCompFont[] fontConfigFonts =
             getFontConfigManager().getFontConfigFonts();
+	// fallback to avoid NPE
+        if (fontConfigFonts == null) {
+            info[0] = "Dialog";
+            info[1] = "/dialog.ttf";
+            return info;
+        }
+
         for (int i=0; i<fontConfigFonts.length; i++) {
             if ("sans".equals(fontConfigFonts[i].fcFamily) &&
                 0 == fontConfigFonts[i].style) {

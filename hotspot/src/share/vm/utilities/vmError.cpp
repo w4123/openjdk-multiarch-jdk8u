@@ -32,6 +32,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
+#include "runtime/stubRoutines.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
@@ -488,7 +489,12 @@ void VMError::report(outputStream* st) {
                                   JDK_Version::runtime_name() : "";
      const char* runtime_version = JDK_Version::runtime_version() != NULL ?
                                   JDK_Version::runtime_version() : "";
-     st->print_cr("# JRE version: %s (%s) (build %s)", runtime_name, buf, runtime_version);
+     const char* vendor_version = JDK_Version::vendor_version();
+     st->print("# JRE version: %s ", runtime_name);
+     if (vendor_version != NULL) {
+         st->print("(%s) ", vendor_version);
+     }
+     st->print_cr("(%s) (build %s)", buf, runtime_version);
      st->print_cr("# Java VM: %s (%s %s %s %s)",
                    Abstract_VM_Version::vm_name(),
                    Abstract_VM_Version::vm_release(),

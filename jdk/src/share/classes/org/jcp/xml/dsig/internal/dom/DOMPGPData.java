@@ -84,7 +84,7 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
                 }
             }
         }
-        this.keyPacket = (byte[])keyPacket.clone();
+        this.keyPacket = keyPacket.clone();
         checkKeyPacket(keyPacket);
         this.keyId = null;
     }
@@ -131,9 +131,9 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
                 }
             }
         }
-        this.keyId = (byte[])keyId.clone();
+        this.keyId = keyId.clone();
         this.keyPacket = keyPacket == null ? null
-                                           : (byte[])keyPacket.clone();
+                                           : keyPacket.clone();
         if (keyPacket != null) {
             checkKeyPacket(keyPacket);
         }

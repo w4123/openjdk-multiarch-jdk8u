@@ -41,6 +41,9 @@
 #if INCLUDE_JFR
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#endif
 
 // An InstanceKlass is the VM level representation of a Java class.
 // It contains all information needed for at class at execution runtime.
@@ -284,6 +287,8 @@ class InstanceKlass: public Klass {
   // Int array containing the vtable_indices for default_methods
   // offset matches _default_methods offset
   Array<int>*     _default_vtable_indices;
+
+  CRS_ONLY(DEFINE_CRS_TRACE_ID_FIELD;)
 
   // Instance and static variable information, starts with 6-tuples of shorts
   // [access, name index, sig index, initval index, low_offset, high_offset]
@@ -1186,6 +1191,8 @@ public:
   void verify_on(outputStream* st);
 
   void oop_verify_on(oop obj, outputStream* st);
+
+  CRS_ONLY(DEFINE_CRS_TRACE_ID_METHODS;)
 };
 
 inline Method* InstanceKlass::method_at_vtable(int index)  {

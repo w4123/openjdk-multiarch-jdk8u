@@ -144,6 +144,10 @@ else
        LIBJSOUND_CFLAGS += -DX_ARCH=X_PPC64LE
   endif
 
+  ifeq ($(OPENJDK_TARGET_CPU), aarch32)
+       LIBJSOUND_CFLAGS += -DX_ARCH=X_AARCH32
+  endif
+
   ifeq ($(OPENJDK_TARGET_CPU), aarch64)
 	LIBJSOUND_CFLAGS += -DX_ARCH=X_AARCH64
   endif
@@ -151,6 +155,8 @@ endif
 
 LIBJSOUND_CFLAGS += -DEXTRA_SOUND_JNI_LIBS='"$(EXTRA_SOUND_JNI_LIBS)"'
 
+# TODO iOS
+ifneq ($(BUILD_IOS),1)
 $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
     LIBRARY := jsound, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -165,7 +171,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -framework CoreAudio -framework CoreFoundation \
-        -framework CoreServices -framework AudioUnit $(LIBCXX) \
+        -framework CoreServices -DNOTIOS_framework -DNOTIOS_AudioUnit $(LIBCXX) \
         -framework CoreMIDI -framework AudioToolbox, \
     LDFLAGS_windows := $(WIN_JAVA_LIB) advapi32.lib winmm.lib, \
     LDFLAGS_SUFFIX_posix := -ljava -ljvm, \
@@ -181,6 +187,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
 $(BUILD_LIBJSOUND): $(BUILD_LIBJAVA)
 
 BUILD_LIBRARIES += $(BUILD_LIBJSOUND)
+endif
 
 ##########################################################################################
 
@@ -216,7 +223,7 @@ ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
 
   $(BUILD_LIBJSOUNDALSA): $(BUILD_LIBJAVA)
 
-  BUILD_LIBRARIES += $(BUILD_LIBJSOUNDALSA)
+  # BUILD_LIBRARIES += $(BUILD_LIBJSOUNDALSA)
 
 endif
 

@@ -32,6 +32,9 @@
 #include "services/gcNotifier.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#endif
 
 ServiceThread* ServiceThread::_instance = NULL;
 
@@ -88,6 +91,9 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool has_gc_notification_event = false;
     bool has_dcmd_notification_event = false;
     bool acs_notify = false;
+#if INCLUDE_CRS
+    bool crs_notify = false;
+#endif // INCLUDE_CRS
     JvmtiDeferredEvent jvmti_event;
     {
       // Need state transition ThreadBlockInVM so that this thread
@@ -105,7 +111,8 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
              !(has_jvmti_events = JvmtiDeferredEventQueue::has_events()) &&
               !(has_gc_notification_event = GCNotifier::has_event()) &&
               !(has_dcmd_notification_event = DCmdFactory::has_pending_jmx_notification()) &&
-             !(acs_notify = AllocationContextService::should_notify())) {
+             !(acs_notify = AllocationContextService::should_notify())
+              CRS_ONLY(&& !(crs_notify = ConnectedRuntime::should_notify_java()))) {
         // wait until one of the sensors has pending requests, or there is a
         // pending JVMTI event or JMX GC notification to post
         Service_lock->wait(Mutex::_no_safepoint_check_flag);
@@ -135,6 +142,12 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     if (acs_notify) {
       AllocationContextService::notify(CHECK);
     }
+
+#if INCLUDE_CRS
+    if (crs_notify) {
+      ConnectedRuntime::notify_java(CHECK);
+    }
+#endif // INCLUDE_CRS
   }
 }
 

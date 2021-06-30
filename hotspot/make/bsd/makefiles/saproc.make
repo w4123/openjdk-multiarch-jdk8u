@@ -22,6 +22,12 @@
 #  
 #
 
+#
+# This file has been modified by Azul Systems, Inc. in 2014. These
+# modifications are Copyright (c) 2014 Azul Systems, Inc., and are made
+# available on the same license terms set forth above. 
+#
+
 # Rules to build serviceability agent library, used by vm.make
 
 # libsaproc.so(dylib): serviceability agent
@@ -102,14 +108,14 @@ endif
 # also, we don't build SA on Itanium, PPC, ARM or zero.
 
 ifneq ($(wildcard $(AGENT_DIR)),)
-ifneq ($(filter-out ia64 arm ppc zero,$(SRCARCH)),)
+ifneq ($(filter-out ia64 arm ppc aarch64 zero,$(SRCARCH)),)
   BUILDLIBSAPROC = $(LIBSAPROC)
 endif
 endif
 
 
 ifneq ($(OS_VENDOR), Darwin)
-SA_LFLAGS = $(MAPFLAG:FILENAME=$(SAMAPFILE))
+   SA_LFLAGS = $(MAPFLAG:FILENAME=$(SAMAPFILE))
 else
 # bring in minimum version argument or we'll fail on OSX 10.10
 SA_LFLAGS = $(LFLAGS)

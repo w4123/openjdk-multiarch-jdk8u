@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -21,6 +22,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * This file has been modified by Azul Systems, Inc. in 2014. These
+ * modifications are Copyright (c) 2014 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above. 
  */
 
 #if defined(__linux__)
@@ -47,7 +54,7 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
-__private_extern__
+__attribute__((visibility("hidden")))
 jstring newStringPlatform(JNIEnv *env, const char* str)
 {
     jstring rv = NULL;

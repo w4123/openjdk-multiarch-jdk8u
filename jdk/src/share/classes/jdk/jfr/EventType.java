@@ -44,6 +44,7 @@ import jdk.jfr.internal.Utils;
  *
  * @since 8
  */
+@jdk.Exported
 public final class EventType {
     private final PlatformEventType platformEventType;
     private final List<String> UNCATEGORIZED = Collections.singletonList("Uncategorized");

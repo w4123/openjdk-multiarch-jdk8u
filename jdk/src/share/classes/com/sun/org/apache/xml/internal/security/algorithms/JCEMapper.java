@@ -89,6 +89,26 @@ public class JCEMapper {
             MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA512,
             new Algorithm("", "SHA-512", "MessageDigest")
         );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_WHIRLPOOL,
+            new Algorithm("", "WHIRLPOOL", "MessageDigest")
+        );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA3_224,
+            new Algorithm("", "SHA3-224", "MessageDigest")
+        );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA3_256,
+            new Algorithm("", "SHA3-256", "MessageDigest")
+        );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA3_384,
+            new Algorithm("", "SHA3-384", "MessageDigest")
+        );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA3_512,
+            new Algorithm("", "SHA3-512", "MessageDigest")
+        );
         // Signature algorithms
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_DSA,
@@ -145,6 +165,22 @@ public class JCEMapper {
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512_MGF1,
             new Algorithm("RSA", "SHA512withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_224_MGF1,
+             new Algorithm("RSA", "SHA3-224withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_256_MGF1,
+             new Algorithm("RSA", "SHA3-256withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_384_MGF1,
+             new Algorithm("RSA", "SHA3-384withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_512_MGF1,
+             new Algorithm("RSA", "SHA3-512withRSAandMGF1", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA1,

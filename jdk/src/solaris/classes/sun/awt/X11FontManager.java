@@ -23,6 +23,12 @@
  * questions.
  */
 
+/*
+ * This file has been modified by Azul Systems, Inc. in 2015. These
+ * modifications are Copyright (c) 2015 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above.
+ */
+
 package sun.awt;
 
 import java.awt.GraphicsEnvironment;

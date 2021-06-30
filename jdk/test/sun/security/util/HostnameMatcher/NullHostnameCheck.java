@@ -78,12 +78,12 @@ public final class NullHostnameCheck {
                 new X509TrustManager() {
                     @Override
                     public void checkClientTrusted(
-                            X509Certificate[] x509Certificates, String s) {
+                        X509Certificate[] x509Certificates, String s) {
                     }
 
                     @Override
                     public void checkServerTrusted(
-                            X509Certificate[] x509Certificates, String s) {
+                        X509Certificate[] x509Certificates, String s) {
                     }
 
                     @Override

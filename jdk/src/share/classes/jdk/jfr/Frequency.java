@@ -35,6 +35,7 @@ import java.lang.annotation.Target;
  *
  * @since 8
  */
+@jdk.Exported
 @MetadataDefinition
 @ContentType
 @Label("Frequency")

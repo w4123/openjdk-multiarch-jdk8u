@@ -2527,6 +2527,7 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
       // GCLockerInvokesConcurrent are handled above and never discarded.
       return;
     } else {
+
       if (cause == GCCause::_gc_locker || cause == GCCause::_wb_young_gc
           DEBUG_ONLY(|| cause == GCCause::_scavenge_alot)) {
 

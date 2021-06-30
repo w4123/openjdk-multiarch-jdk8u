@@ -193,6 +193,7 @@ void SharkCompiler::compile_method(ciEnv*    env,
   // other way to handle the locking.
   {
     ThreadInVMfromNative tiv(JavaThread::current());
+    Thread::WXWriteFromExecSetter __wx_write;
     generate_native_code(entry, function, name);
   }
 

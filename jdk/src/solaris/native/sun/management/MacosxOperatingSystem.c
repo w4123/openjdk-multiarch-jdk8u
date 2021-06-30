@@ -29,6 +29,7 @@
 #include <mach/mach.h>
 #include <mach/task_info.h>
 
+#include "jvm.h"
 
 JNIEXPORT jdouble JNICALL
 Java_sun_management_OperatingSystemImpl_getSystemCpuLoad0
@@ -63,6 +64,9 @@ Java_sun_management_OperatingSystemImpl_getSystemCpuLoad0
     jlong used_delta  = used - last_used;
     jlong total_delta = total - last_total;
 
+    if (total_delta == 0) {
+        return 0.0;
+    }
     jdouble cpu = (jdouble) used_delta / total_delta;
 
     last_used  = used;
@@ -83,7 +87,7 @@ Java_sun_management_OperatingSystemImpl_getSystemCpuLoad0
 
 
 JNIEXPORT jdouble JNICALL
-Java_sun_management_OperatingSystemImpl_getProcessCpuLoad
+Java_sun_management_OperatingSystemImpl_getProcessCpuLoad0
 (JNIEnv *env, jobject dummy)
 {
     // This code is influenced by the darwin top source

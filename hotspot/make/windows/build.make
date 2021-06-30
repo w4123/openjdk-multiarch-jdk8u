@@ -303,6 +303,7 @@ $(variantDir)\local.make: checks
 	@ echo MT=$(MT)						>> $@
 	@ echo RC=$(RC)						>> $@
 	@ echo ENABLE_JFR=$(ENABLE_JFR)				>> $@
+	@ echo ENABLE_CRS=$(ENABLE_CRS)				>> $@
 	@ sh $(WorkSpace)/make/windows/get_msc_ver.sh		>> $@
 	@ if "$(ENABLE_FULL_DEBUG_SYMBOLS)" NEQ "" echo ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS) >> $@
 	@ if "$(ZIP_DEBUGINFO_FILES)" NEQ "" echo ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES) >> $@

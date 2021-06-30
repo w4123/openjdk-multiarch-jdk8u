@@ -164,21 +164,41 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
         return false;
     }
 
-    public native long getCommittedVirtualMemorySize();
+    public long getCommittedVirtualMemorySize() {
+        return getCommittedVirtualMemorySize0();
+    }
+
+    public long getProcessCpuTime() {
+        return getProcessCpuTime0();
+    }
+
+    public long getOpenFileDescriptorCount() {
+        return getOpenFileDescriptorCount0();
+    }
+
+    public long getMaxFileDescriptorCount() {
+        return getMaxFileDescriptorCount0();
+    }
+
+    public double getProcessCpuLoad() {
+        return getProcessCpuLoad0();
+    }
+
+    private native long getCommittedVirtualMemorySize0();
     private native long getTotalSwapSpaceSize0();
     private native long getFreeSwapSpaceSize0();
-    public native long getProcessCpuTime();
+    private native long getProcessCpuTime0();
     private native long getFreePhysicalMemorySize0();
     private native long getTotalPhysicalMemorySize0();
-    public native long getOpenFileDescriptorCount();
-    public native long getMaxFileDescriptorCount();
+    private native long getOpenFileDescriptorCount0();
+    private native long getMaxFileDescriptorCount0();
     private native double getSystemCpuLoad0();
-    public native double getProcessCpuLoad();
+    private native double getProcessCpuLoad0();
     private native double getSingleCpuLoad0(int cpuNum);
     private native int getHostConfiguredCpuCount0();
 
     static {
-        initialize();
+        initialize0();
     }
-    private static native void initialize();
+    private static native void initialize0();
 }

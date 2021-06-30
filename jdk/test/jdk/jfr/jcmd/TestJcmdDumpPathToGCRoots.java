@@ -49,7 +49,7 @@ import jdk.test.lib.jfr.EventNames;
  * @library /lib /
  * @key jfr
  *
- * @run main/othervm -XX:TLABSize=2k jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots
+ * @run main/othervm -Xint -XX:TLABSize=2k jdk.jfr.jcmd.TestJcmdDumpPathToGCRoots
  */
 public class TestJcmdDumpPathToGCRoots {
 

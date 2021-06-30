@@ -327,15 +327,26 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             } else {
                 return signature.sign();
             }
-        } catch (SignatureException se) {
-            throw new XMLSignatureException(se);
-        } catch (IOException ioe) {
-            throw new XMLSignatureException(ioe);
+        } catch (SignatureException | IOException ex){
+            throw new XMLSignatureException(ex);
+        }
+    }
+
+    abstract static class AbstractRSASignatureMethod
+            extends DOMSignatureMethod {
+
+        AbstractRSASignatureMethod(AlgorithmParameterSpec params)
+                throws InvalidAlgorithmParameterException {
+            super(params);
+        }
+
+        AbstractRSASignatureMethod(Element dmElem) throws MarshalException {
+            super(dmElem);
         }
     }
 
     abstract static class AbstractRSAPSSSignatureMethod
-            extends DOMSignatureMethod {
+            extends AbstractRSASignatureMethod {
 
         AbstractRSAPSSSignatureMethod(AlgorithmParameterSpec params)
                 throws InvalidAlgorithmParameterException {
@@ -368,7 +379,8 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             }
         }
     }
-    static final class SHA1withRSA extends DOMSignatureMethod {
+
+    static final class SHA1withRSA extends AbstractRSASignatureMethod {
         SHA1withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -390,7 +402,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA224withRSA extends DOMSignatureMethod {
+    static final class SHA224withRSA extends AbstractRSASignatureMethod {
         SHA224withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -409,7 +421,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA256withRSA extends DOMSignatureMethod {
+    static final class SHA256withRSA extends AbstractRSASignatureMethod {
         SHA256withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -428,7 +440,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA384withRSA extends DOMSignatureMethod {
+    static final class SHA384withRSA extends AbstractRSASignatureMethod {
         SHA384withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -447,7 +459,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class SHA512withRSA extends DOMSignatureMethod {
+    static final class SHA512withRSA extends AbstractRSASignatureMethod {
         SHA512withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -466,7 +478,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class RIPEMD160withRSA extends DOMSignatureMethod {
+    static final class RIPEMD160withRSA extends AbstractRSASignatureMethod {
         RIPEMD160withRSA(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);
@@ -492,7 +504,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
 
         private static PSSParameterSpec spec
                 = new PSSParameterSpec("SHA-1", "MGF1", MGF1ParameterSpec.SHA1,
-                20, PSSParameterSpec.TRAILER_FIELD_BC);
+                20, PSSParameterSpec.DEFAULT.getTrailerField());
 
         SHA1withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
@@ -523,7 +535,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
 
         private static PSSParameterSpec spec
                 = new PSSParameterSpec("SHA-224", "MGF1", MGF1ParameterSpec.SHA224,
-                28, PSSParameterSpec.TRAILER_FIELD_BC);
+                28, PSSParameterSpec.DEFAULT.getTrailerField());
 
         SHA224withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
@@ -554,7 +566,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
 
         private static PSSParameterSpec spec
                 = new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256,
-                32, PSSParameterSpec.TRAILER_FIELD_BC);
+                32, PSSParameterSpec.DEFAULT.getTrailerField());
 
         SHA256withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
@@ -585,7 +597,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
 
         private static PSSParameterSpec spec
                 = new PSSParameterSpec("SHA-384", "MGF1", MGF1ParameterSpec.SHA384,
-                48, PSSParameterSpec.TRAILER_FIELD_BC);
+                48, PSSParameterSpec.DEFAULT.getTrailerField());
 
         SHA384withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
@@ -616,7 +628,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
 
         private static PSSParameterSpec spec
                 = new PSSParameterSpec("SHA-512", "MGF1", MGF1ParameterSpec.SHA512,
-                64, PSSParameterSpec.TRAILER_FIELD_BC);
+                64, PSSParameterSpec.DEFAULT.getTrailerField());
 
         SHA512withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
@@ -643,7 +655,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
     }
 
-    static final class RIPEMD160withRSAandMGF1 extends DOMSignatureMethod {
+    static final class RIPEMD160withRSAandMGF1 extends AbstractRSASignatureMethod {
         RIPEMD160withRSAandMGF1(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
             super(params);

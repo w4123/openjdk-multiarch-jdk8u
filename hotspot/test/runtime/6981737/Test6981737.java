@@ -22,6 +22,12 @@
  */
 
 /*
+ * This file has been modified by Azul Systems, Inc. in 2014. These
+ * modifications are Copyright (c) 2014 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above. 
+ */
+
+/*
  * @test Test6981737.java
  * @bug 6981737
  * @summary check for correct vm properties
@@ -30,6 +36,12 @@
 */
 
 public class Test6981737 {
+    private static final String ZULU_VENDOR = "Azul Systems, Inc.";
+
+    /**
+     * For Zulu branding is modified.
+     * Vendor is "Azul Systems, Inc." for all versions ...
+     */
 
     /**
      * Check the 'vendor' properties java.vm.specification.version
@@ -42,12 +54,14 @@ public class Test6981737 {
         String major_version_spec = version.split("\\.")[1];
         int major_version = new Integer(major_version_spec).intValue();
 
-        String vendor_re = "Oracle Corporation";
+        String vendor_re = ZULU_VENDOR;
         String vm_spec_version_re = "1\\." + major_version_spec;
         if (major_version < 7) {
-            vendor_re = "Sun Microsystems Inc\\.";
             vm_spec_version_re = "1\\.0";
         }
+
+        verifyProperty("java.vendor", vendor_re);
+        verifyProperty("java.vm.vendor", vendor_re);
         verifyProperty("java.vm.specification.vendor", vendor_re);
         verifyProperty("java.specification.vendor", vendor_re);
         verifyProperty("java.vm.specification.version", vm_spec_version_re);

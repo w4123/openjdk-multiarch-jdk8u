@@ -29,6 +29,7 @@
 /*
  * @test
  * @bug 8140436
+ * @modules jdk.crypto.ec
  * @library /javax/net/ssl/templates
  * @summary Negotiated Finite Field Diffie-Hellman Ephemeral Parameters for TLS
  * @run main/othervm UseStrongDHSizes 2048

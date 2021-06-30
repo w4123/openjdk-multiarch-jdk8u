@@ -1144,8 +1144,34 @@ public final class URI
      *          (never {@code null})
      */
     public String getRawSchemeSpecificPart() {
-        defineSchemeSpecificPart();
-        return schemeSpecificPart;
+        String part = schemeSpecificPart;
+        if (part != null) {
+            return part;
+        }
+
+        String s = string;
+        if (s != null) {
+            // if string is defined, components will have been parsed
+            int start = 0;
+            int end = s.length();
+            if (scheme != null) {
+                start = scheme.length() + 1;
+            }
+            if (fragment != null) {
+                end -= fragment.length() + 1;
+            }
+            if (path != null && path.length() == end - start) {
+                part = path;
+            } else {
+                part = s.substring(start, end);
+            }
+        } else {
+            StringBuffer sb = new StringBuffer();
+            appendSchemeSpecificPart(sb, null, getAuthority(), getUserInfo(),
+                                 host, port, getPath(), getQuery());
+            part = sb.toString();
+        }
+        return schemeSpecificPart = part;
     }
 
     /**

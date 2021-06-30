@@ -65,6 +65,7 @@ define_pd_global(intx, StackShadowPages, 3 DEBUG_ONLY(+1));
 
 define_pd_global(intx, StackYellowPages, 2);
 define_pd_global(intx, StackRedPages, 1);
+define_pd_global(intx, StackReservedPages, SOLARIS_ONLY(1) NOT_SOLARIS(0));
 
 define_pd_global(intx, PreInflateSpin,       40);  // Determined by running design center
 

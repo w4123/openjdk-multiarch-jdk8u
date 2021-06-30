@@ -27,6 +27,13 @@
 #ifndef CPU_AARCH64_VM_ICACHE_AARCH64_HPP
 #define CPU_AARCH64_VM_ICACHE_AARCH64_HPP
 
+#ifdef __APPLE__
+#include <libkern/OSCacheControl.h>
+
+#define __clear_cache(start, end) \
+    sys_icache_invalidate(start, (char*)end - (char*)start);
+#endif
+
 // Interface for updating the instruction cache.  Whenever the VM
 // modifies code, part of the processor instruction cache potentially
 // has to be flushed.

@@ -89,6 +89,7 @@ extern "C" void JNICALL jfr_on_class_file_load_hook(jvmtiEnv *jvmti_env,
   }
   JavaThread* jt = JavaThread::thread_from_jni_environment(jni_env);
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));;
+  Thread::WXWriteFromExecSetter wx_write;
   ThreadInVMfromNative tvmfn(jt);
   JfrUpcalls::on_retransform(JfrTraceId::get(class_being_redefined),
                              class_being_redefined,
@@ -104,6 +105,7 @@ static jclass* create_classes_array(jint classes_count, TRAPS) {
   assert(classes_count > 0, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
   ThreadInVMfromNative tvmfn((JavaThread*)THREAD);
+  Thread::WXWriteFromExecSetter wx_write;
   jclass* const classes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jclass, classes_count);
   if (NULL == classes) {
     char error_buffer[ERROR_MSG_BUFFER_SIZE];
@@ -120,6 +122,7 @@ static void log_and_throw(TRAPS) {
   if (!HAS_PENDING_EXCEPTION) {
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
     ThreadInVMfromNative tvmfn((JavaThread*)THREAD);
+    Thread::WXWriteFromExecSetter wx_write;
     if (true) tty->print_cr("JfrJvmtiAgent::retransformClasses failed");
     JfrJavaSupport::throw_class_format_error("JfrJvmtiAgent::retransformClasses failed", THREAD);
   }
@@ -131,6 +134,7 @@ static void check_exception_and_log(JNIEnv* env, TRAPS) {
     // array index out of bound
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
     ThreadInVMfromNative tvmfn((JavaThread*)THREAD);
+    Thread::WXWriteFromExecSetter wx_write;
     if (true) tty->print_cr("GetObjectArrayElement threw an exception");
     return;
   }
@@ -156,6 +160,7 @@ void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jobjectArray classes_array,
     // inspecting the oop/klass requires a thread transition
     {
       ThreadInVMfromNative transition((JavaThread*)THREAD);
+      Thread::WXWriteFromExecSetter wx_write;
       if (JdkJfrEvent::is_a(clz)) {
         // should have been tagged already
         assert(JdkJfrEvent::is_subklass(clz), "invariant");
@@ -223,6 +228,7 @@ JfrJvmtiAgent::~JfrJvmtiAgent() {
   JavaThread* jt = current_java_thread();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
   ThreadToNativeFromVM transition(jt);
+  Thread::WXExecFromWriteSetter wx_exec;
   update_class_file_load_hook_event(JVMTI_DISABLE);
   unregister_callbacks(jt);
   if (jfr_jvmti_env != NULL) {
@@ -238,6 +244,7 @@ static bool initialize() {
   assert(jt->thread_state() == _thread_in_vm, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
   ThreadToNativeFromVM transition(jt);
+  Thread::WXExecFromWriteSetter wx_exec;
   if (create_jvmti_env(jt) != JNI_OK) {
     assert(jfr_jvmti_env == NULL, "invariant");
     return false;

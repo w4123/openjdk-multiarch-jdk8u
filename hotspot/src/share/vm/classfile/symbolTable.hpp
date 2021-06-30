@@ -139,6 +139,8 @@ public:
   // The symbol table
   static SymbolTable* the_table() { return _the_table; }
 
+  TableStatistics get_table_statistics();
+
   // Size of one bucket in the string table.  Used when checking for rollover.
   static uint bucket_size() { return sizeof(HashtableBucket<mtSymbol>); }
 
@@ -294,6 +296,7 @@ private:
 public:
   // The string table
   static StringTable* the_table() { return _the_table; }
+  TableStatistics get_table_statistics();
 
   // Size of one bucket in the string table.  Used when checking for rollover.
   static uint bucket_size() { return sizeof(HashtableBucket<mtSymbol>); }
@@ -328,7 +331,6 @@ public:
     possibly_parallel_unlink_or_oops_do(cl, NULL, processed, removed);
   }
   static void possibly_parallel_oops_do(OopClosure* f);
-  static void possibly_parallel_oops_do_shenandoah(OopClosure* f);
 
   // Hashing algorithm, used as the hash value used by the
   //     StringTable for bucket selection and comparison (stored in the

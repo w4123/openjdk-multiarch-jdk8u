@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  *
+ */
+
+/*
+ * This file has been modified by Azul Systems, Inc. in 2014, 2016. These
+ * modifications are Copyright (c) 2014, 2016 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above. 
  */
 
 #include "precompiled.hpp"
@@ -55,6 +61,8 @@ bool Abstract_VM_Version::_supports_atomic_getadd8 = false;
 unsigned int Abstract_VM_Version::_logical_processors_per_package = 1U;
 unsigned int Abstract_VM_Version::_L1_data_cache_line_size = 0;
 int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
+
+VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVirtualization;
 
 #ifndef HOTSPOT_RELEASE_VERSION
   #error HOTSPOT_RELEASE_VERSION must be defined
@@ -142,25 +150,27 @@ const char* Abstract_VM_Version::vm_name() {
 
 
 const char* Abstract_VM_Version::vm_vendor() {
-#ifdef VENDOR
-  return VENDOR;
-#else
-  return JDK_Version::is_gte_jdk17x_version() ?
-    "Oracle Corporation" : "Sun Microsystems Inc.";
-#endif
+  return "Azul Systems, Inc.";
 }
 
+#ifndef AZUL_VM_INFO_SUFFIX
+#define AZUL_VM_INFO_SUFFIX ""
+#endif
 
 const char* Abstract_VM_Version::vm_info_string() {
   switch (Arguments::mode()) {
     case Arguments::_int:
-      return UseSharedSpaces ? "interpreted mode, sharing" : "interpreted mode";
+      return UseSharedSpaces ? "interpreted mode, sharing" AZUL_VM_INFO_SUFFIX :
+        "interpreted mode" AZUL_VM_INFO_SUFFIX;
     case Arguments::_mixed:
-      return UseSharedSpaces ? "mixed mode, sharing"       :  "mixed mode";
+      return UseSharedSpaces ? "mixed mode, sharing" AZUL_VM_INFO_SUFFIX :
+        "mixed mode" AZUL_VM_INFO_SUFFIX;
     case Arguments::_comp:
-      return UseSharedSpaces ? "compiled mode, sharing"    : "compiled mode";
-  };
+      return UseSharedSpaces ? "compiled mode, sharing" AZUL_VM_INFO_SUFFIX :
+        "compiled mode" AZUL_VM_INFO_SUFFIX;
+  }
   ShouldNotReachHere();
+
   return "";
 }
 
@@ -292,8 +302,18 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
     #define FLOAT_ARCH_STR XSTR(FLOAT_ARCH)
   #endif
 
-  return VMNAME " (" VM_RELEASE ") for " OS "-" CPU FLOAT_ARCH_STR
-         " JRE (" JRE_RELEASE_VERSION "), built on " __DATE__ " " __TIME__
+  #ifdef HOTSPOT_LIBC
+    #define LIBC_STR "-" HOTSPOT_LIBC
+  #else
+    #define LIBC_STR ""
+  #endif
+    
+  return VMNAME " (" VM_RELEASE ") for " OS "-" CPU FLOAT_ARCH_STR LIBC_STR
+         " JRE ("
+#ifdef PRODUCT_VENDOR_VERSION
+          PRODUCT_VENDOR_VERSION ") ("
+#endif
+          JRE_RELEASE_VERSION "), built on " __DATE__ " " __TIME__
          " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER;
 }
 
@@ -307,7 +327,6 @@ unsigned int Abstract_VM_Version::jvm_version() {
          (Abstract_VM_Version::vm_build_number() & 0xFF);
 }
 
-
 void VM_Version_init() {
   VM_Version::initialize();
 
@@ -316,6 +335,28 @@ void VM_Version_init() {
     os::print_cpu_info(tty);
   }
 #endif
+}
+
+bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {
+  char line[500];
+  FILE* fp = fopen(filename, "r");
+  if (fp == NULL) {
+    return false;
+  }
+
+  st->print_cr("Virtualization information:");
+  while (fgets(line, sizeof(line), fp) != NULL) {
+    int i = 0;
+    while (keywords_to_match[i] != NULL) {
+      if (strncmp(line, keywords_to_match[i], strlen(keywords_to_match[i])) == 0) {
+        st->print("%s", line);
+        break;
+      }
+      i++;
+    }
+  }
+  fclose(fp);
+  return true;
 }
 
 unsigned int Abstract_VM_Version::nof_parallel_worker_threads(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.security.spec.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import sun.security.util.ECUtil;
-
 /**
  * Repository for well-known Elliptic Curve parameters. It is used by both
  * the SunPKCS11 and SunJSSE code.
@@ -42,10 +40,10 @@ import sun.security.util.ECUtil;
  * @author  Andreas Sterbenz
  */
 public class CurveDB {
-    private final static int P  = 1; // prime curve
-    private final static int B  = 2; // binary curve
-    private final static int PD = 5; // prime curve, mark as default
-    private final static int BD = 6; // binary curve, mark as default
+    private static final int P  = 1; // prime curve
+    private static final int B  = 2; // binary curve
+    private static final int PD = 5; // prime curve, mark as default
+    private static final int BD = 6; // binary curve, mark as default
 
     private static final Map<String,NamedCurve> oidMap =
         new LinkedHashMap<String,NamedCurve>();
@@ -64,7 +62,7 @@ public class CurveDB {
     }
 
     // Return a NamedCurve for the specified OID/name or null if unknown.
-    static NamedCurve lookup(String name) {
+    public static NamedCurve lookup(String name) {
         NamedCurve spec = oidMap.get(name);
         if (spec != null) {
             return spec;
@@ -85,7 +83,7 @@ public class CurveDB {
 
     // Convert the given ECParameterSpec object to a NamedCurve object.
     // If params does not represent a known named curve, return null.
-    static NamedCurve lookup(ECParameterSpec params) {
+    public static NamedCurve lookup(ECParameterSpec params) {
         if ((params instanceof NamedCurve) || (params == null)) {
             return (NamedCurve)params;
         }

@@ -23,6 +23,12 @@
  * questions.
  */
 
+/*
+ * This file has been modified by Azul Systems, Inc. in 2014. These
+ * modifications are Copyright (c) 2014 Azul Systems, Inc., and are made
+ * available on the same license terms set forth above. 
+ */
+
 package sun.misc;
 import java.io.PrintStream;
 
@@ -44,6 +50,18 @@ public class Version {
     private static final String java_runtime_version =
         "@@java_runtime_version@@";
 
+    private static final String java_vendor_version =
+        "@@java_vendor_version@@";
+
+    private static final String azul_runtime_name =
+        "@@azul_runtime_name@@";
+
+    private static final String azul_runtime_suffix =
+        "@@azul_runtime_suffix@@";
+
+    private static final String azul_version_suffix =
+        "@@azul_version_suffix@@";
+
     static {
         init();
     }
@@ -52,6 +70,7 @@ public class Version {
         System.setProperty("java.version", java_version);
         System.setProperty("java.runtime.version", java_runtime_version);
         System.setProperty("java.runtime.name", java_runtime_name);
+        System.setProperty("jdk.vendor.version", java_vendor_version);
     }
 
     private static boolean versionsInitialized = false;
@@ -103,7 +122,11 @@ public class Version {
 
         /* Second line: runtime version (ie, libraries). */
 
-        ps.print(java_runtime_name + " (build " + java_runtime_version);
+        ps.print(java_runtime_name + " ("+ azul_runtime_name +")");
+        if (azul_runtime_suffix.length() > 0) {
+            ps.print("-" + azul_runtime_suffix);
+        }
+        ps.print(" (build " + java_runtime_version);
 
         if (java_profile_name.length() > 0) {
             // profile name
@@ -114,14 +137,27 @@ public class Version {
             // embedded builds report headless state
             ps.print(", headless");
         }
-        ps.println(')');
+        if (azul_version_suffix.length() > 0) {
+            ps.println(") " + azul_version_suffix);
+        } else {
+            ps.println(')');
+        }
 
         /* Third line: JVM information. */
         String java_vm_name    = System.getProperty("java.vm.name");
         String java_vm_version = System.getProperty("java.vm.version");
         String java_vm_info    = System.getProperty("java.vm.info");
-        ps.println(java_vm_name + " (build " + java_vm_version + ", " +
-                   java_vm_info + ")");
+        ps.print(java_vm_name + " ("+ azul_runtime_name +")");
+        if (azul_runtime_suffix.length() > 0) {
+            ps.print("-" + azul_runtime_suffix);
+        }
+        ps.print( " (build " + java_vm_version + ", " +
+                 java_vm_info);
+        if (azul_version_suffix.length() > 0) {
+            ps.println(") " + azul_version_suffix);
+        } else {
+            ps.println(')');
+        }
     }
 
 

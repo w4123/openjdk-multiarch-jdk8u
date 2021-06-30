@@ -41,5 +41,6 @@ import java.lang.annotation.Target;
 @Description("Semantic meaning of a value")
 @Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)
+@jdk.Exported
 public @interface ContentType {
 }

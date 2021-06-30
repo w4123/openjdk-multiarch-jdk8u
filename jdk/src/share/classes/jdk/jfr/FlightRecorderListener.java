@@ -31,6 +31,7 @@ package jdk.jfr;
  *
  * @since 8
  */
+@jdk.Exported
 public interface FlightRecorderListener {
 
     /**

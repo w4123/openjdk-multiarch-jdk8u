@@ -39,6 +39,9 @@ import java.awt.font.TextLayout;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.security.PrivilegedAction;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -142,6 +145,16 @@ public final class FontDesignMetrics extends FontMetrics {
     private transient FontStrike fontStrike;
 
     private static FontRenderContext DEFAULT_FRC = null;
+
+    private Map<String, Float> hebCache = new HashMap<>();
+
+    private static final boolean useHebrewCache;
+
+    static {
+        useHebrewCache = java.security.AccessController.doPrivileged(
+                    (PrivilegedAction<Boolean>) () -> Boolean.getBoolean(
+                        "sun.font.FontDesignMetrics.useHebrewCache"));
+    }
 
     private static FontRenderContext getDefaultFrc() {
 
@@ -487,7 +500,6 @@ public final class FontDesignMetrics extends FontMetrics {
     }
 
     public int charsWidth(char data[], int off, int len) {
-
         float width = 0;
         if (font.hasLayoutAttributes()) {
             if (len == 0) {
@@ -506,9 +518,14 @@ public final class FontDesignMetrics extends FontMetrics {
                 if (ch < 0x100) {
                     width += getLatinCharWidth(ch);
                 } else if (FontUtilities.isNonSimpleChar(ch)) {
-                    String str = new String(data, off, len);
-                    width = new TextLayout(str, font, frc).getAdvance();
-                    break;
+                    if (ch >= 0x0590 && ch <= 0x05ff && useHebrewCache) {
+                        //This is a Hebrew char
+                        width += getCachedHebrewWidth(ch, font, frc);
+                    } else {
+                        String str = new String(data, off, len);
+                        width = new TextLayout(str, font, frc).getAdvance();
+                        break;
+                    }
                 } else {
                     width += handleCharWidth(ch);
                 }
@@ -586,5 +603,33 @@ public final class FontDesignMetrics extends FontMetrics {
             height = getAscent() + (int)(roundingUpValue + descent + leading);
         }
         return height;
+    }
+
+    /**
+     * Cache Hebrew character widths.
+     * By-product of this may be incorrect general layout in some cases
+     * but charsWidth works with that much faster.
+     */
+    private float getCachedHebrewWidth(char ch, Font font, FontRenderContext frc) {
+        String key = getStringHash(ch, font, frc);
+        Float f = hebCache.get(key);
+        if (f != null ) {
+            return f;
+        }
+        f = new TextLayout(Character.toString(ch), font, frc).getAdvance();
+        hebCache.put(key, f);
+        return f;
+    }
+
+    /**
+     * Use a String as a unique hash (To simplify and prevent the need for another key class)
+     */
+    private String getStringHash(char ch, Font font, FontRenderContext ctx) {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ch;
+        result = prime * result + ((ctx == null) ? 0 : ctx.hashCode());
+        result = prime * result + ((font == null) ? 0 : font.hashCode());
+        return result + "";
     }
 }

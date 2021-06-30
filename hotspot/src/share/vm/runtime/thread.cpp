@@ -96,7 +96,6 @@
 # include "os_bsd.inline.hpp"
 #endif
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/shenandoah/shenandoahControlThread.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
 #include "gc_implementation/parallelScavenge/pcTasks.hpp"
@@ -113,6 +112,9 @@
 #endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
+#endif
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
 #endif
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
@@ -191,9 +193,11 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
            ((uintptr_t) real_malloc_addr + (uintptr_t) aligned_size),
            "JavaThread alignment code overflowed allocated storage");
     if (TraceBiasedLocking) {
-      if (aligned_addr != real_malloc_addr)
+      if (aligned_addr != real_malloc_addr) {
+        tty->date_stamp(TraceBiasedLockingDateStamp, "", ": ");
         tty->print_cr("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
                       real_malloc_addr, aligned_addr);
+      }
     }
     ((Thread*) aligned_addr)->_real_malloc_address = real_malloc_addr;
     return aligned_addr;
@@ -305,40 +309,8 @@ Thread::Thread() {
   }
 #endif /* ASSERT */
 
-  _oom_during_evac = 0;
-#if INCLUDE_ALL_GCS
-  _gc_state = _gc_state_global;
-  _worker_id = (uint)(-1); // Actually, ShenandoahWorkerSession::INVALID_WORKER_ID, but avoid dependencies.
-  _force_satb_flush = false;
-  _paced_time = 0;
-#endif
+  DEBUG_ONLY(_wx_init = false);
 }
-
-void Thread::set_oom_during_evac(bool oom) {
-  if (oom) {
-    _oom_during_evac |= 1;
-  } else {
-    _oom_during_evac &= ~1;
-  }
-}
-
-bool Thread::is_oom_during_evac() const {
-  return (_oom_during_evac & 1) == 1;
-}
-
-#ifdef ASSERT
-void Thread::set_evac_allowed(bool evac_allowed) {
-  if (evac_allowed) {
-    _oom_during_evac |= 2;
-  } else {
-    _oom_during_evac &= ~2;
-  }
-}
-
-bool Thread::is_evac_allowed() const {
-  return (_oom_during_evac & 2) == 2;
-}
-#endif
 
 void Thread::initialize_thread_local_storage() {
   // Note: Make sure this method only calls
@@ -358,6 +330,7 @@ void Thread::record_stack_base_and_size() {
   set_stack_size(os::current_stack_size());
   if (is_Java_thread()) {
     ((JavaThread*) this)->set_stack_overflow_limit();
+    ((JavaThread*) this)->set_reserved_stack_activation(stack_base());
   }
   // CR 7190089: on Solaris, primordial thread's stack is adjusted
   // in initialize_thread(). Without the adjustment, stack size is
@@ -1004,7 +977,7 @@ bool Thread::is_in_stack(address adr) const {
 
 
 bool Thread::is_in_usable_stack(address adr) const {
-  size_t stack_guard_size = os::uses_stack_guard_pages() ? (StackYellowPages + StackRedPages) * os::vm_page_size() : 0;
+  size_t stack_guard_size = os::uses_stack_guard_pages() ? (StackReservedPages + StackYellowPages + StackRedPages) * os::vm_page_size() : 0;
   size_t usable_stack_size = _stack_size - stack_guard_size;
 
   return ((adr < stack_base()) && (adr >= stack_base() - usable_stack_size));
@@ -1098,6 +1071,7 @@ static void call_initializeSystemClass(TRAPS) {
 
 char java_runtime_name[128] = "";
 char java_runtime_version[128] = "";
+char java_vendor_version[128] = "";
 
 // extract the JRE name from sun.misc.Version.java_runtime_name
 static const char* get_java_runtime_name(TRAPS) {
@@ -1135,6 +1109,27 @@ static const char* get_java_runtime_version(TRAPS) {
     const char* name = java_lang_String::as_utf8_string(name_oop,
                                                         java_runtime_version,
                                                         sizeof(java_runtime_version));
+    return name;
+  } else {
+    return NULL;
+  }
+}
+
+// extract the JRE version from sun.misc.Version.java_vendor_version (if any)
+static const char* get_java_vendor_version(TRAPS) {
+  Klass* k = SystemDictionary::find(vmSymbols::sun_misc_Version(),
+                                      Handle(), Handle(), CHECK_AND_CLEAR_NULL);
+  fieldDescriptor fd;
+  bool found = k != NULL &&
+               InstanceKlass::cast(k)->find_local_field(vmSymbols::java_vendor_version_name(),
+                                                        vmSymbols::string_signature(), &fd);
+  if (found) {
+    oop name_oop = k->java_mirror()->obj_field(fd.offset());
+    if (name_oop == NULL)
+      return NULL;
+    const char* name = java_lang_String::as_utf8_string(name_oop,
+                                                        java_vendor_version,
+                                                        sizeof(java_vendor_version));
     return name;
   } else {
     return NULL;
@@ -1250,6 +1245,7 @@ NamedThread::NamedThread() : Thread() {
 
 NamedThread::~NamedThread() {
   JFR_ONLY(Jfr::on_thread_exit(this);)
+  CRS_ONLY(ConnectedRuntime::notify_thread_exit(this);)
   if (_name != NULL) {
     FREE_C_HEAP_ARRAY(char, _name, mtThread);
     _name = NULL;
@@ -1265,6 +1261,17 @@ void NamedThread::set_name(const char* format, ...) {
   jio_vsnprintf(_name, max_name_len, format, ap);
   va_end(ap);
 }
+
+void NamedThread::initialize_named_thread() {
+  set_native_thread_name(name());
+}
+
+void NamedThread::print_on(outputStream* st) const {
+  st->print("\"%s\" ", name());
+  Thread::print_on(st);
+  st->cr();
+}
+
 
 // ======= WatcherThread ========
 
@@ -1490,6 +1497,7 @@ void JavaThread::initialize() {
   _in_deopt_handler = 0;
   _doing_unsafe_access = false;
   _stack_guard_state = stack_guard_unused;
+  _reserved_stack_activation = NULL;  // stack base not known yet
   (void)const_cast<oop&>(_exception_oop = oop(NULL));
   _exception_pc  = 0;
   _exception_handler_pc = 0;
@@ -1543,7 +1551,6 @@ void JavaThread::initialize() {
 #if INCLUDE_ALL_GCS
 SATBMarkQueueSet JavaThread::_satb_mark_queue_set;
 DirtyCardQueueSet JavaThread::_dirty_card_queue_set;
-char Thread::_gc_state_global = 0;
 #endif // INCLUDE_ALL_GCS
 
 JavaThread::JavaThread(bool is_attaching_via_jni) :
@@ -1563,7 +1570,8 @@ JavaThread::JavaThread(bool is_attaching_via_jni) :
 }
 
 bool JavaThread::reguard_stack(address cur_sp) {
-  if (_stack_guard_state != stack_guard_yellow_disabled) {
+  if (_stack_guard_state != stack_guard_yellow_disabled
+      && _stack_guard_state != stack_guard_reserved_disabled) {
     return true; // Stack already guarded or guard pages not needed.
   }
 
@@ -1580,8 +1588,15 @@ bool JavaThread::reguard_stack(address cur_sp) {
   // some exception code in c1, c2 or the interpreter isn't unwinding
   // when it should.
   guarantee(cur_sp > stack_yellow_zone_base(), "not enough space to reguard - increase StackShadowPages");
-
-  enable_stack_yellow_zone();
+  if (_stack_guard_state == stack_guard_yellow_disabled) {
+    enable_stack_yellow_zone();
+    if (reserved_stack_activation() != stack_base()) {
+      set_reserved_stack_activation(stack_base());
+    }
+  } else if (_stack_guard_state == stack_guard_reserved_disabled) {
+    set_reserved_stack_activation(stack_base());
+    enable_stack_reserved_zone();
+  }
   return true;
 }
 
@@ -1707,6 +1722,8 @@ void JavaThread::run() {
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_start(this);
   }
+
+  this->init_wx();
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
@@ -1913,6 +1930,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   // is in a consistent state, in case GC happens
   assert(_privileged_stack_top == NULL, "must be NULL when we get here");
   JFR_ONLY(Jfr::on_thread_exit(this);)
+  CRS_ONLY(ConnectedRuntime::notify_thread_exit(this));
 
   if (active_handles() != NULL) {
     JNIHandleBlock* block = active_handles();
@@ -1947,11 +1965,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   // from the list of active threads. We must do this after any deferred
   // card marks have been flushed (above) so that any entries that are
   // added to the thread's dirty card queue as a result are not lost.
-  if (UseG1GC || (UseShenandoahGC)) {
+  if (UseG1GC) {
     flush_barrier_queues();
-  }
-  if (UseShenandoahGC && UseTLAB && gclab().is_initialized()) {
-    gclab().make_parsable(true);
   }
 #endif // INCLUDE_ALL_GCS
 
@@ -1986,27 +2001,6 @@ void JavaThread::initialize_queues() {
   // The dirty card queue should have been constructed with its
   // active field set to true.
   assert(dirty_queue.is_active(), "dirty card queue should be active");
-
-  _gc_state = _gc_state_global;
-}
-
-void JavaThread::set_gc_state(char in_prog) {
-  _gc_state = in_prog;
-}
-
-void JavaThread::set_gc_state_all_threads(char in_prog) {
-  assert_locked_or_safepoint(Threads_lock);
-  _gc_state_global = in_prog;
-  for (JavaThread* t = Threads::first(); t != NULL; t = t->next()) {
-    t->set_gc_state(in_prog);
-  }
-}
-
-void JavaThread::set_force_satb_flush_all_threads(bool value) {
-  assert_locked_or_safepoint(Threads_lock);
-  for (JavaThread* t = Threads::first(); t != NULL; t = t->next()) {
-    t->set_force_satb_flush(value);
-  }
 }
 #endif // INCLUDE_ALL_GCS
 
@@ -2037,11 +2031,8 @@ void JavaThread::cleanup_failed_attach_current_thread() {
   }
 
 #if INCLUDE_ALL_GCS
-  if (UseG1GC || (UseShenandoahGC)) {
+  if (UseG1GC) {
     flush_barrier_queues();
-  }
-  if (UseShenandoahGC && UseTLAB && gclab().is_initialized()) {
-    gclab().make_parsable(true);
   }
 #endif // INCLUDE_ALL_GCS
 
@@ -2491,6 +2482,8 @@ void JavaThread::check_safepoint_and_suspend_for_native_trans(JavaThread *thread
 // Note only the native==>VM/Java barriers can call this function and when
 // thread state is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
+  Thread::WXWriteFromExecSetter wx_write;
+
   check_safepoint_and_suspend_for_native_trans(thread);
 
   if (thread->has_async_exception()) {
@@ -2509,6 +2502,8 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
 // exiting the GC_locker.
 void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThread *thread) {
   check_special_condition_for_native_trans(thread);
+
+  Thread::WXWriteFromExecSetter wx_write;
 
   // Finish the transition
   thread->set_thread_state(_thread_in_Java);
@@ -2553,7 +2548,7 @@ void JavaThread::create_stack_guard_pages() {
     return;
   }
   address low_addr = stack_base() - stack_size();
-  size_t len = (StackYellowPages + StackRedPages) * os::vm_page_size();
+  size_t len = (StackReservedPages + StackYellowPages + StackRedPages) * os::vm_page_size();
 
   int allocate = os::allocate_stack_guard_pages();
   // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
@@ -2567,7 +2562,7 @@ void JavaThread::create_stack_guard_pages() {
     _stack_guard_state = stack_guard_enabled;
   } else {
     warning("Attempt to protect stack guard pages failed.");
-    if (os::uncommit_memory((char *) low_addr, len)) {
+    if (os::uncommit_memory((char *) low_addr, len, !ExecMem)) {
       warning("Attempt to deallocate stack guard pages failed.");
     }
   }
@@ -2577,7 +2572,7 @@ void JavaThread::remove_stack_guard_pages() {
   assert(Thread::current() == this, "from different thread");
   if (_stack_guard_state == stack_guard_unused) return;
   address low_addr = stack_base() - stack_size();
-  size_t len = (StackYellowPages + StackRedPages) * os::vm_page_size();
+  size_t len = (StackReservedPages + StackYellowPages + StackRedPages) * os::vm_page_size();
 
   if (os::allocate_stack_guard_pages()) {
     if (os::remove_stack_guard_pages((char *) low_addr, len)) {
@@ -2593,6 +2588,44 @@ void JavaThread::remove_stack_guard_pages() {
         warning("Attempt to unprotect stack guard pages failed.");
     }
   }
+}
+
+void JavaThread::enable_stack_reserved_zone() {
+  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
+  assert(_stack_guard_state != stack_guard_enabled, "already enabled");
+
+  // The base notation is from the stack's point of view, growing downward.
+  // We need to adjust it to work correctly with guard_memory()
+  address base = stack_reserved_zone_base() - stack_reserved_zone_size();
+
+  guarantee(base < stack_base(),"Error calculating stack reserved zone");
+  guarantee(base < os::current_stack_pointer(),"Error calculating stack reserved zone");
+
+  if (os::guard_memory((char *) base, stack_reserved_zone_size())) {
+    _stack_guard_state = stack_guard_enabled;
+  } else {
+    warning("Attempt to guard stack reserved zone failed.");
+  }
+  enable_register_stack_guard();
+}
+
+void JavaThread::disable_stack_reserved_zone() {
+  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
+  assert(_stack_guard_state != stack_guard_reserved_disabled, "already disabled");
+
+  // Simply return if called for a thread that does not use guard pages.
+  if (_stack_guard_state == stack_guard_unused) return;
+
+  // The base notation is from the stack's point of view, growing downward.
+  // We need to adjust it to work correctly with guard_memory()
+  address base = stack_reserved_zone_base() - stack_reserved_zone_size();
+
+  if (os::unguard_memory((char *)base, stack_reserved_zone_size())) {
+    _stack_guard_state = stack_guard_reserved_disabled;
+  } else {
+    warning("Attempt to unguard stack reserved zone failed.");
+  }
+  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_yellow_zone() {
@@ -3347,13 +3380,6 @@ bool        Threads::_vm_complete = false;
 // All JavaThreads
 #define ALL_JAVA_THREADS(X) for (JavaThread* X = _thread_list; X; X = X->next())
 
-void Threads::java_threads_do(ThreadClosure* tc) {
-  assert_locked_or_safepoint(Threads_lock);
-  ALL_JAVA_THREADS(p) {
-    tc->do_thread(p);
-  }
-}
-
 // All JavaThreads + all non-JavaThreads (i.e., every thread in the system)
 void Threads::threads_do(ThreadClosure* tc) {
   assert_locked_or_safepoint(Threads_lock);
@@ -3435,6 +3461,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   HOTSPOT_VM_INIT_BEGIN();
 #endif /* USDT2 */
 
+  os::current_thread_enable_wx(WXWrite);
+
   // Record VM creation timing statistics
   TraceVmCreationTime create_vm_timer;
   create_vm_timer.start();
@@ -3486,6 +3514,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->initialize_thread_local_storage();
 
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
+  main_thread->init_wx();
 
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(
@@ -3601,6 +3630,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     // get the Java runtime name after java.lang.System is initialized
     JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
     JDK_Version::set_runtime_version(get_java_runtime_version(THREAD));
+    JDK_Version::set_vendor_version(get_java_vendor_version(THREAD));
 
     // an instance of OutOfMemory exception has been allocated earlier
     initialize_class(vmSymbols::java_lang_OutOfMemoryError(), CHECK_0);
@@ -3670,11 +3700,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Support for ConcurrentMarkSweep. This should be cleaned up
   // and better encapsulated. The ugly nested if test would go away
   // once things are properly refactored. XXX YSR
-  if (UseConcMarkSweepGC || UseG1GC || UseShenandoahGC) {
+  if (UseConcMarkSweepGC || UseG1GC) {
     if (UseConcMarkSweepGC) {
       ConcurrentMarkSweepThread::makeSurrogateLockerThread(THREAD);
-    } else if (UseShenandoahGC) {
-      ShenandoahControlThread::makeSurrogateLockerThread(THREAD);
     } else {
       ConcurrentMarkThread::makeSurrogateLockerThread(THREAD);
     }
@@ -3745,6 +3773,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (MemProfiling)                   MemProfiler::engage();
   StatSampler::engage();
   if (CheckJNICalls)                  JniPeriodicChecker::engage();
+
+#if INCLUDE_CRS
+  if (UseCRS)                         ConnectedRuntime::engage(THREAD);
+#endif
 
   BiasedLocking::init();
 
@@ -3934,6 +3966,7 @@ void Threads::shutdown_vm_agents() {
     if (unload_entry != NULL) {
       JavaThread* thread = JavaThread::current();
       ThreadToNativeFromVM ttn(thread);
+      Thread::WXExecFromWriteSetter wx_exec;
       HandleMark hm(thread);
       (*unload_entry)(&main_vm);
     }
@@ -3953,6 +3986,7 @@ void Threads::create_vm_init_libraries() {
       // Invoke the JVM_OnLoad function
       JavaThread* thread = JavaThread::current();
       ThreadToNativeFromVM ttn(thread);
+      Thread::WXExecFromWriteSetter wx_exec;
       HandleMark hm(thread);
       jint err = (*on_load_entry)(&main_vm, agent->options(), NULL);
       if (err != JNI_OK) {
@@ -4267,8 +4301,7 @@ void Threads::possibly_parallel_oops_do(OopClosure* f, CLDClosure* cld_f, CodeBl
   bool is_par = sh->n_par_threads() > 0;
   assert(!is_par ||
          (SharedHeap::heap()->n_par_threads() ==
-          SharedHeap::heap()->workers()->active_workers()
-	  || UseShenandoahGC), "Mismatch");
+          SharedHeap::heap()->workers()->active_workers()), "Mismatch");
   int cp = SharedHeap::heap()->strong_roots_parity();
   ALL_JAVA_THREADS(p) {
     if (p->claim_oops_do(is_par, cp)) {

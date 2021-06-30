@@ -28,6 +28,7 @@
 #include "jvmtifiles/jvmti.h"
 #include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/top.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "jvm_linux.h"
@@ -53,8 +54,6 @@
 #endif
 
 class AgentLibrary;
-class methodHandle;
-class instanceKlassHandle;
 
 // os defines the interface to operating system; this includes traditional
 // OS services (time, I/O) as well as other functionality with system-
@@ -93,6 +92,11 @@ enum ThreadPriority {        // JLS 20.20.1-3
   CriticalPriority = 11      // Critical thread priority
 };
 
+enum WXMode {
+  WXWrite,
+  WXExec
+};
+
 // Executable parameter flag for os::commit_memory() and
 // os::commit_memory_or_exit().
 const bool ExecMem = true;
@@ -123,7 +127,8 @@ class os: AllStatic {
   }
 
   static char*  pd_reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0);
+                               size_t alignment_hint = 0,
+                               bool executable = false);
   static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
   static void   pd_split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
@@ -137,7 +142,7 @@ class os: AllStatic {
   static void   pd_commit_memory_or_exit(char* addr, size_t size,
                                          size_t alignment_hint,
                                          bool executable, const char* mesg);
-  static bool   pd_uncommit_memory(char* addr, size_t bytes);
+  static bool   pd_uncommit_memory(char* addr, size_t bytes, bool exec);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
@@ -314,7 +319,8 @@ class os: AllStatic {
 
   static int    vm_allocation_granularity();
   static char*  reserve_memory(size_t bytes, char* addr = 0,
-                               size_t alignment_hint = 0);
+                               size_t alignment_hint = 0,
+                               bool executable = false);
   static char*  reserve_memory(size_t bytes, char* addr,
                                size_t alignment_hint, MEMFLAGS flags);
   static char*  reserve_memory_aligned(size_t size, size_t alignment);
@@ -331,7 +337,7 @@ class os: AllStatic {
   static void   commit_memory_or_exit(char* addr, size_t size,
                                       size_t alignment_hint,
                                       bool executable, const char* mesg);
-  static bool   uncommit_memory(char* addr, size_t bytes);
+  static bool   uncommit_memory(char* addr, size_t bytes, bool exec);
   static bool   release_memory(char* addr, size_t bytes);
 
   // Touch memory pages that cover the memory range from start to end (exclusive)
@@ -514,6 +520,7 @@ class os: AllStatic {
 
   static ExtendedPC fetch_frame_from_context(void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(void* ucVoid);
+  static frame      fetch_frame_from_ucontext(Thread* thread, void* ucVoid);
 
   static ExtendedPC get_thread_pc(Thread *thread);
   static void breakpoint();
@@ -677,6 +684,9 @@ class os: AllStatic {
   // returns a string to describe the exception/signal;
   // returns NULL if exception_code is not an OS exception/signal.
   static const char* exception_name(int exception_code, char* buf, size_t buflen);
+
+  // Returns the signal number (e.g. 11) for a given signal name (SIGSEGV).
+  static int get_signal_number(const char* signal_name);
 
   // Returns native Java library, loads if necessary
   static void*    native_java_library();
@@ -888,6 +898,9 @@ class os: AllStatic {
 #ifdef TARGET_OS_ARCH_bsd_x86
 # include "os_bsd_x86.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_bsd_aarch64
+# include "os_bsd_aarch64.hpp"
+#endif
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "os_bsd_zero.hpp"
 #endif
@@ -949,6 +962,12 @@ class os: AllStatic {
     Thread* _thread;
     bool _done;
   };
+
+  // If the JVM is running in W^X mode, enable write or execute access to
+  // writeable and executable pages. No-op otherwise.
+  static inline void current_thread_enable_wx(WXMode mode) {
+    current_thread_enable_wx_impl(mode);
+  }
 
 #ifndef TARGET_OS_FAMILY_windows
   // Suspend/resume support
@@ -1022,7 +1041,6 @@ class os: AllStatic {
     }
   };
 #endif
-
 
  protected:
   static long _rand_seed;                     // seed for random number generator

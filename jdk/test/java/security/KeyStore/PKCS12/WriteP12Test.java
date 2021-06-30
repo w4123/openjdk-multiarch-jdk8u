@@ -201,7 +201,17 @@ public class WriteP12Test {
             CertificateException, UnrecoverableKeyException,
             NoSuchAlgorithmException {
         // init output key store
-        KeyStore outputKeyStore = KeyStore.getInstance("pkcs12", "SunJSSE");
+        KeyStore outputKeyStore;
+        try {
+            outputKeyStore = KeyStore.getInstance("pkcs12", "SunJSSE");
+        } catch(NoSuchProviderException nspe) {
+            try {
+                outputKeyStore = KeyStore.getInstance("pkcs12", "OpenJSSE");
+            } catch(NoSuchProviderException altnspe) {
+                // throw initial NSPE
+                throw nspe;
+            }
+        }
         outputKeyStore.load(null, null);
         try (FileOutputStream fout = new FileOutputStream(OUT_KEYSTORE)) {
             // KeyStore have encoded by Base64.getMimeEncoder().encode(),need
@@ -258,7 +268,17 @@ public class WriteP12Test {
             NoSuchProviderException, NoSuchAlgorithmException,
             CertificateException, IOException, UnrecoverableKeyException {
         // initial KeyStore
-        KeyStore outputKeyStore = KeyStore.getInstance("pkcs12", "SunJSSE");
+        KeyStore outputKeyStore;
+        try {
+            outputKeyStore = KeyStore.getInstance("pkcs12", "SunJSSE");
+        } catch(NoSuchProviderException nspe) {
+            try {
+                outputKeyStore = KeyStore.getInstance("pkcs12", "OpenJSSE");
+            } catch(NoSuchProviderException altnspe) {
+                // throw initial NSPE
+                throw nspe;
+            }
+        }
         try (FileOutputStream fout = new FileOutputStream(OUT_KEYSTORE);) {
             outputKeyStore.load(null, null);
             KeyStore inputKeyStoreOne, inputKeyStoreTwo;

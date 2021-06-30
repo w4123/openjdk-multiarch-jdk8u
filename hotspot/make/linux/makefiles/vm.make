@@ -22,6 +22,12 @@
 #
 #
 
+#
+# This file has been modified by Azul Systems, Inc. in 2016. These
+# modifications are Copyright (c) 2016 Azul Systems, Inc., and are made
+# available on the same license terms set forth above.
+#
+
 # Rules to build JVM and related libraries, included from vm.make in the build
 # directory.
 
@@ -90,6 +96,10 @@ BUILD_TARGET  = -DHOTSPOT_BUILD_TARGET="\"$(TARGET)\""
 BUILD_USER    = -DHOTSPOT_BUILD_USER="\"$(HOTSPOT_BUILD_USER)\""
 VM_DISTRO     = -DHOTSPOT_VM_DISTRO="\"$(HOTSPOT_VM_DISTRO)\""
 
+ifneq ($(HOTSPOT_TARGET_LIBC),)
+  LIBC_DEFINE = -DHOTSPOT_LIBC="\"$(HOTSPOT_TARGET_LIBC)\""
+endif
+
 CXXFLAGS =           \
   ${SYSDEFS}         \
   ${INCLUDES}        \
@@ -97,12 +107,23 @@ CXXFLAGS =           \
   ${BUILD_TARGET}    \
   ${BUILD_USER}      \
   ${HS_LIB_ARCH}     \
-  ${VM_DISTRO}
+  ${VM_DISTRO}       \
+  ${LIBC_DEFINE}
 
 # This is VERY important! The version define must only be supplied to vm_version.o
 # If not, ccache will not re-use the cache at all, since the version string might contain
 # a time and date.
-CXXFLAGS/vm_version.o += ${JRE_VERSION} ${VERSION_CFLAGS}
+ifdef AZUL_VM_INFO_SUFFIX
+  VM_INFO_SUFFIX = -DAZUL_VM_INFO_SUFFIX="\", $(AZUL_VM_INFO_SUFFIX)\""
+else
+  VM_INFO_SUFFIX = -DAZUL_VM_INFO_SUFFIX="\"\"" 
+endif
+CXXFLAGS/vm_version.o += ${JRE_VERSION} ${VM_INFO_SUFFIX}
+
+ifdef PRODUCT_VENDOR_VERSION
+  CXXFLAGS/vm_version.o += -DPRODUCT_VENDOR_VERSION="\"$(PRODUCT_VENDOR_VERSION)\""
+endif
+CXXFLAGS/vm_version.o += ${VERSION_CFLAGS}
 CXXFLAGS/arguments.o += ${VERSION_CFLAGS}
 
 CXXFLAGS/BYFILE = $(CXXFLAGS/$@)
@@ -168,7 +189,6 @@ CORE_PATHS+=$(GENERATED)/jvmtifiles $(GENERATED)/jfrfiles
 
 COMPILER1_PATHS := $(call altsrc,$(HS_COMMON_SRC)/share/vm/c1)
 COMPILER1_PATHS += $(HS_COMMON_SRC)/share/vm/c1
-COMPILER1_PATHS += $(HS_COMMON_SRC)/share/vm/gc_implementation/shenandoah/c1
 
 COMPILER2_PATHS := $(call altsrc,$(HS_COMMON_SRC)/share/vm/opto)
 COMPILER2_PATHS += $(call altsrc,$(HS_COMMON_SRC)/share/vm/libadt)
@@ -187,8 +207,8 @@ Src_Dirs/ZERO      := $(CORE_PATHS)
 Src_Dirs/SHARK     := $(CORE_PATHS) $(SHARK_PATHS)
 Src_Dirs := $(Src_Dirs/$(TYPE))
 
-COMPILER2_SPECIFIC_FILES := opto libadt bcEscapeAnalyzer.cpp c2_\* runtime_\* shenandoahBarrierSetC2.cpp shenandoahSupport.cpp
-COMPILER1_SPECIFIC_FILES := c1_\* shenandoahBarrierSetC1.cpp
+COMPILER2_SPECIFIC_FILES := opto libadt bcEscapeAnalyzer.cpp c2_\* runtime_\*
+COMPILER1_SPECIFIC_FILES := c1_\*
 SHARK_SPECIFIC_FILES     := shark
 ZERO_SPECIFIC_FILES      := zero
 
@@ -222,7 +242,7 @@ endif
 # Locate all source files in the given directory, excluding files in Src_Files_EXCLUDE.
 define findsrc
 	$(notdir $(shell find $(1)/. ! -name . -prune \
-		-a \( -name \*.c -o -name \*.cpp -o -name \*.s -o -name \*.S \) \
+		-a \( -name \*.c -o -name \*.cpp -o -name \*.s \) \
 		-a ! \( -name DUMMY $(addprefix -o -name ,$(Src_Files_EXCLUDE)) \)))
 endef
 

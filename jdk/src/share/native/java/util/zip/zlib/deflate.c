@@ -74,6 +74,7 @@
 /* @(#) $Id$ */
 
 #include "deflate.h"
+#include "zinit.h"
 
 const char deflate_copyright[] =
    " deflate 1.2.11 Copyright 1995-2017 Jean-loup Gailly and Mark Adler ";
@@ -274,6 +275,15 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
 {
     deflate_state *s;
     int wrap = 1;
+
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+        return zlibPtrs->deflateInit2_(strm, level, method, windowBits, memLevel,
+                                        strategy, version, stream_size);
+    }
+#endif
+
     static const char my_version[] = ZLIB_VERSION;
 
     ushf *overlay;
@@ -408,6 +418,13 @@ int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
     unsigned avail;
     z_const unsigned char *next;
 
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+        return zlibPtrs->deflateSetDictionary(strm, dictionary, dictLength);
+    }
+#endif
+
     if (deflateStateCheck(strm) || dictionary == Z_NULL)
         return Z_STREAM_ERROR;
     s = strm->state;
@@ -531,6 +548,13 @@ int ZEXPORT deflateReset (strm)
 {
     int ret;
 
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+        return zlibPtrs->deflateReset(strm);
+    }
+#endif
+
     ret = deflateResetKeep(strm);
     if (ret == Z_OK)
         lm_init(strm->state);
@@ -596,6 +620,13 @@ int ZEXPORT deflateParams(strm, level, strategy)
 {
     deflate_state *s;
     compress_func func;
+
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+        return zlibPtrs->deflateParams(strm, level, strategy);
+    }
+#endif
 
     if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
     s = strm->state;
@@ -790,6 +821,13 @@ int ZEXPORT deflate (strm, flush)
 {
     int old_flush; /* value of flush param for previous deflate call */
     deflate_state *s;
+
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+        return zlibPtrs->deflate(strm, flush);
+    }
+#endif
 
     if (deflateStateCheck(strm) || flush > Z_BLOCK || flush < 0) {
         return Z_STREAM_ERROR;
@@ -1101,6 +1139,13 @@ int ZEXPORT deflateEnd (strm)
     z_streamp strm;
 {
     int status;
+
+#ifdef __linux__
+    zlibFuncTypes * zlibPtrs = getLibraryFuncs();
+    if  (zlibPtrs != NULL && zlibPtrs->initDone == 1) {
+        return zlibPtrs->deflateEnd(strm);
+    }
+#endif
 
     if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
 

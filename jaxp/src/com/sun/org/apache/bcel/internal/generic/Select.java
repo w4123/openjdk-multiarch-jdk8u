@@ -94,14 +94,16 @@ public abstract class Select extends BranchInstruction
    */
   Select(short opcode, int[] match, InstructionHandle[] targets,
          InstructionHandle target) {
-    super(opcode, target);
+    // don't set default target before instuction is built
+    super(opcode, null);
+    this.match = match;
 
     this.targets = targets;
+    // now it's safe to set default target
+    setTarget(target);
     for(int i=0; i < targets.length; i++) {
       BranchInstruction.notifyTargetChanged(targets[i], this);
     }
-
-    this.match = match;
 
     if((match_length = match.length) != targets.length)
       throw new ClassGenException("Match and target array have not the same length");
@@ -263,5 +265,10 @@ public abstract class Select extends BranchInstruction
   /**
    * @return array of match targets
    */
-  public InstructionHandle[] getTargets() { return targets; }
+  public InstructionHandle[] getTargets() {
+    if (targets == null) {
+      return new InstructionHandle[0];
+    }
+    return targets;
+  }
 }

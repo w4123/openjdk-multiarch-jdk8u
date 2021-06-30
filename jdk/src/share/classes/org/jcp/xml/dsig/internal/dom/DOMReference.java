@@ -175,7 +175,7 @@ public final class DOMReference extends DOMStructure
         this.type = type;
         this.id = id;
         if (digestValue != null) {
-            this.digestValue = (byte[])digestValue.clone();
+            this.digestValue = digestValue.clone();
             this.digested = true;
         }
         this.appliedTransformData = result;

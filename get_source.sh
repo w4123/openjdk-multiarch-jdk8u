@@ -98,3 +98,10 @@ sh ./common/bin/hgforest.sh clone "$@" || exit $?
 
 # Update all existing repositories to the latest sources
 sh ./common/bin/hgforest.sh pull -u
+
+if [ "x$CRS_TESTS_SOURCE_URL" != "x" -a "x$CRS_TESTS_ROOT" != "x" ]; then
+    mkdir -p $CRS_TESTS_ROOT
+    wget $CRS_TESTS_SOURCE_URL -O $CRS_TESTS_ROOT/1.zip
+    unzip $CRS_TESTS_ROOT/1.zip -d $CRS_TESTS_ROOT
+    rm $CRS_TESTS_ROOT/1.zip
+fi

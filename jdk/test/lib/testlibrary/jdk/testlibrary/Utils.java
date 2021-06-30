@@ -67,6 +67,11 @@ public final class Utils {
      */
     public static final String JAVA_OPTIONS = System.getProperty("test.java.opts", "").trim();
 
+    public static final String TEST_JDK = System.getProperty("test.jdk");
+
+    public static final String TEST_SRC = System.getProperty("test.src", "").trim();
+
+    public static final String TEST_CLASSES = System.getProperty("test.classes", ".");
 
     /**
     * Returns the value of 'test.timeout.factor' system property
@@ -182,28 +187,15 @@ public final class Utils {
 
     /**
      * Returns the free port on the local host.
-     * The function will spin until a valid port number is found.
      *
      * @return The port number
-     * @throws InterruptedException if any thread has interrupted the current thread
      * @throws IOException if an I/O error occurs when opening the socket
      */
-    public static int getFreePort() throws InterruptedException, IOException {
-        int port = -1;
-
-        while (port <= 0) {
-            Thread.sleep(100);
-
-            ServerSocket serverSocket = null;
-            try {
-                serverSocket = new ServerSocket(0);
-                port = serverSocket.getLocalPort();
-            } finally {
-                serverSocket.close();
-            }
+    public static int getFreePort() throws IOException {
+        try (ServerSocket serverSocket =
+                new ServerSocket(0, 5, InetAddress.getLoopbackAddress());) {
+            return serverSocket.getLocalPort();
         }
-
-        return port;
     }
 
     /**

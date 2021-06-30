@@ -196,9 +196,14 @@ class SharedRuntime: AllStatic {
   static void    throw_NullPointerException(JavaThread* thread);
   static void    throw_NullPointerException_at_call(JavaThread* thread);
   static void    throw_StackOverflowError(JavaThread* thread);
+  static void    throw_delayed_StackOverflowError(JavaThread* thread);
+  static void    throw_StackOverflowError_common(JavaThread* thread, bool delayed);
   static address continuation_for_implicit_exception(JavaThread* thread,
                                                      address faulting_pc,
                                                      ImplicitExceptionKind exception_kind);
+
+  static void enable_stack_reserved_zone(JavaThread* thread);
+  static frame look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr);
 
   // Shared stub locations
   static address get_poll_stub(address pc);
@@ -490,10 +495,6 @@ class SharedRuntime: AllStatic {
   static void get_utf(oopDesc* src, address dst);
 #endif // def HAVE_DTRACE_H
 
-  // Pin/Unpin object
-  static oopDesc* pin_object(JavaThread* thread, oopDesc* obj);
-  static void unpin_object(JavaThread* thread, oopDesc* obj);
-
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
   static void fixup_callers_callsite(Method* moop, address ret_pc);
@@ -517,6 +518,10 @@ class SharedRuntime: AllStatic {
   static address handle_wrong_method(JavaThread* thread);
   static address handle_wrong_method_abstract(JavaThread* thread);
   static address handle_wrong_method_ic_miss(JavaThread* thread);
+
+#if INCLUDE_CRS
+  static void first_call_interpreter_entry(JavaThread *thread, Method *method);
+#endif
 
 #ifndef PRODUCT
 

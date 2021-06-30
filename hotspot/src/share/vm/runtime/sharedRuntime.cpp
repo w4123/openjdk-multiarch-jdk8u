@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
+//#include "trace/tracing.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -84,6 +85,9 @@
 #endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
+#endif
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
 #endif
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
@@ -505,8 +509,11 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
       // unguarded. Reguard the stack otherwise if we return to the
       // deopt blob and the stack bang causes a stack overflow we
       // crash.
-      bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
+      bool guard_pages_enabled = thread->stack_guards_enabled();
       if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
+      if (thread->reserved_stack_activation() != thread->stack_base()) {
+        thread->set_reserved_stack_activation(thread->stack_base());
+      }
       assert(guard_pages_enabled, "stack banging in deopt blob may cause crash");
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
@@ -540,6 +547,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
 
 
 JRT_LEAF(address, SharedRuntime::exception_handler_for_return_address(JavaThread* thread, address return_address))
+  Thread::WXWriteFromExecSetter wx_write;
   return raw_exception_handler_for_return_address(thread, return_address);
 JRT_END
 
@@ -755,10 +763,23 @@ JRT_ENTRY(void, SharedRuntime::throw_NullPointerException_at_call(JavaThread* th
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::throw_StackOverflowError(JavaThread* thread))
+  throw_StackOverflowError_common(thread, false);
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::throw_delayed_StackOverflowError(JavaThread* thread))
+  throw_StackOverflowError_common(thread, true);
+JRT_END
+
+void SharedRuntime::throw_StackOverflowError_common(JavaThread* thread, bool delayed) {
   // We avoid using the normal exception construction in this case because
   // it performs an upcall to Java, and we're already out of stack space.
+  Thread* THREAD = thread;
   Klass* k = SystemDictionary::StackOverflowError_klass();
   oop exception_oop = InstanceKlass::cast(k)->allocate_instance(CHECK);
+  if (delayed) {
+    java_lang_Throwable::set_message(exception_oop,
+                                     Universe::delayed_stack_overflow_error_message());
+  }
   Handle exception (thread, exception_oop);
   if (StackTraceInThrowable) {
     java_lang_Throwable::fill_in_stack_trace(exception);
@@ -766,7 +787,7 @@ JRT_ENTRY(void, SharedRuntime::throw_StackOverflowError(JavaThread* thread))
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
   throw_and_post_jvmti_exception(thread, exception);
-JRT_END
+}
 
 address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
                                                            address pc,
@@ -1711,6 +1732,8 @@ void SharedRuntime::check_member_name_argument_is_last_argument(methodHandle met
 IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address caller_pc))
   Method* moop(method);
 
+  Thread::WXWriteFromExecSetter wx_write;
+
   address entry_point = moop->from_compiled_entry();
 
   // It's possible that deoptimization can occur at a call site which hasn't
@@ -2611,6 +2634,7 @@ bool AdapterHandlerEntry::compare_code(unsigned char* buffer, int length) {
 void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
   ResourceMark rm;
   nmethod* nm = NULL;
+  bool nativeWrapperNotSupported = false;
 
   assert(method->is_native(), "must be native");
   assert(method->is_method_handle_intrinsic() ||
@@ -2633,8 +2657,8 @@ void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
     BufferBlob*  buf = buffer_blob(); // the temporary code buffer in CodeCache
     if (buf != NULL) {
       CodeBuffer buffer(buf);
-      double locs_buf[20];
-      buffer.insts()->initialize_shared_locs((relocInfo*)locs_buf, sizeof(locs_buf) / sizeof(relocInfo));
+      struct { double data[20]; } locs_buf;
+      buffer.insts()->initialize_shared_locs((relocInfo*)&locs_buf, sizeof(locs_buf) / (sizeof(relocInfo)));
       MacroAssembler _masm(&buffer);
 
       // Fill in the signature array, for the calling-convention call.
@@ -2662,6 +2686,10 @@ void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
 
       // Generate the compiled-to-native wrapper code
       nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
+      if (nm == (void *)-1) {
+        nativeWrapperNotSupported = true;
+        nm = NULL;
+      }
 
       if (nm != NULL) {
         method->set_code(method, nm);
@@ -2679,7 +2707,8 @@ void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
     nm->post_compiled_method_load_event();
   } else {
     // CodeCache is full, disable compilation
-    CompileBroker::handle_full_code_cache();
+    if (!nativeWrapperNotSupported)
+      CompileBroker::handle_full_code_cache();
   }
 }
 
@@ -2823,22 +2852,6 @@ void SharedRuntime::convert_ints_to_longints(int i2l_argcnt, int& in_args_count,
     assert(0, "This should not be needed on this platform");
   }
 }
-
-JRT_LEAF(oopDesc*, SharedRuntime::pin_object(JavaThread* thread, oopDesc* obj))
-  assert(Universe::heap()->supports_object_pinning(), "Why we here?");
-  assert(obj != NULL, "Should not be null");
-  oop o(obj);
-  o = Universe::heap()->pin_object(thread, o);
-  assert(o != NULL, "Should not be null");
-  return o;
-JRT_END
-
-JRT_LEAF(void, SharedRuntime::unpin_object(JavaThread* thread, oopDesc* obj))
-  assert(Universe::heap()->supports_object_pinning(), "Why we here?");
-  assert(obj != NULL, "Should not be null");
-  oop o(obj);
-  Universe::heap()->unpin_object(thread, o);
-JRT_END
 
 // -------------------------------------------------------------------------
 // Java-Java calling convention
@@ -3043,3 +3056,78 @@ void AdapterHandlerLibrary::print_statistics() {
 }
 
 #endif /* PRODUCT */
+
+JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* thread))
+  assert(thread->is_Java_thread(), "Only Java threads have a stack reserved zone");
+  thread->enable_stack_reserved_zone();
+  thread->set_reserved_stack_activation(thread->stack_base());
+JRT_END
+
+frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr) {
+  frame activation;
+  int decode_offset = 0;
+  nmethod* nm = NULL;
+  frame prv_fr = fr;
+  int count = 1;
+
+  assert(fr.is_java_frame(), "Must start on Java frame");
+
+  while (!fr.is_first_frame()) {
+    Method* method = NULL;
+    // Compiled java method case.
+    if (decode_offset != 0) {
+      DebugInfoReadStream stream(nm, decode_offset);
+      decode_offset = stream.read_int();
+      method = (Method*)nm->metadata_at(stream.read_int());
+    } else {
+      if (fr.is_first_java_frame()) break;
+      address pc = fr.pc();
+      prv_fr = fr;
+      if (fr.is_interpreted_frame()) {
+        method = fr.interpreter_frame_method();
+        fr = fr.java_sender();
+      } else {
+        CodeBlob* cb = fr.cb();
+        fr = fr.java_sender();
+        if (cb == NULL || !cb->is_nmethod()) {
+          continue;
+        }
+        nm = (nmethod*)cb;
+        if (nm->method()->is_native()) {
+          method = nm->method();
+        } else {
+          PcDesc* pd = nm->pc_desc_at(pc);
+          assert(pd != NULL, "PcDesc must not be NULL");
+          decode_offset = pd->scope_decode_offset();
+          // if decode_offset is not equal to 0, it will execute the
+          // "compiled java method case" at the beginning of the loop.
+          continue;
+        }
+      }
+    }
+    if (method->has_reserved_stack_access()) {
+      ResourceMark rm(thread);
+      activation = prv_fr;
+      warning("Potentially dangerous stack overflow in "
+              "ReservedStackAccess annotated method %s [%d]",
+              method->name_and_sig_as_C_string(), count++);
+/*    This event cause build failures on linux32/solaris_all
+      EventReservedStackActivation event;
+      if (event.should_commit()) {
+        event.set_method(method);
+        event.commit();
+      }
+*/
+    }
+  }
+  return activation;
+}
+
+#if INCLUDE_CRS
+JRT_ENTRY(void, SharedRuntime::first_call_interpreter_entry(JavaThread *thread, Method *method))
+  assert(method->was_used(), "Interpreted method must be marked as used by corresponding runtime stub");
+  if (UseCRS) {
+    ConnectedRuntime::notify_first_call(thread, method);
+  }
+JRT_END
+#endif // INCLUDE_CRS

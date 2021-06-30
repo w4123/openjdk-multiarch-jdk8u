@@ -751,6 +751,11 @@ void os::set_native_thread_name(const char *name) {
   // is already attached to a debugger; debugger must observe
   // the exception below to show the correct name.
 
+  // If there is no debugger attached skip raising the exception
+  if (!IsDebuggerPresent()) {
+    return;
+  }
+
   const DWORD MS_VC_EXCEPTION = 0x406D1388;
   struct {
     DWORD dwType;     // must be 0x1000
@@ -766,7 +771,7 @@ void os::set_native_thread_name(const char *name) {
 
   __try {
     RaiseException (MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(DWORD), (const ULONG_PTR*)&info );
-  } __except(EXCEPTION_CONTINUE_EXECUTION) {}
+  } __except(EXCEPTION_EXECUTE_HANDLER) {}
 }
 
 bool os::distribute_processes(uint length, uint* distribution) {
@@ -1721,6 +1726,10 @@ void os::print_os_info(outputStream* st) {
   st->print("OS:");
 
   os::win32::print_windows_version(st);
+
+#ifdef _LP64
+  VM_Version::print_platform_virtualization_info(st);
+#endif
 }
 
 void os::win32::print_windows_version(outputStream* st) {
@@ -2452,6 +2461,39 @@ static inline void report_error(Thread* t, DWORD exception_code,
   // somewhere where we can find it in the minidump.
 }
 
+bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
+        struct _EXCEPTION_POINTERS* exceptionInfo, address pc, frame* fr) {
+  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+  address addr = (address) exceptionRecord->ExceptionInformation[1];
+  if (Interpreter::contains(pc)) {
+    *fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
+    if (!fr->is_first_java_frame()) {
+      assert(fr->safe_for_sender(thread), "Safety check");
+      *fr = fr->java_sender();
+    }
+  } else {
+    // more complex code with compiled code
+    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+      // Not sure where the pc points to, fallback to default
+      // stack overflow handling
+      return false;
+    } else {
+      *fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
+      // in compiled code, the stack banging is performed just after the return pc
+      // has been pushed on the stack
+      *fr = frame(fr->sp() + 1, fr->fp(), (address)*(fr->sp()));
+      if (!fr->is_java_frame()) {
+        assert(fr->safe_for_sender(thread), "Safety check");
+        *fr = fr->java_sender();
+      }
+    }
+  }
+  assert(fr->is_java_frame(), "Safety check");
+  return true;
+}
+
 //-----------------------------------------------------------------------------
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
@@ -2628,7 +2670,16 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW));
         }
 #endif
-        if (thread->stack_yellow_zone_enabled()) {
+        if (thread->stack_guards_enabled()) {
+          if (_thread_in_Java) {
+            frame fr;
+            PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+            address addr = (address) exceptionRecord->ExceptionInformation[1];
+            if (os::win32::get_frame_at_stack_banging_point(thread, exceptionInfo, pc, &fr)) {
+              assert(fr.is_java_frame(), "Must be a Java frame");
+              SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+            }
+          }
           // Yellow zone violation.  The o/s has unprotected the first yellow
           // zone page for us.  Note:  must call disable_stack_yellow_zone to
           // update the enabled status, even if the zone contains only one page.
@@ -3246,7 +3297,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
   return aligned_base;
 }
 
-char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
+char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint, bool executable) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
   assert(bytes % os::vm_allocation_granularity() == 0, "reserve block size");
@@ -3448,7 +3499,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
-bool os::pd_uncommit_memory(char* addr, size_t bytes) {
+bool os::pd_uncommit_memory(char* addr, size_t bytes, bool exec) {
   if (bytes == 0) {
     // Don't bother the OS with noops.
     return true;
@@ -3467,7 +3518,7 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
-  return os::uncommit_memory(addr, size);
+  return os::uncommit_memory(addr, size, !ExecMem);
 }
 
 // Set protections specified
@@ -5944,4 +5995,37 @@ void TestReserveMemorySpecial_test() {
   UseNUMAInterleaving = old_use_numa_interleaving;
 }
 #endif // PRODUCT
+
+/*
+  All the defined signal names for Windows.
+
+  NOTE that not all of these names are accepted by FindSignal!
+
+  For various reasons some of these may be rejected at runtime.
+
+  Here are the names currently accepted by a user of sun.misc.Signal with
+  1.4.1 (ignoring potential interaction with use of chaining, etc):
+
+     (LIST TBD)
+
+*/
+int os::get_signal_number(const char* name) {
+  static const struct siglabel {
+    char* name;
+    int   number;
+  } siglabels [] =
+    // derived from version 6.0 VC98/include/signal.h
+  {"ABRT",      SIGABRT,        // abnormal termination triggered by abort cl
+  "FPE",        SIGFPE,         // floating point exception
+  "SEGV",       SIGSEGV,        // segment violation
+  "INT",        SIGINT,         // interrupt
+  "TERM",       SIGTERM,        // software term signal from kill
+  "BREAK",      SIGBREAK,       // Ctrl-Break sequence
+  "ILL",        SIGILL};        // illegal instruction
+  for(int i=0;i<sizeof(siglabels)/sizeof(struct siglabel);i++)
+    if(!strcmp(name, siglabels[i].name))
+      return siglabels[i].number;
+  return -1;
+}
+
 

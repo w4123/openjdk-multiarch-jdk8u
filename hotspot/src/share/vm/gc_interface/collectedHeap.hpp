@@ -32,6 +32,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
+#include "services/memoryUsage.hpp"
 #include "utilities/events.hpp"
 
 // A "CollectedHeap" is an implementation of a java heap for HotSpot.  This
@@ -80,7 +81,6 @@ class GCHeapLog : public EventLogBase<GCMessage> {
 //     GenCollectedHeap
 //     G1CollectedHeap
 //   ParallelScavengeHeap
-//   ShenandoahHeap
 //
 class CollectedHeap : public CHeapObj<mtInternal> {
   friend class VMStructs;
@@ -189,8 +189,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     SharedHeap,
     GenCollectedHeap,
     ParallelScavengeHeap,
-    G1CollectedHeap,
-    ShenandoahHeap
+    G1CollectedHeap
   };
 
   static inline size_t filler_array_max_size() {
@@ -502,6 +501,10 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Return the CollectorPolicy for the heap
   virtual CollectorPolicy* collector_policy() const = 0;
 
+  virtual MemoryUsage memory_usage() {
+    return MemoryUsage(InitialHeapSize, used(), capacity(), max_capacity());
+  }
+
   void oop_iterate_no_header(OopClosure* cl);
 
   // Iterate over all the ref-containing fields of all objects, calling
@@ -607,19 +610,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
 
   // Heap verification
   virtual void verify(bool silent, VerifyOption option) = 0;
-
-  // Shut down all GC workers and other GC related threads.
-  virtual void shutdown();
-
-  // Accumulate additional statistics from GCLABs.
-  virtual void accumulate_statistics_all_gclabs();
-
-  // Support for object pinning. This is used by JNI Get*Critical()
-  // and Release*Critical() family of functions. If supported, the GC
-  // must guarantee that pinned objects never move.
-  virtual bool supports_object_pinning() const;
-  virtual oop pin_object(JavaThread* thread, oop obj);
-  virtual void unpin_object(JavaThread* thread, oop obj);
 
   // Non product verification and debugging.
 #ifndef PRODUCT

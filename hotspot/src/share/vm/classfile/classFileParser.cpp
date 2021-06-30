@@ -64,6 +64,10 @@
 #include "utilities/array.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_CRS
+#include "services/connectedRuntime.hpp"
+#include "utilities/hash.hpp"
+#endif
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -1305,19 +1309,13 @@ Array<u2>* ClassFileParser::parse_fields(Symbol* class_name,
 }
 
 
-static void copy_u2_with_conversion(u2* dest, u2* src, int length) {
-  while (length-- > 0) {
-    *dest++ = Bytes::get_Java_u2((u1*) (src++));
-  }
-}
 
-
-u2* ClassFileParser::parse_exception_table(u4 code_length,
+void* ClassFileParser::parse_exception_table(u4 code_length,
                                            u4 exception_table_length,
                                            TRAPS) {
   ClassFileStream* cfs = stream();
 
-  u2* exception_table_start = cfs->get_u2_buffer();
+  void* exception_table_start = cfs->get_u1_buffer();
   assert(exception_table_start != NULL, "null exception table");
   cfs->guarantee_more(8 * exception_table_length, CHECK_NULL); // start_pc, end_pc, handler_pc, catch_type_index
   // Will check legal target after parsing code array in verifier.
@@ -1482,7 +1480,7 @@ void copy_lvt_element(Classfile_LVT_Element *src, LocalVariableTableElement *lvt
 
 // Function is used to parse both attributes:
 //       LocalVariableTable (LVT) and LocalVariableTypeTable (LVTT)
-u2* ClassFileParser::parse_localvariable_table(u4 code_length,
+void* ClassFileParser::parse_localvariable_table(u4 code_length,
                                                u2 max_locals,
                                                u4 code_attribute_length,
                                                u2* localvariable_table_length,
@@ -1497,7 +1495,7 @@ u2* ClassFileParser::parse_localvariable_table(u4 code_length,
     guarantee_property(code_attribute_length == (sizeof(*localvariable_table_length) + size * sizeof(u2)),
                        "%s has wrong length in class file %s", tbl_name, CHECK_NULL);
   }
-  u2* localvariable_table_start = cfs->get_u2_buffer();
+  u1* localvariable_table_start = cfs->get_u1_buffer();
   assert(localvariable_table_start != NULL, "null local variable table");
   if (!_need_verify) {
     cfs->skip_u2_fast(size);
@@ -1604,14 +1602,14 @@ u1* ClassFileParser::parse_stackmap_table(
   return stackmap_table_start;
 }
 
-u2* ClassFileParser::parse_checked_exceptions(u2* checked_exceptions_length,
+void* ClassFileParser::parse_checked_exceptions(u2* checked_exceptions_length,
                                               u4 method_attribute_length,
                                               TRAPS) {
   ClassFileStream* cfs = stream();
   cfs->guarantee_more(2, CHECK_NULL);  // checked_exceptions_length
   *checked_exceptions_length = cfs->get_u2_fast();
   unsigned int size = (*checked_exceptions_length) * sizeof(CheckedExceptionElement) / sizeof(u2);
-  u2* checked_exceptions_start = cfs->get_u2_buffer();
+  void* checked_exceptions_start = cfs->get_u1_buffer();
   assert(checked_exceptions_start != NULL, "null checked exceptions");
   if (!_need_verify) {
     cfs->skip_u2_fast(size);
@@ -1818,6 +1816,10 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
     if (_location != _in_field && _location != _in_class)          break;  // only allow for fields and classes
     if (!EnableContended || (RestrictContended && !privileged))    break;  // honor privileges
     return _sun_misc_Contended;
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_ReservedStackAccess_signature):
+    if (_location != _in_method)  break;  // only allow for methods
+    if (RestrictReservedStack && !privileged) break; // honor privileges
+    return _jdk_internal_vm_annotation_ReservedStackAccess;
   default: break;
   }
   return AnnotationCollector::_unknown;
@@ -1849,6 +1851,8 @@ void ClassFileParser::MethodAnnotationCollector::apply_to(methodHandle m) {
     m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
   if (has_annotation(_method_LambdaForm_Hidden))
     m->set_hidden(true);
+  if (has_annotation(_jdk_internal_vm_annotation_ReservedStackAccess))
+    m->set_has_reserved_stack_access(true);
 }
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(instanceKlassHandle k) {
@@ -1876,10 +1880,10 @@ void ClassFileParser::ClassAnnotationCollector::apply_to(instanceKlassHandle k) 
 void ClassFileParser::copy_localvariable_table(ConstMethod* cm,
                                                int lvt_cnt,
                                                u2* localvariable_table_length,
-                                               u2** localvariable_table_start,
+                                               void** localvariable_table_start,
                                                int lvtt_cnt,
                                                u2* localvariable_type_table_length,
-                                               u2** localvariable_type_table_start,
+                                               void** localvariable_type_table_start,
                                                TRAPS) {
 
   LVT_Hash** lvt_Hash = NEW_RESOURCE_ARRAY(LVT_Hash*, HASH_ROW_SIZE);
@@ -2065,10 +2069,10 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
   u4 code_length = 0;
   u1* code_start = 0;
   u2 exception_table_length = 0;
-  u2* exception_table_start = NULL;
+  void* exception_table_start = NULL;
   Array<int>* exception_handlers = Universe::the_empty_int_array();
   u2 checked_exceptions_length = 0;
-  u2* checked_exceptions_start = NULL;
+  void* checked_exceptions_start = NULL;
   CompressedLineNumberWriteStream* linenumber_table = NULL;
   int linenumber_table_length = 0;
   int total_lvt_length = 0;
@@ -2078,9 +2082,9 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
   u2 max_lvt_cnt = INITIAL_MAX_LVT_NUMBER;
   u2 max_lvtt_cnt = INITIAL_MAX_LVT_NUMBER;
   u2* localvariable_table_length;
-  u2** localvariable_table_start;
+  void** localvariable_table_start;
   u2* localvariable_type_table_length;
-  u2** localvariable_type_table_start;
+  void** localvariable_type_table_start;
   u2 method_parameters_length = 0;
   u1* method_parameters_data = NULL;
   bool method_parameters_seen = false;
@@ -2213,17 +2217,17 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
             localvariable_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, u2*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, void*, INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, u2*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, void*, INITIAL_MAX_LVT_NUMBER);
             lvt_allocated = true;
           }
           if (lvt_cnt == max_lvt_cnt) {
             max_lvt_cnt <<= 1;
             localvariable_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_table_length, lvt_cnt, max_lvt_cnt);
-            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(u2*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
+            localvariable_table_start  = REALLOC_RESOURCE_ARRAY(void*, localvariable_table_start, lvt_cnt, max_lvt_cnt);
           }
           localvariable_table_start[lvt_cnt] =
             parse_localvariable_table(code_length,
@@ -2241,18 +2245,18 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
             localvariable_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, u2*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, void*, INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_length = NEW_RESOURCE_ARRAY_IN_THREAD(
               THREAD, u2,  INITIAL_MAX_LVT_NUMBER);
             localvariable_type_table_start = NEW_RESOURCE_ARRAY_IN_THREAD(
-              THREAD, u2*, INITIAL_MAX_LVT_NUMBER);
+              THREAD, void*, INITIAL_MAX_LVT_NUMBER);
             lvt_allocated = true;
           }
           // Parse local variable type table
           if (lvtt_cnt == max_lvtt_cnt) {
             max_lvtt_cnt <<= 1;
             localvariable_type_table_length = REALLOC_RESOURCE_ARRAY(u2, localvariable_type_table_length, lvtt_cnt, max_lvtt_cnt);
-            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(u2*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
+            localvariable_type_table_start  = REALLOC_RESOURCE_ARRAY(void*, localvariable_type_table_start, lvtt_cnt, max_lvtt_cnt);
           }
           localvariable_type_table_start[lvtt_cnt] =
             parse_localvariable_table(code_length,
@@ -2468,10 +2472,10 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
 
   // Copy exception table
   if (exception_table_length > 0) {
-    int size =
-      exception_table_length * sizeof(ExceptionTableElement) / sizeof(u2);
-    copy_u2_with_conversion((u2*) m->exception_table_start(),
-                             exception_table_start, size);
+    Copy::conjoint_swap_if_needed<Endian::JAVA>(exception_table_start,
+                                                m->exception_table_start(),
+                                                exception_table_length * sizeof(ExceptionTableElement),
+                                                sizeof(u2));
   }
 
   // Copy method parameters
@@ -2487,8 +2491,10 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
 
   // Copy checked exceptions
   if (checked_exceptions_length > 0) {
-    int size = checked_exceptions_length * sizeof(CheckedExceptionElement) / sizeof(u2);
-    copy_u2_with_conversion((u2*) m->checked_exceptions_start(), checked_exceptions_start, size);
+    Copy::conjoint_swap_if_needed<Endian::JAVA>(checked_exceptions_start,
+                                                m->checked_exceptions_start(),
+                                                checked_exceptions_length * sizeof(CheckedExceptionElement),
+                                                sizeof(u2));
   }
 
   // Copy class file LVT's/LVTT's into the HotSpot internal LVT.
@@ -3882,6 +3888,12 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   _host_klass = host_klass;
   _cp_patches = cp_patches;
 
+#if INCLUDE_CRS
+  if (_need_file_hash && _file_hash) { // _file_hash can be NULL if memory allocation has failed
+    sha256(cfs->buffer(), cfs->length(), _file_hash);
+  }
+#endif // INCLUDE_CRS
+
   instanceKlassHandle nullHandle;
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
@@ -3912,9 +3924,9 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   u2 minor_version = cfs->get_u2_fast();
   u2 major_version = cfs->get_u2_fast();
 
-  if (DumpSharedSpaces && major_version < JAVA_1_5_VERSION) {
+  if (DumpSharedSpaces && major_version < JAVA_6_VERSION) {
     ResourceMark rm;
-    warning("Pre JDK 1.5 class not supported by CDS: %u.%u %s",
+    warning("Pre JDK 6 class not supported by CDS: %u.%u %s",
             major_version,  minor_version, name->as_C_string());
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
@@ -4358,6 +4370,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   }
 
   JFR_ONLY(INIT_ID(preserve_this_klass);)
+  CRS_ONLY(CRS_INIT_ID((InstanceKlass*)preserve_this_klass);)
 
   // Create new handle outside HandleMark (might be needed for
   // Extended Class Redefinition)
@@ -5392,3 +5405,21 @@ void ClassFileParser::set_klass_to_deallocate(InstanceKlass* klass) {
 }
 
 #endif // INCLUDE_JFR
+
+#if INCLUDE_CRS
+
+void ClassFileParser::set_need_file_hash(TRAPS) {
+  _need_file_hash = true;
+  _file_hash = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, u1, DL_SHA256);
+}
+
+u1 const* ClassFileParser::get_file_hash() const {
+  assert(_file_hash != NULL, "invariant");
+  return _file_hash;
+}
+
+uintx ClassFileParser::get_file_hash_length() const {
+  return DL_SHA256;
+}
+
+#endif // INCLUDE_CRS

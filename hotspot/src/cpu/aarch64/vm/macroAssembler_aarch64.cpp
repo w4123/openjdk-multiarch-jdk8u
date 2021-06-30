@@ -32,7 +32,6 @@
 #include "interpreter/interpreter.hpp"
 
 #include "compiler/disassembler.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -53,7 +52,6 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
-#include "shenandoahBarrierSetAssembler_aarch64.hpp"
 #endif
 
 #ifdef COMPILER2
@@ -75,8 +73,8 @@
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
   int instructions = 1;
-  assert((uint64_t)target < (1ul << 48), "48-bit overflow in address constant");
-  long offset = (target - branch) >> 2;
+  assert((uint64_t)target < (1ull << 48), "48-bit overflow in address constant");
+  intptr_t offset = (target - branch) >> 2;
   unsigned insn = *(unsigned*)branch;
   if ((Instruction_aarch64::extract(insn, 29, 24) & 0b111011) == 0b011000) {
     // Load register (literal)
@@ -139,9 +137,9 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
                      Instruction_aarch64::extract(insn2, 4, 0)) {
         // movk #imm16<<32
         Instruction_aarch64::patch(branch + 4, 20, 5, (uint64_t)target >> 32);
-        long dest = ((long)target & 0xffffffffL) | ((long)branch & 0xffff00000000L);
-        long pc_page = (long)branch >> 12;
-        long adr_page = (long)dest >> 12;
+        uintptr_t dest = ((uintptr_t)target & 0xffffffffULL) | ((uintptr_t)branch & 0xffff00000000ULL);
+        uintptr_t pc_page = (uintptr_t)branch >> 12;
+        uintptr_t adr_page = (uintptr_t)dest >> 12;
         offset = adr_page - pc_page;
         instructions = 2;
       }
@@ -197,7 +195,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
 }
 
 address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
-  long offset = 0;
+  intptr_t offset = 0;
   if ((Instruction_aarch64::extract(insn, 29, 24) & 0b011011) == 0b00011000) {
     // Load register (literal)
     offset = Instruction_aarch64::sextract(insn, 23, 5);
@@ -369,7 +367,7 @@ void MacroAssembler::far_call(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
   if (far_branches()) {
-    unsigned long offset;
+    uint64_t offset;
     // We can use ADRP here because we know that the total size of
     // the code cache cannot exceed 2Gb.
     adrp(tmp, entry, offset);
@@ -387,7 +385,7 @@ void MacroAssembler::far_jump(Address entry, CodeBuffer *cbuf, Register tmp) {
   assert(CodeCache::find_blob(entry.target()) != NULL,
          "destination of far call not found in code cache");
   if (far_branches()) {
-    unsigned long offset;
+    uint64_t offset;
     // We can use ADRP here because we know that the total size of
     // the code cache cannot exceed 2Gb.
     adrp(tmp, entry, offset);
@@ -779,7 +777,7 @@ void MacroAssembler::c2bool(Register x) {
 address MacroAssembler::ic_call(address entry) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc());
   // address const_ptr = long_constant((jlong)Universe::non_oop_word());
-  // unsigned long offset;
+  // uintptr_t offset;
   // ldr_constant(rscratch2, const_ptr);
   movptr(rscratch2, (uintptr_t)Universe::non_oop_word());
   return trampoline_call(Address(entry, rh));
@@ -1436,11 +1434,11 @@ void MacroAssembler::movptr(Register r, uintptr_t imm64) {
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%"PRIX64, imm64);
+    snprintf(buffer, sizeof(buffer), "0x%" PRIX64, (uint64_t)imm64);
     block_comment(buffer);
   }
 #endif
-  assert(imm64 < (1ul << 48), "48-bit overflow in address constant");
+  assert(imm64 < (1ull << 48), "48-bit overflow in address constant");
   movz(r, imm64 & 0xffff);
   imm64 >>= 16;
   movk(r, imm64 & 0xffff, 16);
@@ -1499,7 +1497,7 @@ void MacroAssembler::mov_immediate64(Register dst, u_int64_t imm64)
 #ifndef PRODUCT
   {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "0x%"PRIX64, imm64);
+    snprintf(buffer, sizeof(buffer), "0x%" PRIX64, (uint64_t)imm64);
     block_comment(buffer);
   }
 #endif
@@ -1640,17 +1638,11 @@ void MacroAssembler::mov_immediate32(Register dst, u_int32_t imm32)
   }
 }
 
-void MacroAssembler::mov(Register dst, address addr) {
-  assert(Universe::heap() == NULL
-         || !Universe::heap()->is_in(addr), "use movptr for oop pointers");
-    mov_immediate64(dst, (uintptr_t)addr);
-}
-
 // Form an address from base + offset in Rd.  Rd may or may
 // not actually be used: you must use the Address that is returned.
 // It is up to you to ensure that the shift provided matches the size
 // of your data.
-Address MacroAssembler::form_address(Register Rd, Register base, long byte_offset, int shift) {
+Address MacroAssembler::form_address(Register Rd, Register base, int64_t byte_offset, int shift) {
   if (Address::offset_ok_for_immed(byte_offset, shift))
     // It fits; no need for any heroics
     return Address(base, byte_offset);
@@ -1665,9 +1657,9 @@ Address MacroAssembler::form_address(Register Rd, Register base, long byte_offse
 
   // See if we can do this with two 12-bit offsets
   {
-    unsigned long word_offset = byte_offset >> shift;
-    unsigned long masked_offset = word_offset & 0xfff000;
-    if (Address::offset_ok_for_immed(word_offset - masked_offset)
+    uint64_t word_offset = byte_offset >> shift;
+    uint64_t masked_offset = word_offset & 0xfff000;
+    if (Address::offset_ok_for_immed(word_offset - masked_offset, 0)
         && Assembler::operand_valid_for_add_sub_immediate(masked_offset << shift)) {
       add(Rd, base, masked_offset << shift);
       word_offset -= masked_offset;
@@ -1848,7 +1840,7 @@ void MacroAssembler::decrement(Register reg, int value)
   if (value < (1 << 12)) { sub(reg, reg, value); return; }
   /* else */ {
     assert(reg != rscratch2, "invalid dst for register decrement");
-    mov(rscratch2, (unsigned long)value);
+    mov(rscratch2, (uint64_t)value);
     sub(reg, reg, rscratch2);
   }
 }
@@ -2321,43 +2313,43 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
 #endif
     if (os::message_box(msg, "Execution stopped, print registers?")) {
       ttyLocker ttyl;
-      tty->print_cr(" pc = 0x%016lx", pc);
+      tty->print_cr(" pc = 0x%016" PRIx64, pc);
 #ifndef PRODUCT
       tty->cr();
       findpc(pc);
       tty->cr();
 #endif
-      tty->print_cr(" r0 = 0x%016lx", regs[0]);
-      tty->print_cr(" r1 = 0x%016lx", regs[1]);
-      tty->print_cr(" r2 = 0x%016lx", regs[2]);
-      tty->print_cr(" r3 = 0x%016lx", regs[3]);
-      tty->print_cr(" r4 = 0x%016lx", regs[4]);
-      tty->print_cr(" r5 = 0x%016lx", regs[5]);
-      tty->print_cr(" r6 = 0x%016lx", regs[6]);
-      tty->print_cr(" r7 = 0x%016lx", regs[7]);
-      tty->print_cr(" r8 = 0x%016lx", regs[8]);
-      tty->print_cr(" r9 = 0x%016lx", regs[9]);
-      tty->print_cr("r10 = 0x%016lx", regs[10]);
-      tty->print_cr("r11 = 0x%016lx", regs[11]);
-      tty->print_cr("r12 = 0x%016lx", regs[12]);
-      tty->print_cr("r13 = 0x%016lx", regs[13]);
-      tty->print_cr("r14 = 0x%016lx", regs[14]);
-      tty->print_cr("r15 = 0x%016lx", regs[15]);
-      tty->print_cr("r16 = 0x%016lx", regs[16]);
-      tty->print_cr("r17 = 0x%016lx", regs[17]);
-      tty->print_cr("r18 = 0x%016lx", regs[18]);
-      tty->print_cr("r19 = 0x%016lx", regs[19]);
-      tty->print_cr("r20 = 0x%016lx", regs[20]);
-      tty->print_cr("r21 = 0x%016lx", regs[21]);
-      tty->print_cr("r22 = 0x%016lx", regs[22]);
-      tty->print_cr("r23 = 0x%016lx", regs[23]);
-      tty->print_cr("r24 = 0x%016lx", regs[24]);
-      tty->print_cr("r25 = 0x%016lx", regs[25]);
-      tty->print_cr("r26 = 0x%016lx", regs[26]);
-      tty->print_cr("r27 = 0x%016lx", regs[27]);
-      tty->print_cr("r28 = 0x%016lx", regs[28]);
-      tty->print_cr("r30 = 0x%016lx", regs[30]);
-      tty->print_cr("r31 = 0x%016lx", regs[31]);
+      tty->print_cr(" r0 = 0x%016" PRIx64, regs[0]);
+      tty->print_cr(" r1 = 0x%016" PRIx64, regs[1]);
+      tty->print_cr(" r2 = 0x%016" PRIx64, regs[2]);
+      tty->print_cr(" r3 = 0x%016" PRIx64, regs[3]);
+      tty->print_cr(" r4 = 0x%016" PRIx64, regs[4]);
+      tty->print_cr(" r5 = 0x%016" PRIx64, regs[5]);
+      tty->print_cr(" r6 = 0x%016" PRIx64, regs[6]);
+      tty->print_cr(" r7 = 0x%016" PRIx64, regs[7]);
+      tty->print_cr(" r8 = 0x%016" PRIx64, regs[8]);
+      tty->print_cr(" r9 = 0x%016" PRIx64, regs[9]);
+      tty->print_cr("r10 = 0x%016" PRIx64, regs[10]);
+      tty->print_cr("r11 = 0x%016" PRIx64, regs[11]);
+      tty->print_cr("r12 = 0x%016" PRIx64, regs[12]);
+      tty->print_cr("r13 = 0x%016" PRIx64, regs[13]);
+      tty->print_cr("r14 = 0x%016" PRIx64, regs[14]);
+      tty->print_cr("r15 = 0x%016" PRIx64, regs[15]);
+      tty->print_cr("r16 = 0x%016" PRIx64, regs[16]);
+      tty->print_cr("r17 = 0x%016" PRIx64, regs[17]);
+      tty->print_cr("r18 = 0x%016" PRIx64, regs[18]);
+      tty->print_cr("r19 = 0x%016" PRIx64, regs[19]);
+      tty->print_cr("r20 = 0x%016" PRIx64, regs[20]);
+      tty->print_cr("r21 = 0x%016" PRIx64, regs[21]);
+      tty->print_cr("r22 = 0x%016" PRIx64, regs[22]);
+      tty->print_cr("r23 = 0x%016" PRIx64, regs[23]);
+      tty->print_cr("r24 = 0x%016" PRIx64, regs[24]);
+      tty->print_cr("r25 = 0x%016" PRIx64, regs[25]);
+      tty->print_cr("r26 = 0x%016" PRIx64, regs[26]);
+      tty->print_cr("r27 = 0x%016" PRIx64, regs[27]);
+      tty->print_cr("r28 = 0x%016" PRIx64, regs[28]);
+      tty->print_cr("r30 = 0x%016" PRIx64, regs[30]);
+      tty->print_cr("r31 = 0x%016" PRIx64, regs[31]);
       BREAKPOINT;
     }
     ThreadStateTransition::transition(thread, _thread_in_vm, saved_state);
@@ -2369,7 +2361,9 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
   }
 }
 
-void MacroAssembler::push_call_clobbered_fp_registers() {
+void MacroAssembler::push_call_clobbered_registers() {
+  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) BSD_ONLY(- r18), sp);
+
   // Push v0-v7, v16-v31.
   for (int i = 30; i >= 0; i -= 2) {
     if (i <= v7->encoding() || i >= v16->encoding()) {
@@ -2379,7 +2373,7 @@ void MacroAssembler::push_call_clobbered_fp_registers() {
   }
 }
 
-void MacroAssembler::pop_call_clobbered_fp_registers() {
+void MacroAssembler::pop_call_clobbered_registers() {
 
   for (int i = 0; i < 32; i += 2) {
     if (i <= v7->encoding() || i >= v16->encoding()) {
@@ -2387,19 +2381,8 @@ void MacroAssembler::pop_call_clobbered_fp_registers() {
            Address(post(sp, 2 * wordSize)));
     }
   }
-}
 
-void MacroAssembler::push_call_clobbered_registers() {
-  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
-
-  push_call_clobbered_fp_registers();
-}
-
-void MacroAssembler::pop_call_clobbered_registers() {
-
-  pop_call_clobbered_fp_registers();
-
-  pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
+  pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2) BSD_ONLY(- r18), sp);
 }
 
 void MacroAssembler::push_CPU_state(bool save_vectors) {
@@ -2849,7 +2832,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3) {
   Label L_by16, L_by16_loop, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
-  unsigned long offset;
+  uint64_t offset;
 
     ornw(crc, zr, crc);
 
@@ -3086,7 +3069,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 SkipIfEqual::SkipIfEqual(
     MacroAssembler* masm, const bool* flag_addr, bool value) {
   _masm = masm;
-  unsigned long offset;
+  uint64_t offset;
   _masm->adrp(rscratch1, ExternalAddress((address)flag_addr), offset);
   _masm->ldrb(rscratch1, Address(rscratch1, offset));
   _masm->cbzw(rscratch1, _label);
@@ -3115,7 +3098,7 @@ void MacroAssembler::addptr(const Address &dst, int32_t src) {
 }
 
 void MacroAssembler::cmpptr(Register src1, Address src2) {
-  unsigned long offset;
+  uint64_t offset;
   adrp(rscratch1, src2, offset);
   ldr(rscratch1, Address(rscratch1, offset));
   cmp(src1, rscratch1);
@@ -3472,13 +3455,6 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
 
 void MacroAssembler::load_heap_oop(Register dst, Address src)
 {
-#if INCLUDE_ALL_GCS
-  if (UseShenandoahGC) {
-    ShenandoahBarrierSetAssembler::bsasm()->load_heap_oop(this, dst, src);
-    return;
-  }
-#endif
-
   if (UseCompressedOops) {
     ldrw(dst, src);
     decode_heap_oop(dst);
@@ -3489,13 +3465,6 @@ void MacroAssembler::load_heap_oop(Register dst, Address src)
 
 void MacroAssembler::load_heap_oop_not_null(Register dst, Address src)
 {
-#if INCLUDE_ALL_GCS
-  if (UseShenandoahGC) {
-    ShenandoahBarrierSetAssembler::bsasm()->load_heap_oop(this, dst, src);
-    return;
-  }
-#endif
-
   if (UseCompressedOops) {
     ldrw(dst, src);
     decode_heap_oop_not_null(dst);
@@ -3638,13 +3607,6 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
                              rscratch1);
   assert(store_addr != noreg && new_val != noreg && tmp != noreg
          && tmp2 != noreg, "expecting a register");
-
-  if (UseShenandoahGC) {
-    // No need for this in Shenandoah.
-    return;
-  }
-
-  assert(UseG1GC, "expect G1 GC");
 
   Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
                                        PtrQueue::byte_offset_of_index()));
@@ -3860,7 +3822,7 @@ Register MacroAssembler::tlab_refill(Label& retry,
   strw(t1, Address(top, arrayOopDesc::length_offset_in_bytes()));
   // set klass to intArrayKlass
   {
-    unsigned long offset;
+    uint64_t offset;
     // dubious reloc why not an oop reloc?
     adrp(rscratch1, ExternalAddress((address)Universe::intArrayKlassObj_addr()),
          offset);
@@ -3926,7 +3888,7 @@ void MacroAssembler::eden_allocate(Register obj,
     Label retry;
     bind(retry);
     {
-      unsigned long offset;
+      uint64_t offset;
       adrp(rscratch1, ExternalAddress((address) Universe::heap()->end_addr()), offset);
       ldr(heap_end, Address(rscratch1, offset));
     }
@@ -3935,7 +3897,7 @@ void MacroAssembler::eden_allocate(Register obj,
 
     // Get the current top of the heap
     {
-      unsigned long offset;
+      uint64_t offset;
       adrp(rscratch1, heap_top, offset);
       // Use add() here after ARDP, rather than lea().
       // lea() does not generate anything if its offset is zero.
@@ -4022,7 +3984,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 
 
 address MacroAssembler::read_polling_page(Register r, address page, relocInfo::relocType rtype) {
-  unsigned long off;
+  uint64_t off;
   adrp(r, Address(page, rtype), off);
   InstructionMark im(this);
   code_section()->relocate(inst_mark(), rtype);
@@ -4037,13 +3999,12 @@ address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype
   return inst_mark();
 }
 
-void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byte_offset) {
-  relocInfo::relocType rtype = dest.rspec().reloc()->type();
-  unsigned long low_page = (unsigned long)CodeCache::low_bound() >> 12;
-  unsigned long high_page = (unsigned long)(CodeCache::high_bound()-1) >> 12;
-  unsigned long dest_page = (unsigned long)dest.target() >> 12;
-  long offset_low = dest_page - low_page;
-  long offset_high = dest_page - high_page;
+void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
+  uint64_t low_page = (uint64_t)CodeCache::low_bound() >> 12;
+  uint64_t high_page = (uint64_t)(CodeCache::high_bound()-1) >> 12;
+  uint64_t dest_page = (uint64_t)dest.target() >> 12;
+  int64_t offset_low = dest_page - low_page;
+  int64_t offset_high = dest_page - high_page;
 
   assert(is_valid_AArch64_address(dest.target()), "bad address");
   assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
@@ -4055,14 +4016,14 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
   if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
     _adrp(reg1, dest.target());
   } else {
-    unsigned long target = (unsigned long)dest.target();
-    unsigned long adrp_target
-      = (target & 0xffffffffUL) | ((unsigned long)pc() & 0xffff00000000UL);
+    uint64_t target = (uint64_t)dest.target();
+    uint64_t adrp_target
+      = (target & 0xffffffffULL) | ((uint64_t)pc() & 0xffff00000000ULL);
 
     _adrp(reg1, (address)adrp_target);
     movk(reg1, target >> 32, 32);
   }
-  byte_offset = (unsigned long)dest.target() & 0xfff;
+  byte_offset = (uint64_t)dest.target() & 0xfff;
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
@@ -4072,7 +4033,7 @@ void MacroAssembler::load_byte_map_base(Register reg) {
   if (is_valid_AArch64_address((address)byte_map_base)) {
     // Strictly speaking the byte_map_base isn't an address at all,
     // and it might even be negative.
-    unsigned long offset;
+    uint64_t offset;
     adrp(reg, ExternalAddress((address)byte_map_base), offset);
     // We expect offset to be zero with most collectors.
     if (offset != 0) {

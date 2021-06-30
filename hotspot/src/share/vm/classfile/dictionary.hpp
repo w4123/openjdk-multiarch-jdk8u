@@ -129,6 +129,7 @@ public:
   void reorder_dictionary();
 
   ProtectionDomainCacheEntry* cache_get(oop protection_domain);
+  ProtectionDomainCacheTable* pd_cache_table() { return _pd_cache_table; }
 
   void print(bool details = true);
   void verify();

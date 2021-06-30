@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8175029
- * @library ../../testlibrary
+ * @library /lib
  * @summary check that default implementation of
  *          X509CRL.verify(PublicKey, Provider) works on custom X509CRL impl.
  */
@@ -44,6 +44,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.util.Date;
 import java.util.Set;
+import jdk.test.lib.security.CertUtils;
 
 public class VerifyDefault {
     private static final String TEST_CRL =

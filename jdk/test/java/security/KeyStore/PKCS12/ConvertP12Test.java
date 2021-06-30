@@ -32,6 +32,7 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.util.Arrays;
@@ -67,6 +68,7 @@ import java.util.Enumeration;
 public class ConvertP12Test {
 
     private static final String SUN_JSSE = "SunJSSE";
+    private static final String OPEN_JSSE = "OpenJSSE";
     private static final String SUN_JCE = "SunJCE";
     private static final String SUN = "SUN";
     private static final String PKCS12 = "pkcs12";
@@ -121,8 +123,20 @@ public class ConvertP12Test {
         out.println("Output KeyStore : " + inKeyStore + ".out");
         String outKeyStoreName = inKeyStore + ".out";
         try (FileOutputStream fout = new FileOutputStream(outKeyStoreName);) {
-            inputKeyStore = KeyStore.getInstance(inKeyStoreType,
-                    inKeyStoreTypePrv);
+            try {
+                inputKeyStore = KeyStore.getInstance(inKeyStoreType,
+                        inKeyStoreTypePrv);
+            } catch(NoSuchProviderException nspe) {
+                if (inKeyStoreTypePrv.equals(SUN_JSSE))
+                    inKeyStoreTypePrv = OPEN_JSSE;
+                try {
+                    inputKeyStore = KeyStore.getInstance(inKeyStoreType,
+                            inKeyStoreTypePrv);
+                } catch(NoSuchProviderException altnspe) {
+                    // throw initial NSPE
+                    throw nspe;
+                }
+            }
 
             // KeyStore have encoded by Base64.getMimeEncoder().encode(),need
             // decode first.
@@ -135,8 +149,20 @@ public class ConvertP12Test {
 
             inputKeyStore.load(arrayIn, inStorePass.toCharArray());
 
-            outputKeyStore = KeyStore.getInstance(outKeyStoreType,
-                    outKeyStorePrv);
+            try {
+                outputKeyStore = KeyStore.getInstance(outKeyStoreType,
+                        outKeyStorePrv);
+            } catch(NoSuchProviderException nspe) {
+                if (outKeyStorePrv.equals(SUN_JSSE))
+                    outKeyStorePrv = OPEN_JSSE;
+                try {
+                    outputKeyStore = KeyStore.getInstance(outKeyStoreType,
+                            outKeyStorePrv);
+                } catch(NoSuchProviderException altnspe) {
+                    // throw initial NSPE
+                    throw nspe;
+                }
+            }
             outputKeyStore.load(null, null);
 
             run(inputKeyStore, outputKeyStore, inKeyPass, outKeyPass);

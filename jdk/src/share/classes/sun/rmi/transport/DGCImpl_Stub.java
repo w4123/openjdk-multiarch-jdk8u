@@ -28,6 +28,7 @@ package sun.rmi.transport;
 import sun.rmi.transport.tcp.TCPConnection;
 
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.rmi.dgc.Lease;
 import java.rmi.dgc.VMID;
 import java.rmi.server.UID;

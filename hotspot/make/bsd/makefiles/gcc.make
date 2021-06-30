@@ -190,7 +190,7 @@ CFLAGS += -fno-rtti
 CFLAGS += -fno-exceptions
 ifeq ($(USE_CLANG),)
   CFLAGS += -pthread
-  CFLAGS += -fcheck-new -fstack-protector
+  CFLAGS += -fcheck-new
   # version 4 and above support fvisibility=hidden (matches jni_x86.h file)
   # except 4.1.2 gives pointless warnings that can't be disabled (afaik)
   ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "0"
@@ -247,7 +247,8 @@ endif
 
 # Compiler warnings are treated as errors
 ifneq ($(COMPILER_WARNINGS_FATAL),false)
-  WARNINGS_ARE_ERRORS = -Werror
+  # WARNINGS_ARE_ERRORS = -Werror
+  WARNINGS_ARE_ERRORS = -Werror=implicit-function-declaration
 endif
 
 ifeq ($(USE_CLANG), true)
@@ -313,8 +314,14 @@ OPT_CFLAGS/NOOPT=-O0
 
 # Work around some compiler bugs.
 ifeq ($(USE_CLANG), true)
-  ifeq ($(shell expr $(CC_VER_MAJOR) = 4 \& $(CC_VER_MINOR) = 2), 1)
+  # Clang <= 6.1
+  ifeq ($(shell expr \
+      $(CC_VER_MAJOR) \< 6 \| \
+      \( $(CC_VER_MAJOR) = 6 \& $(CC_VER_MINOR) \<= 1 \) \
+    ), 1)
     OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
+    OPT_CFLAGS/unsafe.o += -O1
+  else
     OPT_CFLAGS/unsafe.o += -O1
   endif
 else
@@ -346,9 +353,17 @@ ifeq ($(OS_VENDOR), Darwin)
     MACOSX_VERSION_MIN=10.7.0
   endif
   # The macro takes the version with no dots, ex: 1070
-  CFLAGS += -DMAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(MACOSX_VERSION_MIN)) \
-            -mmacosx-version-min=$(MACOSX_VERSION_MIN)
-  LFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
+  ifdef CROSS_COMPILE_ARCH
+    HOSTCC += -DMAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(MACOSX_VERSION_MIN)) \
+              -mmacosx-version-min=$(MACOSX_VERSION_MIN)
+    HOSTCXX += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
+    # Quick way to replace finite() with isfinite()
+    CXX += -Dfinite\(x\)=isfinite\(x\)
+  else
+    CFLAGS += -DMAC_OS_X_VERSION_MAX_ALLOWED=$(subst .,,$(MACOSX_VERSION_MIN)) \
+              -mmacosx-version-min=$(MACOSX_VERSION_MIN)
+    LFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
+  endif
 endif
 
 
@@ -362,7 +377,15 @@ ASFLAGS += -x assembler-with-cpp
 # Linker flags
 
 # statically link libstdc++.so, work with gcc but ignored by g++
-STATIC_STDCXX = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
+ifeq ($(OS_VENDOR), Darwin)
+  ifeq ($(USE_CLANG), true)
+    STATIC_STDCXX = -Wl,-Bstatic -lc++ -Wl,-Bdynamic
+  else
+    STATIC_STDCXX = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
+  endif
+else
+  STATIC_STDCXX = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
+endif
 
 ifeq ($(USE_CLANG),)
   # statically link libgcc and/or libgcc_s, libgcc does not exist before gcc-3.x.
