@@ -536,8 +536,9 @@ define SetupNativeCompilation
     endif
 
     ifeq ($(OPENJDK_TARGET_OS), macosx)
+    # iOS workarounds: dynamic lib and rpa
       $1_EXTRA_LDFLAGS+="-dynamiclib"
-      # FIXME add: install_name=@rpath/$$($1_BASENAME)
+      $1_EXTRA_LDFLAGS+="-Wl,-install_name,@rpath/$$($1_BASENAME)"
     endif
 
     $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)
