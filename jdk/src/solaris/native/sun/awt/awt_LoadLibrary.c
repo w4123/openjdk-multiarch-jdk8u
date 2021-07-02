@@ -90,9 +90,15 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
   #define LWAWT_PATH "/libawt_lwawt.dylib"
   #define DEFAULT_PATH LWAWT_PATH
 #else
+#ifndef MACOSX
   #define XAWT_PATH "/libawt_xawt.so"
   #define DEFAULT_PATH XAWT_PATH
   #define HEADLESS_PATH "/libawt_headless.so"
+#else
+  #define XAWT_PATH "/libawt_xawt.dylib"
+  #define DEFAULT_PATH XAWT_PATH
+  #define HEADLESS_PATH "/libawt_headless.dylib"
+#endif
 #endif
 static bool read_so_path_from_maps(const char* so_name, char* buf) {
   FILE *fp = fopen("/proc/self/maps", "r");
