@@ -565,6 +565,12 @@ JNIEXPORT jstring JNICALL Java_sun_awt_FcFontManager_getFontPathNative
     if (ptr == NULL) {
         ptr = getPlatformFontPathChars(env, noType1, isX11);
     }
+
+    // mod: set path to ${JAVA_HOME}/lib/fonts if still NULL
+    if (ptr == NULL) {
+        ptr = calloc(1, 4096);
+        sprintf(ptr, "%s/lib/fonts", getenv("JAVA_HOME"));
+    }
     ret = (*env)->NewStringUTF(env, ptr);
     return ret;
 }
