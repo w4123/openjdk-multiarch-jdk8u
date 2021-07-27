@@ -141,7 +141,7 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     /* Get address of this library and the directory containing it. */
     dladdr((void *)AWT_OnLoad, &dlinfo);
     char *altpath = getenv("JAVA_AWT_PATH");
-    if (altpath != null) {
+    if (altpath != NULL) {
       realpath(altpath, buf);
     } if (strrchr(dlinfo.dli_fname, '/') != NULL) {
       realpath((char *)dlinfo.dli_fname, buf);
