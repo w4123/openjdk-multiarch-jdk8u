@@ -144,11 +144,14 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
 
     /* Get address of this library and the directory containing it. */
     dladdr((void *)AWT_OnLoad, &dlinfo);
-     if (strrchr(dlinfo.dli_fname, '/') != NULL) {
-        realpath((char *)dlinfo.dli_fname, buf);
-     }else{
-         read_so_path_from_maps(dlinfo.dli_fname,buf);
-     }
+    char *altpath = getenv("JAVA_AWT_PATH");
+    if (altpath != NULL) {
+      realpath(altpath, buf);
+    } else if (strrchr(dlinfo.dli_fname, '/') != NULL) {
+      realpath((char *)dlinfo.dli_fname, buf);
+    } else {
+      read_so_path_from_maps(dlinfo.dli_fname,buf);
+    }
     len = strlen(buf);
     p = strrchr(buf, '/');
 
