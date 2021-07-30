@@ -566,11 +566,6 @@ JNIEXPORT jstring JNICALL Java_sun_awt_FcFontManager_getFontPathNative
         ptr = getPlatformFontPathChars(env, noType1, isX11);
     }
 
-    // mod: set path to ${JAVA_HOME}/lib/fonts if still NULL
-    if (ptr == NULL) {
-        ptr = calloc(1, 4096);
-        sprintf(ptr, "%s/lib/fonts", getenv("JAVA_HOME"));
-    }
     ret = (*env)->NewStringUTF(env, ptr);
     return ret;
 }
@@ -762,10 +757,15 @@ static char **getFontConfigLocations() {
     int i, f, found, len=0;
     char **fontPath;
 
+    // mod: set path to ${JAVA_HOME}/lib/fonts if still NULL
+    fontdirs = (char*[]) { (char *)calloc(1, 4096), NULL };
+    sprintf(fontdirs[0], "%s/lib/fonts", getenv("JAVA_HOME"));
+
     void* libfontconfig = openFontConfig();
 
     if (libfontconfig == NULL) {
-        return NULL;
+        return fontdirs;
+        // NULL
     }
 
     FcPatternBuild     =
@@ -814,6 +814,7 @@ static char **getFontConfigLocations() {
         /* FcFontList() may return NULL if fonts are not installed. */
         fontdirs = NULL;
     } else {
+        free(fontdirs[0]);
         fontdirs = (char**)calloc(fontSet->nfont+1, sizeof(char*));
         for (f=0; f < fontSet->nfont; f++) {
             FcChar8 *file;
