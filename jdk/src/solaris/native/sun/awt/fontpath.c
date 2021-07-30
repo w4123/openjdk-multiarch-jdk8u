@@ -757,10 +757,6 @@ static char **getFontConfigLocations() {
     int i, f, found, len=0;
     char **fontPath;
 
-    // mod: set path to ${JAVA_HOME}/lib/fonts if still NULL
-    fontdirs = (char*[]) { (char *)calloc(1, 4096), NULL };
-    sprintf(fontdirs[0], "%s/lib/fonts", getenv("JAVA_HOME"));
-
     void* libfontconfig = openFontConfig();
 
     if (libfontconfig == NULL) {
