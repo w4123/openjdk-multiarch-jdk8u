@@ -735,6 +735,17 @@ typedef FcStrList* (*FcConfigGetCacheDirsFuncType)(FcConfig *config);
 typedef FcChar8* (*FcStrListNextFuncType)(FcStrList *list);
 typedef FcChar8* (*FcStrListDoneFuncType)(FcStrList *list);
 
+// mod: fallback directories
+static char **getFallbackFontLocations() {
+
+    char **fontdirs = (char**)calloc(3, sizeof(char*));
+    fontdirs[0] = (char *)calloc(1, 4096);
+    sprintf(fontdirs[0], "%s/lib/fonts", getenv("JAVA_HOME"));
+    fontdirs[1] = "/System/Library/Fonts/UnicodeSupport";
+    return fontdirs;
+
+}
+
 static char **getFontConfigLocations() {
 
     char **fontdirs;
@@ -757,15 +768,11 @@ static char **getFontConfigLocations() {
     int i, f, found, len=0;
     char **fontPath;
 
-    // mod: set path to ${JAVA_HOME}/lib/fonts if still NULL
-    fontdirs = (char*[]) { (char *)calloc(1, 4096), NULL };
-    sprintf(fontdirs[0], "%s/lib/fonts", getenv("JAVA_HOME"));
-
     void* libfontconfig = openFontConfig();
 
     if (libfontconfig == NULL) {
-        return fontdirs;
-        // NULL
+        return getFallbackFontLocations();
+        // original: NULL
     }
 
     FcPatternBuild     =
@@ -812,9 +819,9 @@ static char **getFontConfigLocations() {
     fontSet = (*FcFontList)(NULL, pattern, objset);
     if (fontSet == NULL) {
         /* FcFontList() may return NULL if fonts are not installed. */
-        fontdirs = NULL;
+        fontdirs = getFallbackFontLocations();
+        // original: NULL
     } else {
-        free(fontdirs[0]);
         fontdirs = (char**)calloc(fontSet->nfont+1, sizeof(char*));
         for (f=0; f < fontSet->nfont; f++) {
             FcChar8 *file;
