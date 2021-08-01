@@ -809,7 +809,6 @@ static char **getFontConfigLocations() {
         /* FcFontList() may return NULL if fonts are not installed. */
         fontdirs = NULL;
     } else {
-        free(fontdirs[0]);
         fontdirs = (char**)calloc(fontSet->nfont+1, sizeof(char*));
         for (f=0; f < fontSet->nfont; f++) {
             FcChar8 *file;
