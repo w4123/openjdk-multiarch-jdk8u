@@ -607,6 +607,7 @@ double CodeCache::reverse_free_ratio() {
 void icache_init();
 
 void CodeCache::initialize() {
+ /*
   assert(CodeCacheSegmentSize >= (uintx)CodeEntryAlignment, "CodeCacheSegmentSize must be large enough to align entry points");
 #ifdef COMPILER2
   assert(CodeCacheSegmentSize >= (uintx)OptoLoopAlignment,  "CodeCacheSegmentSize must be large enough to align inner loops");
@@ -632,8 +633,8 @@ void CodeCache::initialize() {
   // This is used on Windows 64 bit platforms to register
   // Structured Exception Handlers for our generated code.
   os::register_code_area(_heap->low_boundary(), _heap->high_boundary());
-}
-
+*/
+ }
 
 void codeCache_init() {
   CodeCache::initialize();
