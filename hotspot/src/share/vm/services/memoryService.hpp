@@ -147,7 +147,7 @@ public:
 
   static void track_memory_usage();
   static void track_code_cache_memory_usage() {
-    track_memory_pool_usage(_code_heap_pool);
+    //track_memory_pool_usage(_code_heap_pool);
   }
   static void track_metaspace_memory_usage() {
     track_memory_pool_usage(_metaspace_pool);
