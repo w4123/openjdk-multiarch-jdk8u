@@ -2202,7 +2202,7 @@ void bsd_wrap_code(char* base, size_t size) {
     if (rv != (off_t)-1) {
       if (::write(fd, "", 1) == 1) {
         mmap(base, size,
-             PROT_READ|PROT_WRITE|PROT_EXEC,
+             PROT_READ|PROT_WRITE,
              MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE, fd, 0);
       }
     }
@@ -2223,7 +2223,7 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
 //       left at the time of mmap(). This could be a potential
 //       problem.
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
-  int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
+  int prot = exec ? PROT_READ|PROT_WRITE : PROT_READ|PROT_WRITE;
 #if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
   if (::mprotect(addr, size, prot) == 0) {
@@ -2427,7 +2427,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
   case MEM_PROT_NONE: p = PROT_NONE; break;
   case MEM_PROT_READ: p = PROT_READ; break;
   case MEM_PROT_RW:   p = PROT_READ|PROT_WRITE; break;
-  case MEM_PROT_RWX:  p = PROT_READ|PROT_WRITE|PROT_EXEC; break;
+  case MEM_PROT_RWX:  p = PROT_READ|PROT_WRITE; break;
   default:
     ShouldNotReachHere();
   }
@@ -4193,10 +4193,6 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
   } else {
     prot = PROT_READ | PROT_WRITE;
     flags = MAP_PRIVATE;
-  }
-
-  if (allow_exec) {
-    prot |= PROT_EXEC;
   }
 
   if (addr != NULL) {
